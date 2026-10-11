@@ -466,3 +466,6 @@ html.mv-lock,body.mv-body{overflow:hidden;height:100%}
 .mv-phow ul{margin:6px 0;padding-left:20px}.mv-phow p{margin:8px 0;font-size:.9375rem;color:#6b4f3a}
 @media (max-width:720px){.mv-pod-page{margin:4px 8px 30px;padding:16px 12px 22px;box-shadow:5px 5px 0 var(--cin)}.mv-pod-tabs button{padding:0 10px}}
 @media (prefers-reduced-motion:reduce){.mv-pstar,.mv-pblock,.mv-pod{animation:none}}
+
+/* the map's own logo: whatever its shape, it is shown whole inside the same square as the built-in one (never stretched, never cropped) */
+.mv-logo-img{object-fit:contain;object-position:center;background:none;border-radius:6px}

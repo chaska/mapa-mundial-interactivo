@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS `#__mapaviajes_albums` (
   `ordering` int NOT NULL DEFAULT 0,
   `created` datetime NOT NULL,
   `created_by` int unsigned NOT NULL DEFAULT 0,
+  `logo` varchar(40) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `idx_published` (`published`),
   KEY `idx_access` (`access`)

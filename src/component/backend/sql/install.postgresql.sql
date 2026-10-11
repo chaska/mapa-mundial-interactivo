@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS "#__mapaviajes_albums" (
   "ordering" bigint NOT NULL DEFAULT 0,
   "created" timestamp without time zone NOT NULL,
   "created_by" bigint NOT NULL DEFAULT 0,
+  "logo" character varying(40) NOT NULL DEFAULT '',
   PRIMARY KEY ("id")
 );
 CREATE INDEX IF NOT EXISTS "#__mapaviajes_albums_idx_published" ON "#__mapaviajes_albums" ("published");

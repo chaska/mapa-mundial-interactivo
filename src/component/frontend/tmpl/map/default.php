@@ -53,12 +53,16 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 
 <header class="mv-top mv-on-ocean">
 	<div class="mv-brand">
+		<?php if ((string) ($this->album['logo'] ?? '') !== '') : ?>
+			<img class="mv-logo mv-logo-img" src="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=photo.logo&id=' . (int) $this->album['id'] . '&v=' . substr((string) $this->album['logo'], 0, 8), false)); ?>" alt="" width="52" height="52" decoding="async">
+		<?php else : ?>
 		<svg class="mv-logo" viewBox="0 0 52 52" aria-hidden="true">
 			<circle cx="26" cy="26" r="24" fill="#d49b55" stroke="#fbf7f0" stroke-width="2.5"/>
 			<g fill="none" stroke="#8a5424" stroke-width="1.6"><ellipse cx="26" cy="26" rx="10" ry="24"/><path d="M3 20h46M3 32h46"/></g>
 			<path d="M33 10.5a8.5 8.5 0 0 0-8.5 8.5c0 6.2 8.5 15.5 8.5 15.5s8.5-9.3 8.5-15.5A8.5 8.5 0 0 0 33 10.5z" fill="#8f2a1b" stroke="#fbf7f0" stroke-width="2"/>
 			<circle cx="33" cy="19" r="3.2" fill="#fff"/>
 		</svg>
+		<?php endif; ?>
 		<div>
 			<h1><?php echo $e((string) $this->album['title']); ?></h1>
 			<p id="mv-stat">&nbsp;</p>

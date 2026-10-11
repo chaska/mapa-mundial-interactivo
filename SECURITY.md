@@ -71,3 +71,6 @@ Pendiente de validar en tu despliegue: `pcre.jit` (mejor activado), registro abi
 - **Ranking**: se calcula con consultas parametrizadas sobre datos ya moderados; las semanas cerradas no cambian; el cierre usa la clave de la fila de semana como cerrojo.
 - **Filtro por persona**: usa una clave opaca (HMAC con el secreto de Joomla), no el id de usuario.
 - **RGPD**: acceso y supresión mediante las herramientas de Privacidad de Joomla y borrado en cascada al eliminar la cuenta (archivos incluidos). Ver `docs/PRIVACIDAD.md`.
+
+## Añadido en 1.4.0: logo del mapa
+Pasa por `ImageProcessor` (el mismo que las fotos) con límites propios: 2 MB, 4096 px por lado, 16 MP, resultado ≤ 512 px y sin pérdida. Se rechazan SVG (scripts), GIF, BMP, PNG con código pegado o truncados y cabeceras con dimensiones absurdas, y `tmp_name` que no subió PHP. El campo se lee como UN archivo (una lista se ignora), el nombre almacenado lo genera el servidor, la columna `logo` no se puede rellenar desde el formulario, el guardado exige token CSRF y permiso de edición, y se sirve con `Content-Security-Policy: sandbox`, `nosniff` y 404 vacío si no hay permiso.

@@ -33,6 +33,25 @@ final class PhotoServer
 			@ob_end_clean();
 		}
 
+		self::deliver($app, $path, (string) ($gate['filename'] ?? ''), 'foto.webp');
+	}
+
+	/** The logo of a map: the same empty 404 for anything that is not allowed or not there. */
+	public static function sendLogo(CMSApplicationInterface $app, DatabaseInterface $db, Settings $settings, int $albumId, callable $mayView): never
+	{
+		$gate = (new TripRepository($db))->logoGate($albumId);
+		$path = ($gate !== null && $gate['logo'] !== '' && $mayView($gate)) ? $settings->storage()->pathFor($gate['logo']) : null;
+
+		while (ob_get_level() > 0)
+		{
+			@ob_end_clean();
+		}
+
+		self::deliver($app, $path, $gate['logo'] ?? '', 'logo.webp');
+	}
+
+	private static function deliver(CMSApplicationInterface $app, ?string $path, string $etagSeed, string $downloadName): never
+	{
 		if ($path === null)
 		{
 			http_response_code(404);
@@ -44,7 +63,7 @@ final class PhotoServer
 		}
 
 		$size = (int) filesize($path);
-		$etag = '"' . substr($gate['filename'], 0, 32) . '"';
+		$etag = '"' . substr($etagSeed, 0, 32) . '"';
 
 		header('X-Content-Type-Options: nosniff');
 		header('Cache-Control: private, no-cache'); // revalidate every time: a hidden or trashed photo must stop showing at once
@@ -63,7 +82,7 @@ final class PhotoServer
 
 		header('Content-Type: image/webp');
 		header('Content-Length: ' . $size);
-		header('Content-Disposition: inline; filename="foto.webp"');
+		header('Content-Disposition: inline; filename="' . $downloadName . '"');
 
 		readfile($path);
 		$app->close();

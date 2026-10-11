@@ -27,7 +27,7 @@ final class TripRepository
 	{
 		$levels = array_map('intval', $user->getAuthorisedViewLevels());
 		$query  = $this->db->getQuery(true)
-			->select($this->db->quoteName(['id', 'title', 'description', 'allow_comments', 'access']))
+			->select($this->db->quoteName(['id', 'title', 'description', 'allow_comments', 'access', 'logo']))
 			->from($this->db->quoteName('#__mapaviajes_albums'))
 			->where($this->db->quoteName('published') . ' = 1')
 			->order($this->db->quoteName('ordering') . ' ASC, ' . $this->db->quoteName('id') . ' ASC');
@@ -167,6 +167,20 @@ final class TripRepository
 			'filename' => (string) $row['filename'], 'trip_published' => (int) $row['trip_published'], 'trip_user' => (int) $row['trip_user'],
 			'album_published' => (int) $row['album_published'], 'album_access' => (int) $row['album_access'],
 		];
+	}
+
+	/** What decides whether somebody may see the logo of a map. @return array{logo: string, published: int, access: int}|null */
+	public function logoGate(int $albumId): ?array
+	{
+		if ($albumId <= 0)
+		{
+			return null;
+		}
+
+		$id  = $albumId;
+		$row = $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName(['logo', 'published', 'access']))->from($this->db->quoteName('#__mapaviajes_albums'))->where($this->db->quoteName('id') . ' = :id')->bind(':id', $id, ParameterType::INTEGER))->loadAssoc();
+
+		return $row ? ['logo' => (string) $row['logo'], 'published' => (int) $row['published'], 'access' => (int) $row['access']] : null;
 	}
 
 	/**

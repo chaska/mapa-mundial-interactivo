@@ -1,5 +1,12 @@
 # Registro de cambios
 
+## 1.4.0 — 2026-10-15
+- **Logo del mapa** subido desde el administrador (ficha del mapa → Logo), con la misma tubería de seguridad que las fotos: se identifica por sus bytes (nunca por nombre, extensión ni Content-Type), se rechazan SVG, GIF, poliglotas y PNG con código pegado, las cabeceras se leen **antes** de decodificar (una imagen que dice 60000x60000 se rechaza sin decodificarla), máximo 2 MB y 4096 px por lado (16 MP), y se guarda como una imagen **nueva** en el almacén privado con nombre aleatorio.
+- **Ajuste automático**: lado largo máximo 512 px, sin ampliar y sin deformar (4000x2000 → 512x256; tu 512x512 se queda igual). **PNG con transparencia**: el alfa se conserva y se guarda sin pérdida (WebP VP8L) para que los bordes duros no se emborronen. En la cabecera se muestra entero dentro del mismo cuadrado que el logo por defecto (`object-fit: contain`): nunca se estira ni se recorta.
+- Un logo rechazado rechaza todo el guardado con el motivo y **no toca el logo anterior**; al cambiar o quitar el logo, o borrar el mapa, el archivo antiguo se borra. El nombre del archivo nunca viene del formulario. Se sirve solo con sesión y nivel de acceso del mapa (404 vacío en cualquier otro caso).
+- Corrección: el tamaño mínimo de un archivo aceptado baja de 100 a 60 bytes (un logo plano sin pérdida puede ocupar unas decenas de bytes).
+- Pruebas nuevas: 19 de logo sin Joomla (`02-imagen.php`) y 43 contra Joomla (`96-logo.php`).
+
 ## 1.3.0 — 2026-10-14
 - **Ranking semanal con podio de cómic**: botón «Podio» en el mapa; semana en curso, semana pasada y tabla general; estrellas 3/2/1; puntos de viajero 10/6/3 (1 del 4 al 10). Solo cuentan viajes publicados con fotos; reacciones y comentarios suman como mucho lo mismo que viajes y fotos; topes por semana; desempate determinista; semanas cerradas inmutables (cierre perezoso a los 2 días, sin dos cierres a la vez). Cada persona puede **no aparecer**. Pesos y topes en Opciones.
 - **Filtro por persona** en el mapa (desde el podio o la lista): «Viajes de …».

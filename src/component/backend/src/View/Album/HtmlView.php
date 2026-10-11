@@ -11,6 +11,8 @@ namespace Chaska\Component\Mapaviajes\Administrator\View\Album;
 
 defined('_JEXEC') || die;
 
+use Chaska\Component\Mapaviajes\Administrator\Model\AlbumModel;
+use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -21,6 +23,8 @@ class HtmlView extends BaseHtmlView
 	protected $form;
 	protected $item;
 	protected $state;
+	/** The current logo as a data: URI for the preview (the back end has no public URL for private files); '' when there is none. */
+	protected string $logoPreview = '';
 
 	public function display($tpl = null): void
 	{
@@ -28,6 +32,14 @@ class HtmlView extends BaseHtmlView
 		$this->form  = $model->getForm();
 		$this->item  = $model->getItem();
 		$this->state = $model->getState();
+
+		$logo = (string) ($this->item->logo ?? '');
+		$path = $logo !== '' ? (new Settings())->storage()->pathFor($logo) : null;
+
+		if ($path !== null && (int) filesize($path) <= AlbumModel::LOGO_MAX_BYTES)
+		{
+			$this->logoPreview = 'data:image/webp;base64,' . base64_encode((string) file_get_contents($path));
+		}
 
 		Factory::getApplication()->getInput()->set('hidemainmenu', true);
 		$isNew = (int) ($this->item->id ?? 0) === 0;

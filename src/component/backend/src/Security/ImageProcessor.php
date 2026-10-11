@@ -36,6 +36,7 @@ final class ImageProcessor
 	private int $maxPixels;
 	private int $maxDimension;
 	private bool $upscale;
+	private bool $lossless;
 
 	/**
 	 * @param   callable(string): bool|null  $isUploaded  Defaults to is_uploaded_file(); tests inject their own.
@@ -47,7 +48,8 @@ final class ImageProcessor
 		bool $upscale = false,
 		int $maxPixels = 24000000,
 		int $maxDimension = 12000,
-		?callable $isUploaded = null
+		?callable $isUploaded = null,
+		bool $lossless = false
 	)
 	{
 		$this->maxBytes     = max(1024, $maxBytes);
@@ -57,6 +59,8 @@ final class ImageProcessor
 		$this->maxPixels    = $maxPixels;
 		$this->maxDimension = $maxDimension;
 		$this->isUploaded   = $isUploaded ?? 'is_uploaded_file';
+		// Logos: lossless WebP keeps hard edges and transparency exactly as designed (needs the constant from PHP 8.1 + libwebp)
+		$this->lossless     = $lossless && \defined('IMG_WEBP_LOSSLESS');
 	}
 
 	public static function isSupported(): bool
@@ -135,7 +139,7 @@ final class ImageProcessor
 
 		$size = filesize($path);
 
-		if ($size === false || $size < 100)
+		if ($size === false || $size < 60) // the smallest real PNG is 67 bytes; a flat, lossless logo can be a few dozen bytes once re-encoded
 		{
 			throw new SanitizeException('image_unreadable');
 		}
@@ -264,7 +268,7 @@ final class ImageProcessor
 				throw new SanitizeException('image_unreadable');
 			}
 
-			if (!imagewebp($canvas, $destination, $this->quality))
+			if (!imagewebp($canvas, $destination, $this->lossless ? IMG_WEBP_LOSSLESS : $this->quality))
 			{
 				throw new SanitizeException('image_unreadable');
 			}
@@ -280,7 +284,7 @@ final class ImageProcessor
 		// Verify what WE produced, with the same distrust.
 		$outSize = filesize($destination);
 
-		if ($outSize === false || $outSize < 100 || $outSize > $this->maxBytes)
+		if ($outSize === false || $outSize < 40 || $outSize > $this->maxBytes)
 		{
 			throw new SanitizeException('image_unreadable');
 		}

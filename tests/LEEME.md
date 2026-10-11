@@ -24,6 +24,7 @@ php tests/joomla-live/60-comentarios.php  # puente de comentarios: Engage real y
 php tests/joomla-live/70-ranking.php      # ranking semanal: puntuación, topes, exclusiones, empates, cierre, tabla general
 php tests/joomla-live/90-panel-sorteo.php # panel, ranking del administrador, sorteo, CSV, correos a autores y al podio
 php tests/joomla-live/95-privacidad.php   # acceso y supresión de Joomla, borrado de cuenta
+php tests/joomla-live/96-logo.php         # logo del mapa: ajuste, transparencia, archivos hostiles, permisos, cambiar y quitar
 node tests/joomla-live/30-navegador.js    # Chromium: formulario en iPhone (táctil) y en escritorio
 node tests/joomla-live/31-reacciones-navegador.js
 node tests/joomla-live/61-comentarios-navegador.js
