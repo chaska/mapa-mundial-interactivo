@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS "#__mapaviajes_trips" (
   "published" smallint NOT NULL DEFAULT 0,
   "photo_count" smallint NOT NULL DEFAULT 0,
   "article_id" bigint NULL DEFAULT NULL,
+  "asset_id" bigint NOT NULL DEFAULT 0,
   "created" timestamp without time zone NOT NULL,
   "modified" timestamp without time zone NULL DEFAULT NULL,
   PRIMARY KEY ("id")

@@ -5,6 +5,11 @@ require __DIR__ . '/http.php';
 $base = getenv('MV_BASE') ?: 'http://127.0.0.1:8081';
 $db = new Bd(getenv('MV_PREFIX') ?: 'jt_');
 $db->setParams(['trips_per_hour' => 1000, 'trips_per_day' => 1000, 'review_first' => 0, 'notify_admin' => 0]);
+if (getenv('MV_COMMENTS')) { // comments bridge on, and Registered users allowed to comment in Engage (test setup)
+	$db->pdo->exec(file_get_contents(__DIR__ . '/../engage-pg.sql'));
+	$db->setParams(['comments_provider' => (string) getenv('MV_COMMENTS')]);
+	$db->exec('UPDATE ' . $db->t('assets') . " SET rules = '{\"core.create\":{\"2\":1}}' WHERE name = 'com_engage'");
+}
 $ana = new Cliente($base, 'ana');
 if (!$ana->login('ana', getenv('MV_ANA') ?: 'cambia-esta-clave-de-prueba')) { fwrite(STDERR, "login\n"); exit(1); }
 $db->exec('DELETE FROM ' . $db->t('mapaviajes_reactions'));

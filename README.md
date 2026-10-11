@@ -21,3 +21,6 @@ Instala el ZIP desde *Sistema → Instalar → Extensiones*. Crea un elemento de
 Versión 1.0.0: mapa, formulario, subida segura y moderación. Lo que falta está listado en [CHANGELOG.md](CHANGELOG.md). Seguridad y pruebas: [SECURITY.md](SECURITY.md) y [tests/LEEME.md](tests/LEEME.md). Licencia: GPL v3 o posterior, ver [NOTICE.md](NOTICE.md).
 
 Los bocetos de diseño están en `boceto/` (HTML autocontenido: `mapa.html` y `admin-panel.html`).
+
+## Comentarios
+Cada viaje puede tener comentarios a través de otra extensión (Engage probado; eventos de contenido de Joomla para otras). Joomla no trae comentarios propios. Cómo funciona, qué cadenas usa cada sistema y qué está probado: [`docs/COMENTARIOS.md`](docs/COMENTARIOS.md).

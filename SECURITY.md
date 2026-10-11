@@ -55,7 +55,7 @@ Pendiente de validar en tu despliegue: `pcre.jit` (mejor activado), registro abi
 - Esto no sustituye una auditoría externa independiente.
 - Aún no están hechos: me gusta/favoritos/ranking, conexión con Engage, avisos a usuarios (ver `CHANGELOG.md`); cuando existan, tendrán sus propias pruebas.
 - Un administrador con permisos de Joomla puede, por diseño, ver todas las fotos y editar los ajustes.
-- El texto de tus usuarios es texto plano; si más adelante activas Engage, sus comentarios los filtra Engage (HTMLPurifier), no este componente.
+- El texto de tus usuarios es texto plano. Los comentarios los filtra y modera la extensión que elijas (Engage usa HTMLPurifier), no este componente; el puente (`docs/COMENTARIOS.md`) solo pasa el id del viaje, nunca el correo del autor, y la página de comentarios exige sesión, viaje publicado y nivel de acceso del mapa. El viaje no se hace pasar por artículo (una extensión de comentarios no puede confundirlo con el artículo del mismo número) y el panel es una página del mismo dominio, sin scripts de terceros.
 
 ## Despliegue recomendado
 1. Joomla 5.4.9 / 6.1.4 o superior.

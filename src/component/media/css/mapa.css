@@ -391,3 +391,11 @@ html.mv-lock,body.mv-body{overflow:hidden;height:100%}
 .mv-empty-fav strong{color:var(--ink);font:800 1.125rem var(--display)}
 .mv-tabs b[hidden]{display:none}
 .mv-tabs{grid-template-columns:repeat(2,1fr)}
+
+/* comments panel inside the viewer */
+.mv-cm{position:absolute;z-index:5;left:0;right:0;bottom:0;height:min(72vh,640px);display:flex;flex-direction:column;background:var(--paper,#fff7e0);color:#2d1b10;border-radius:20px 20px 0 0;box-shadow:0 -10px 40px #0008;animation:mv-vin .3s var(--ease) both}
+.mv-cm[hidden]{display:none}
+.mv-cm-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 18px;border-bottom:1px solid #2d1b1022}
+.mv-cm-head .mv-v-btn{background:#2d1b1014;color:#2d1b10}
+#mv-cmFrame{flex:1;width:100%;border:0;background:#fff}
+@media (min-width:900px){.mv-cm{left:auto;right:16px;width:440px;height:calc(100% - 96px);bottom:16px;border-radius:20px}}

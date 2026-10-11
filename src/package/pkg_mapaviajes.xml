@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="package" method="upgrade">
+	<name>PKG_MAPAVIAJES</name>
+	<packagename>mapaviajes</packagename>
+	<author>ChasKa</author>
+	<creationDate>2026-10-13</creationDate>
+	<copyright>Copyright (c) 2026 ChasKa</copyright>
+	<license>GNU General Public License version 3, or later</license>
+	<version>1.2.0</version>
+	<description>PKG_MAPAVIAJES_XML_DESC</description>
+	<scriptfile>pkg_script.php</scriptfile>
+	<files>
+		<file type="component" id="com_mapaviajes">com_mapaviajes.zip</file>
+		<file type="plugin" id="mapaviajes" group="content">plg_content_mapaviajes.zip</file>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/pkg_mapaviajes.sys.ini</language>
+		<language tag="es-ES">es-ES/pkg_mapaviajes.sys.ini</language>
+	</languages>
+</extension>

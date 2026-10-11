@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `#__mapaviajes_trips` (
   `published` tinyint NOT NULL DEFAULT 0,
   `photo_count` tinyint unsigned NOT NULL DEFAULT 0,
   `article_id` int unsigned NULL DEFAULT NULL,
+  `asset_id` int unsigned NOT NULL DEFAULT 0,
   `created` datetime NOT NULL,
   `modified` datetime NULL DEFAULT NULL,
   PRIMARY KEY (`id`),

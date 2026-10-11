@@ -39,6 +39,14 @@ final class Settings
 	public function perDay(): int         { return $this->int('trips_per_day', 10, 1, 200); }
 	public function reviewFirst(): bool   { return (int) $this->params->get('review_first', 1) === 1; }
 	public function commentsDefault(): bool { return (int) $this->params->get('comments_default', 1) === 1; }
+	/** Which comment system the trip viewer uses: none, engage (Akeeba Engage / Engage) or events (any extension that listens to Joomla's content events). */
+	public function commentsProvider(): string
+	{
+		$v = (string) $this->params->get('comments_provider', 'none');
+
+		return \in_array($v, ['engage', 'events'], true) ? $v : 'none';
+	}
+
 	public function reactionsPerDay(): int { return $this->int('reactions_per_day', 300, 1, 5000); }
 	public function showRealNames(): bool { return (int) $this->params->get('show_real_names', 0) === 1; }
 	public function notifyAdmin(): bool   { return (int) $this->params->get('notify_admin', 1) === 1; }

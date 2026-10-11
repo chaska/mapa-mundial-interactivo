@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="content" method="upgrade">
+	<name>plg_content_mvtest</name><version>1.0.0</version><license>GPL-3.0-or-later</license>
+	<description>TEST ONLY: answers the content events with context com_mapaviajes.trip, the way a comment extension would.</description>
+	<namespace path="src">Mvtest\Plugin\Content\Mvtest</namespace>
+	<files><folder>services</folder><folder plugin="mvtest">src</folder></files>
+</extension>

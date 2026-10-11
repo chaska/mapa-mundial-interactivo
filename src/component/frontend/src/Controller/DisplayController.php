@@ -30,8 +30,9 @@ class DisplayController extends BaseController
 			return $this;
 		}
 
-		// Whatever the request asked for, this component has exactly one page.
-		$this->input->set('view', 'map');
+		// Two pages exist: the map, and the comments of one trip (its view is named tripcomments because Joomla caches views by NAME across controllers and Engage owns the name "comments") (shown inside a panel of the map). Nothing else can be asked for.
+		$view = $this->input->getCmd('view', 'map') === 'tripcomments' ? 'tripcomments' : 'map';
+		$this->input->set('view', $view);
 		$this->input->set('layout', 'default'); // never a layout chosen by the request (core LFI via ?layout=, CVE-2026-40383)
 		$this->input->set('tmpl', 'component'); // the map is an app: no site header or footer around it
 

@@ -354,9 +354,19 @@
 		if (!t || !t.ph.length) { return; }
 		VWR.t = t; VWR.i = 0; VWR.opener = document.activeElement;
 		const v = $('viewer'); v.hidden = false; v.classList.remove('mv-bare'); v.classList.toggle('mv-single', t.ph.length < 2);
-		$('vT').textContent = t.t; showPhoto(0, 0); syncReact(); $('vMsg').classList.remove('mv-show'); $('vMsg').textContent = ''; $('vClose').focus({ preventScroll: true });
+		$('vT').textContent = t.t; showPhoto(0, 0); syncReact(); syncComments(); $('vMsg').classList.remove('mv-show'); $('vMsg').textContent = ''; $('vClose').focus({ preventScroll: true });
 	}
-	function closeViewer() { $('viewer').hidden = true; if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (_) { /* ignore */ } } if (VWR.opener && VWR.opener.focus) { VWR.opener.focus({ preventScroll: true }); } }
+	/* comments: another extension renders them; we only show its page for this trip inside a panel (same origin) */
+	function syncComments() {
+		const b = $('vCom'); if (!b) { return; }
+		closeComments(); b.hidden = !(O.commentsOn && O.allowComments && VWR.t && VWR.t.cm && !VWR.t.pending);
+	}
+	function openComments() { const f = $('cmFrame'); if (!VWR.t || !f) { return; } f.src = O.commentsUrl + encodeURIComponent(String(VWR.t.id)); $('cm').hidden = false; $('cmClose').focus({ preventScroll: true }); }
+	function closeComments() { const c = $('cm'); if (!c || c.hidden) { return; } c.hidden = true; $('cmFrame').removeAttribute('src'); if (!$('vCom').hidden) { $('vCom').focus({ preventScroll: true }); } }
+	// Escape must work while the focus is inside the comments page too (same origin, so its document is ours to listen to)
+	if ($('cmFrame')) { $('cmFrame').addEventListener('load', () => { try { $('cmFrame').contentDocument.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeComments(); } }); } catch (_) { /* not ours */ } }); }
+	if ($('vCom')) { $('vCom').onclick = (e) => { e.stopPropagation(); $('cm').hidden ? openComments() : closeComments(); }; $('cmClose').onclick = (e) => { e.stopPropagation(); closeComments(); }; }
+	function closeViewer() { if ($('cm')) { $('cm').hidden = true; $('cmFrame').removeAttribute('src'); } $('viewer').hidden = true; if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (_) { /* ignore */ } } if (VWR.opener && VWR.opener.focus) { VWR.opener.focus({ preventScroll: true }); } }
 	function showPhoto(i, dir) {
 		const n = VWR.t.ph.length; VWR.i = (i + n) % n; const p = VWR.t.ph[VWR.i], img = $('vImg');
 		img.style.transition = 'none'; img.style.opacity = dir ? 0 : 1; img.style.transform = dir ? 'translateX(' + dir * 48 + 'px)' : 'none';
@@ -405,6 +415,7 @@
 	$('vFs').onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : $('viewer').requestFullscreen(); } catch (_) { /* ignore */ } };
 	document.addEventListener('keydown', (e) => {
 		if ($('viewer').hidden) { return; }
+		if (e.key === 'Escape' && $('cm') && !$('cm').hidden) { closeComments(); return; }
 		if (e.key === 'ArrowRight') { vStep(1); } else if (e.key === 'ArrowLeft') { vStep(-1); } else if (e.key === 'f' || e.key === 'F') { $('vFs').click(); }
 		else if (e.key === 'Tab') { const f = [...$('viewer').querySelectorAll('button:not([disabled])')].filter((x) => x.offsetParent !== null); if (!f.length) { return; } const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } }
 	});
@@ -645,6 +656,7 @@
 		limits(); Object.assign(V, viewFor(W / 2, H / 2 + (VW <= 720 ? -18 : 0), KMIN)); V.ty = VW <= 720 ? (VH - H * KMIN) / 2 - 20 : V.ty; clamp(V);
 		if (panel) { renderPhotos(); syncSub(); }
 		apply(); await loadTrips();
+		if (O.openTrip) { const t = TRIPS.find((x) => x.id === O.openTrip); if (t) { flyTo(viewFor(t.x, t.y, KMIN * 4), 0); openViewer(t); } }
 		setTimeout(() => $('hint').classList.add('mv-off'), 9000);
 	})();
 }());

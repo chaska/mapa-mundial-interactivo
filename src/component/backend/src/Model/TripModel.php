@@ -11,6 +11,7 @@ namespace Chaska\Component\Mapaviajes\Administrator\Model;
 
 defined('_JEXEC') || die;
 
+use Chaska\Component\Mapaviajes\Administrator\Service\CommentsBridge;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\Database\ParameterType;
@@ -42,9 +43,12 @@ class TripModel extends AdminModel
 		$pks = array_values(array_filter(array_map('intval', (array) $pks)));
 		$db  = $this->getDatabase();
 		$files = [];
+		$assets = [];
 
 		foreach ($pks as $pk)
 		{
+			$aq = $pk;
+			$assets[$pk] = (int) $db->setQuery($db->getQuery(true)->select($db->quoteName('asset_id'))->from($db->quoteName('#__mapaviajes_trips'))->where($db->quoteName('id') . ' = :aq')->bind(':aq', $aq, ParameterType::INTEGER))->loadResult();
 			$query = $db->getQuery(true)->select($db->quoteName('filename'))->from($db->quoteName('#__mapaviajes_photos'))->where($db->quoteName('trip_id') . ' = :t')->bind(':t', $pk, ParameterType::INTEGER);
 			$files[$pk] = $db->setQuery($query)->loadColumn() ?: [];
 		}
@@ -68,6 +72,9 @@ class TripModel extends AdminModel
 				{
 					$storage->delete((string) $name);
 				}
+
+				// its comment thread and its asset row (whatever comment system was in use)
+				(new CommentsBridge($db, new Settings()))->forget([$assets[$pk] ?? 0]);
 			}
 		}
 

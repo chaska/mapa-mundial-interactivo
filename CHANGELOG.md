@@ -1,5 +1,12 @@
 # Registro de cambios
 
+## 1.2.0 — 2026-10-13
+- **Comentarios por viaje** mediante otra extensión (Joomla no trae comentarios). Opciones → Sistema de comentarios: Ninguno / Akeeba Engage-Engage / Eventos de contenido de Joomla. Botón «Comentarios» en el visor que abre un panel del mismo dominio; enlace `…&trip=ID` que abre el mapa en ese viaje.
+- Cada viaje tiene su fila de activos `com_mapaviajes.trip.N` y su contexto `com_mapaviajes.trip` (no se hace pasar por artículo). Al borrar el viaje se borran su hilo y su activo.
+- Paquete `pkg_mapaviajes` (componente + plugin `plg_content_mapaviajes`, que enseña a Engage qué es un viaje y no entrega el correo del autor).
+- Documentación de cómo funcionan los comentarios en Joomla y qué cadenas usa cada sistema: `docs/COMENTARIOS.md` (JComments y Komento sin probar, dicho claramente).
+- Pruebas nuevas: 34 en vivo con Engage real y una extensión simulada (`60-comentarios.php`) y 14 en Chromium (`61-comentarios-navegador.js`).
+
 ## 1.1.0 — 2026-10-12
 - Permisos separados: `mapaviajes.submit` (añadir viajes con fotos; usuarios registrados) y `core.create` (crear mapas/álbumes en el administrador; solo administradores). Al actualizar desde 1.0.x se traspasa el permiso antiguo automáticamente. Prueba: tener solo `core.create` no permite enviar viajes.
 - Búsqueda de lugares con **todas las ciudades del mundo** (~127 000, **con nombres en español**: Londres, Nueva York, Roma, El Cairo…; datos de GeoNames/Wikidata vía Countries States Cities Database, ODbL; crédito visible en el formulario). ~600 nombres españoles escritos a mano (Gante, Brujas, Núremberg, Oporto, Pekín…) y búsqueda también por el nombre local o inglés («Gent», «Mumbai», «Cuzco»). Mapa-click propone la ciudad más cercana: archivo propio en tu servidor, búsqueda binaria por prefijo (<1 ms), sin consultar a nadie. Pinchar en el mapa propone la ciudad más cercana. Solo usuarios registrados, solo GET, entrada validada. Pruebas: 28 en PHP (incluye que ningún nombre de lugar sea rechazado por el saneador) y 27 en vivo.

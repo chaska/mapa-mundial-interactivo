@@ -168,4 +168,58 @@ final class TripRepository
 			'album_published' => (int) $row['album_published'], 'album_access' => (int) $row['album_access'],
 		];
 	}
+
+	/**
+	 * One trip with what a comment system needs to know about it, whoever is asking. Visibility is decided by the caller
+	 * with commentsVisible(): this method never filters by user.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function forComments(int $tripId = 0, int $assetId = 0): ?array
+	{
+		if ($tripId <= 0 && $assetId <= 0)
+		{
+			return null;
+		}
+
+		$t = $tripId;
+		$s = $assetId;
+		$q = $this->db->getQuery(true)
+			->select([
+				$this->db->quoteName('t.id'), $this->db->quoteName('t.title'), $this->db->quoteName('t.place'), $this->db->quoteName('t.user_id'),
+				$this->db->quoteName('t.published'), $this->db->quoteName('t.allow_comments'), $this->db->quoteName('t.album_id'), $this->db->quoteName('t.created'),
+				$this->db->quoteName('t.asset_id'), $this->db->quoteName('a.title', 'album_title'), $this->db->quoteName('a.access', 'album_access'),
+				$this->db->quoteName('a.published', 'album_published'), $this->db->quoteName('a.allow_comments', 'album_comments'),
+				$this->db->quoteName('u.username'), $this->db->quoteName('u.name'),
+			])
+			->from($this->db->quoteName('#__mapaviajes_trips', 't'))
+			->join('INNER', $this->db->quoteName('#__mapaviajes_albums', 'a') . ' ON ' . $this->db->quoteName('a.id') . ' = ' . $this->db->quoteName('t.album_id'))
+			->join('LEFT', $this->db->quoteName('#__users', 'u') . ' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('t.user_id'));
+
+		if ($tripId > 0)
+		{
+			$q->where($this->db->quoteName('t.id') . ' = :t')->bind(':t', $t, ParameterType::INTEGER);
+		}
+		else
+		{
+			$q->where($this->db->quoteName('t.asset_id') . ' = :s')->bind(':s', $s, ParameterType::INTEGER);
+		}
+
+		$row = $this->db->setQuery($q)->loadAssoc();
+
+		return $row ?: null;
+	}
+
+	/** Published trip in a published album the user may see (the same rule as the map and the reactions). */
+	public function commentsVisible(User $user, array $row): bool
+	{
+		return (int) $row['published'] === 1 && (int) $row['album_published'] === 1
+			&& \in_array((int) $row['album_access'], array_map('intval', $user->getAuthorisedViewLevels()), true);
+	}
+
+	/** Comments are possible on this trip: the album and the trip both allow them. */
+	public static function commentsAllowed(array $row): bool
+	{
+		return (int) $row['allow_comments'] === 1 && (int) $row['album_comments'] === 1;
+	}
 }
