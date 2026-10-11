@@ -33,13 +33,14 @@ class HtmlView extends BaseHtmlView
 	protected bool $canSubmit = false;
 	protected bool $commentsOn = false;
 	protected bool $rankOn = false;
+	protected bool $selfReact = false;
 	protected int $maxPhotos = 5;
 	protected int $maxWords = 256;
 	protected string $userName = '';
 
 	/** Strings the browser code needs, in the language of the visitor. */
 	private const JS_STRINGS = [
-		'COM_MAPAVIAJES_JS_ALBUMS_N', 'COM_MAPAVIAJES_JS_ALBUM_ONE', 'COM_MAPAVIAJES_JS_COUNT_ALBUMS', 'COM_MAPAVIAJES_JS_COUNT_PLACES',
+		'COM_MAPAVIAJES_JS_ALBUMS_N', 'COM_MAPAVIAJES_JS_COUNT_ALBUMS_1', 'COM_MAPAVIAJES_JS_COUNT_PLACES_1', 'COM_MAPAVIAJES_JS_ALBUM_ONE', 'COM_MAPAVIAJES_JS_COUNT_ALBUMS', 'COM_MAPAVIAJES_JS_COUNT_PLACES',
 		'COM_MAPAVIAJES_JS_OPEN', 'COM_MAPAVIAJES_JS_CLOSE', 'COM_MAPAVIAJES_JS_NEAR', 'COM_MAPAVIAJES_JS_POINT', 'COM_MAPAVIAJES_JS_SEA',
 		'COM_MAPAVIAJES_JS_COORDS', 'COM_MAPAVIAJES_JS_USE_POINT', 'COM_MAPAVIAJES_JS_NO_PLACE', 'COM_MAPAVIAJES_JS_PHOTOS_N', 'COM_MAPAVIAJES_JS_PHOTO_ONE',
 		'COM_MAPAVIAJES_JS_COMMENTS', 'COM_MAPAVIAJES_JS_PENDING', 'COM_MAPAVIAJES_JS_BY', 'COM_MAPAVIAJES_JS_CAPTION_PH', 'COM_MAPAVIAJES_JS_WORDS',
@@ -89,6 +90,7 @@ class HtmlView extends BaseHtmlView
 		$this->userName  = (string) $user->name;
 		$this->commentsOn = $settings->commentsProvider() !== 'none' && $this->album !== null && (int) $this->album['allow_comments'] === 1;
 		$this->rankOn = $settings->rankEnabled();
+		$this->selfReact = $settings->adminSelfReact() && $user->authorise('core.admin');
 		$this->canSubmit = $this->album !== null && $user->authorise('mapaviajes.submit', 'com_mapaviajes') && ImageProcessor::isSupported();
 
 		// Nothing here may be cached by the site, a proxy or the browser history: it is personal.
@@ -115,6 +117,7 @@ class HtmlView extends BaseHtmlView
 			'commentsUrl' => Route::_('index.php?option=com_mapaviajes&view=tripcomments&tmpl=component&id=', false),
 			'openTrip'   => (int) preg_replace('/\D/', '', substr((string) ($_GET['trip'] ?? ''), 0, 9)),
 			'rankOn'     => $this->rankOn,
+			'selfReact'  => $this->selfReact,
 			'rankUrl'    => Route::_('index.php?option=com_mapaviajes&task=ranking.data&format=json', false),
 			'hideUrl'    => Route::_('index.php?option=com_mapaviajes&task=ranking.hide&format=json', false),
 			'reactUrl'   => Route::_('index.php?option=com_mapaviajes&task=reaction.toggle&format=json', false),

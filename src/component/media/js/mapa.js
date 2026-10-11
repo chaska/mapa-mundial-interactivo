@@ -201,7 +201,7 @@
 		for (const [k, el] of pinEls) { if (!keep.has(k)) { el.remove(); pinEls.delete(k); } }
 		syncPolaroids(cs); placeDraft();
 		const countries = new Set(TRIPS.map(countryOf)).size;
-		$('stat').textContent = TRIPS.length ? fmt(T('COM_MAPAVIAJES_JS_COUNT_ALBUMS'), TRIPS.length) + ' · ' + fmt(T('COM_MAPAVIAJES_JS_COUNT_PLACES'), countries) : T('COM_MAPAVIAJES_JS_NO_TRIPS');
+		$('stat').textContent = TRIPS.length ? fmt(T(TRIPS.length === 1 ? 'COM_MAPAVIAJES_JS_COUNT_ALBUMS_1' : 'COM_MAPAVIAJES_JS_COUNT_ALBUMS'), TRIPS.length) + ' · ' + fmt(T(countries === 1 ? 'COM_MAPAVIAJES_JS_COUNT_PLACES_1' : 'COM_MAPAVIAJES_JS_COUNT_PLACES'), countries) : T('COM_MAPAVIAJES_JS_NO_TRIPS');
 	}
 	function onPin(c) {
 		closePop();
@@ -331,9 +331,9 @@
 		$('favN').textContent = favs.length ? String(favs.length) : ''; $('favN').hidden = !favs.length;
 		body.setAttribute('aria-labelledby', 'mv-tab-' + dtab);
 		if (dtab === 'fav') {
-			body.replaceChildren(favs.length ? h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_FAV_HELP') }) : null,
+			body.replaceChildren(...[favs.length ? h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_FAV_HELP') }) : null,
 				favs.length ? h('ul', { class: 'mv-list2' }, favs.map(tripRow))
-					: h('div', { class: 'mv-empty-fav' }, h('strong', { text: T('COM_MAPAVIAJES_JS_FAV_EMPTY') }), h('span', { text: T('COM_MAPAVIAJES_JS_FAV_EMPTY_HELP') })));
+					: h('div', { class: 'mv-empty-fav' }, h('strong', { text: T('COM_MAPAVIAJES_JS_FAV_EMPTY') }), h('span', { text: T('COM_MAPAVIAJES_JS_FAV_EMPTY_HELP') }))].filter(Boolean));
 			return;
 		}
 		const list = [...TRIPS].filter((t) => !t.pending).sort((a, b) => b.ts - a.ts).slice(0, 12);
@@ -457,7 +457,7 @@
 	function showMsg(text) { const m = $('vMsg'); m.textContent = text; m.classList.remove('mv-show'); void m.offsetWidth; m.classList.add('mv-show'); clearTimeout(msgTimer); msgTimer = setTimeout(() => m.classList.remove('mv-show'), 2600); }
 	function syncReact() {
 		const t = VWR.t; if (!t) { return; }
-		const own = !!t.mine, rows = [['vLike', 'ml', 'lk', 'COM_MAPAVIAJES_JS_LIKE_LABEL', 'COM_MAPAVIAJES_JS_LIKE_UNDO'], ['vFan', 'mf', 'fn', 'COM_MAPAVIAJES_JS_FAN_LABEL', 'COM_MAPAVIAJES_JS_FAN_UNDO']];
+		const own = !!t.mine && !O.selfReact, rows = [['vLike', 'ml', 'lk', 'COM_MAPAVIAJES_JS_LIKE_LABEL', 'COM_MAPAVIAJES_JS_LIKE_UNDO'], ['vFan', 'mf', 'fn', 'COM_MAPAVIAJES_JS_FAN_LABEL', 'COM_MAPAVIAJES_JS_FAN_UNDO']];
 		for (const [id, mineKey, countKey, label, undo] of rows) {
 			const b = $(id), on = !!t[mineKey], n = t[countKey] || 0;
 			b.setAttribute('aria-pressed', String(on)); b.disabled = own || !!t.pending; $(id + 'N').textContent = n > 0 ? String(n) : '';
@@ -466,7 +466,7 @@
 	}
 	let reacting = false;
 	async function react(kind) {
-		const t = VWR.t; if (!t || t.mine || t.pending || reacting) { return; }
+		const t = VWR.t; if (!t || (t.mine && !O.selfReact) || t.pending || reacting) { return; }
 		const mineKey = kind === 'fan' ? 'mf' : 'ml', countKey = kind === 'fan' ? 'fn' : 'lk', was = !!t[mineKey], wasN = t[countKey] || 0;
 		reacting = true; t[mineKey] = !was; t[countKey] = Math.max(0, wasN + (was ? -1 : 1)); syncReact();
 		const fd = new FormData(); fd.append(O.token, '1'); fd.append('trip_id', String(t.id)); fd.append('kind', kind);

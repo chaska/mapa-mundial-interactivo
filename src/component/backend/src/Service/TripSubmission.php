@@ -188,7 +188,7 @@ final class TripSubmission
 				$names[$i] = $storage->commit($tmp);
 			}
 
-			$tripId = $this->store($userId, $album, $title, $place, $lat, $lon, $post, $names, $meta, $captions);
+			$tripId = $this->store($userId, $album, $title, $place, $lat, $lon, $post, $names, $meta, $captions, $this->publishesDirectly($user) ? 1 : 0);
 		}
 		catch (\Throwable $e)
 		{
@@ -213,10 +213,16 @@ final class TripSubmission
 			throw new SubmissionException('server', 500);
 		}
 
-		$published = $this->settings->reviewFirst() ? 0 : 1;
+		$published = $this->publishesDirectly($user) ? 1 : 0;
 		$this->notifyAdministrators($user, $album['title'], $title, \count($names), $published === 0);
 
 		return ['id' => $tripId, 'published' => $published];
+	}
+
+	/** Trips go live at once when moderation is off, and always for Super Users (they are the moderators). */
+	private function publishesDirectly(User $user): bool
+	{
+		return !$this->settings->reviewFirst() || $user->authorise('core.admin');
 	}
 
 	/** Rows of the given table kind for this user since a moment. */
@@ -341,12 +347,12 @@ final class TripSubmission
 	 * @param   array<int, string>                                  $names
 	 * @param   array<int, array{width: int, height: int, bytes: int}>  $meta
 	 * @param   array<int, string>                                  $captions
+	 * @param   int                                                 $published  1 live, 0 waiting for review
 	 */
-	private function store(int $userId, array $album, string $title, string $place, float $lat, float $lon, array $post, array $names, array $meta, array $captions): int
+	private function store(int $userId, array $album, string $title, string $place, float $lat, float $lon, array $post, array $names, array $meta, array $captions, int $published): int
 	{
 		$db        = $this->db;
 		$now       = Factory::getDate()->toSql();
-		$published = $this->settings->reviewFirst() ? 0 : 1;
 		$allow     = ($album['allow_comments'] === 1 && ($post['allow_comments'] ?? '') === '1') ? 1 : 0;
 		$notify    = ($allow === 1 && ($post['notify'] ?? '') === '1') ? 1 : 0;
 		$albumId   = $album['id'];

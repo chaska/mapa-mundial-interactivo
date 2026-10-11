@@ -55,7 +55,7 @@ final class ReactionService
 			throw new SubmissionException('trip', 404);
 		}
 
-		if ((int) $trip['user_id'] === $userId)
+		if ((int) $trip['user_id'] === $userId && !($this->settings->adminSelfReact() && $user->authorise('core.admin')))
 		{
 			throw new SubmissionException('own_trip', 403);
 		}
