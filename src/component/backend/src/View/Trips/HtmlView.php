@@ -89,6 +89,12 @@ class HtmlView extends BaseHtmlView
 			}
 		}
 
+		// The comments are kept by Engage, not here: a shortcut to its list
+		if ((new \Chaska\Component\Mapaviajes\Administrator\Service\Settings())->commentsProvider() === 'engage' && \Joomla\CMS\Component\ComponentHelper::isEnabled('com_engage') && $this->getCurrentUser()->authorise('core.manage', 'com_engage'))
+		{
+			$toolbar->linkButton('comments', 'COM_MAPAVIAJES_BTN_COMMENTS')->url(\Joomla\CMS\Router\Route::_("index.php?option=com_engage&view=comments", false))->icon('icon-comments');
+		}
+
 		if ((string) $this->state->get('filter.published') !== '-2' && $canDo->get('core.delete'))
 		{
 			$toolbar->confirmButton('purge', 'COM_MAPAVIAJES_BTN_PURGE', 'trips.purge')->message('COM_MAPAVIAJES_PURGE_CONFIRM')->icon('icon-times')->listCheck(true);

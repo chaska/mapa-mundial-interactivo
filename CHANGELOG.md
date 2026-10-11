@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.7.4 — 2026-10-18
+- Lista de viajes del administrador: botón **Comentarios (Engage)** que abre la lista de comentarios de Engage (donde se guardan, en `#__engage_comments`, enlazados al viaje por su `asset_id`). Solo con el proveedor «Engage» y permiso de gestión en Engage.
+
 ## 1.7.3 — 2026-10-18
 - Corrección: bajo «No hay comentarios» quedaba un hueco en blanco enorme (el marco de los comentarios se medía por la ventana y nunca encogía). Ahora mide lo que mide su contenido.
 
