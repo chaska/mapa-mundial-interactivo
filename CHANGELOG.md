@@ -1,5 +1,17 @@
 # Registro de cambios
 
+## 1.5.0 — 2026-10-16
+- **Fotos ordenadas por persona**: cada foto se guarda en `…/photos/<id de usuario>/viaje_<año>_<n>_<8 hex>.webp` (por ejemplo `12/viaje_2019_1_a3f9c2d1.webp`). Las de cada persona quedan juntas y se localizan años después; el sufijo aleatorio sigue haciendo el nombre inadivinable por si un servidor sirviera la carpeta por error. La carpeta se borra sola con la última foto. La ruta guardada se valida con una expresión estricta (nada de `..`, subcarpetas extra, mayúsculas ni caracteres raros). Las fotos y logos anteriores siguen funcionando. Actualización de base de datos incluida (`filename` a 120 caracteres y `trip_year`).
+- **Año del viaje**: el formulario lo pide (obligatorio, de 1900 al año actual; el servidor lo valida) y se muestra en la lista de últimos añadidos.
+- **Aviso de ranking** en el formulario: los comentarios, «me gusta» y favoritos cuentan para el ranking semanal y el general.
+- **Cabecera**: el título del mapa va arriba y el logo debajo (más el contador); el logo mide 177 px en ordenador (-15 %). Sin solaparse con los botones.
+- **Zoom mucho mayor** (hasta 260 veces el mapa completo) y **álbumes del mismo sitio ordenados**: uno cuelga su polaroid; de 2 a 4 forman una «ventana de cuatro cristales» (2×2); de 5 en adelante se sustituyen por **etiquetas** en columna (hasta 6 y «+N más» que abre la lista), que nunca se amontonan. Los álbumes cuyas fotos se pisarían se agrupan automáticamente.
+- **Filtro por personas** (botón de las dos personas junto al zoom): lista a quien ha publicado, con casillas; marcadas se ven sus viajes, sin marcar se ocultan. «Todas» y «Ninguna», y un aviso con el estado.
+- Móvil: ficha de la foto/álbum **centrada** en vez de pegada abajo; con el teclado abierto el formulario ocupa justo la parte visible; `overscroll-behavior` para que un gesto sobre el mapa no active el «tirar para actualizar» de la app (si la app lo hace por su cuenta, hay que desactivarlo en la propia app).
+- Corrección: pestaña Favoritos mostraba «null»; contador en singular («1 álbum · 1 país»).
+- Super Users: sus viajes se publican al instante y pueden reaccionar a los suyos (opción en Opciones; desactivar al abrir al público).
+- Pruebas nuevas: `98-grupos-navegador.js` (ventana de 4, etiquetas, filtro de personas, en escritorio y móvil) y año/rutas en `10-envio.php` y `02-imagen.php`.
+
 ## 1.4.2 — 2026-10-16
 - Corrección: un PNG con metadatos de herramientas de IA (firmas C2PA, XMP, EXIF, texto) se rechazaba como «contiene datos que no son una imagen» porque el filtro buscaba código en todo el archivo. Ahora un PNG se lee por chunks: se buscan trampas solo en los chunks de píxeles y en lo que haya después de IEND; los chunks descriptivos se ignoran porque el re-codificado a WebP los descarta (se comprueba que el archivo guardado no conserva nada). Un chunk mal formado o sin IEND es ilegible. Código pegado tras IEND o dentro de IDAT sigue rechazado.
 - Pruebas nuevas en `02-imagen.php` (4).

@@ -49,7 +49,7 @@
 	const dist = (a, b, c, d) => { const dl = (c - a) * D2R, dp = (d - b) * D2R, q = Math.sin(dp / 2) ** 2 + Math.cos(b * D2R) * Math.cos(d * D2R) * Math.sin(dl / 2) ** 2; return 12742 * Math.asin(Math.sqrt(q)); };
 
 	/* ---------------------------------------------------------------- state */
-	let TRIPS = [], ALL = [], AUTHOR = '', AUTHOR_NAME = '';
+	let TRIPS = [], ALL = [];
 	const stage = $('stage'), svg = $('svg'), worldG = $('world'), pinsEl = $('pins');
 	const V = { k: 1, tx: 0, ty: 0 };
 	let VW = innerWidth, VH = innerHeight, KMIN = 1, KMAX = 40;
@@ -66,7 +66,7 @@
 		if (drawerOpen()) { return { x: 0, y: 0, w: VW, h: VH * 0.26 }; }
 		return { x: 0, y: 0, w: VW, h: VH };
 	}
-	function limits() { VW = innerWidth; VH = innerHeight; KMIN = VW <= 720 ? VW / W * 1.45 : VW / W; KMAX = KMIN * 40; }
+	function limits() { VW = innerWidth; VH = innerHeight; KMIN = VW <= 720 ? VW / W * 1.45 : VW / W; KMAX = KMIN * 260; }
 	function clamp(v) {
 		v.k = Math.max(KMIN, Math.min(KMAX, v.k));
 		const mw = W * v.k, mh = H * v.k, m = 60;
@@ -131,7 +131,7 @@
 			for (const t of TRIPS) { const k = countryOf(t); if (!m.has(k)) { m.set(k, []); } m.get(k).push(t); }
 			for (const [k, arr] of m) { out.push({ key: k, items: arr }); }
 		} else {
-			const RAD = Math.max(14, FIXED_PX * Math.min(1, 9 / z));
+			const RAD = z >= ZP ? (innerWidth <= 720 ? 300 : 360) : Math.max(14, FIXED_PX * Math.min(1, 9 / z)); // close up, albums whose photos would overlap are grouped
 			for (const t of TRIPS) {
 				let hit = null;
 				for (const c of out) { const dx = (c.cx - t.x) * V.k, dy = (c.cy - t.y) * V.k; if (dx * dx + dy * dy < RAD * RAD) { hit = c; break; } }
@@ -201,11 +201,12 @@
 		for (const [k, el] of pinEls) { if (!keep.has(k)) { el.remove(); pinEls.delete(k); } }
 		syncPolaroids(cs); placeDraft();
 		const countries = new Set(TRIPS.map(countryOf)).size;
-		$('stat').textContent = TRIPS.length ? fmt(T(TRIPS.length === 1 ? 'COM_MAPAVIAJES_JS_COUNT_ALBUMS_1' : 'COM_MAPAVIAJES_JS_COUNT_ALBUMS'), TRIPS.length) + ' · ' + fmt(T(countries === 1 ? 'COM_MAPAVIAJES_JS_COUNT_PLACES_1' : 'COM_MAPAVIAJES_JS_COUNT_PLACES'), countries) : T('COM_MAPAVIAJES_JS_NO_TRIPS');
+		$('stat').textContent = TRIPS.length ? fmt(T(TRIPS.length === 1 ? 'COM_MAPAVIAJES_JS_COUNT_ALBUMS_1' : 'COM_MAPAVIAJES_JS_COUNT_ALBUMS'), TRIPS.length) + ' · ' + fmt(T(countries === 1 ? 'COM_MAPAVIAJES_JS_COUNT_PLACES_1' : 'COM_MAPAVIAJES_JS_COUNT_PLACES'), countries) : T(ALL.length ? 'COM_MAPAVIAJES_JS_FILTER_NONE' : 'COM_MAPAVIAJES_JS_NO_TRIPS');
 	}
 	function onPin(c) {
 		closePop();
 		if (c.items.length === 1) { return V.k / KMIN >= ZP ? openViewer(c.items[0]) : openPop(c); }
+		if (V.k / KMIN >= ZP) { return openPop(c); }
 		if (V.k >= KMAX * .85) { return openPop(c); }
 		const xs = c.items.map((i) => i.x), ys = c.items.map((i) => i.y), b = visibleBox();
 		const bx = Math.max(...xs) - Math.min(...xs), by = Math.max(...ys) - Math.min(...ys);
@@ -213,28 +214,69 @@
 		flyTo(viewFor((Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...ys) + Math.min(...ys)) / 2, k));
 	}
 
-	/* polaroid: when you are close to one album, its photo hangs from the pin by its highest corner */
+	/* close up (z >= ZP): one album hangs its polaroid from the pin; 2 to 4 albums in the same place hang as a window of four panes
+	   (2 x 2); five or more become a column of name tags, which can never pile up */
+	const MAX_TAGS = 6;
 	function syncPolaroids(cs) {
-		const keep = new Set(), on = V.k / KMIN >= ZP;
+		const keep = new Set(), on = V.k / KMIN >= ZP, small = innerWidth <= 720;
+		const w = small ? 104 : 136, gap = 10, cellH = w + 34;
+		const polaroid = (key, t, x, y, ang) => {
+			keep.add(key);
+			let el = polEls.get(key);
+			if (!el) {
+				el = h('button', { type: 'button', class: 'mv-polaroid', 'aria-label': t.t + ' ' + fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) },
+					h('span', { class: 'mv-pol-in' }, h('span', { class: 'mv-ph' }, t.ph.length ? h('img', { alt: '', draggable: 'false', src: photoSrc(t.ph[0].id) }) : null), h('span', { class: 'mv-cap', text: t.t })));
+				el.addEventListener('click', (ev) => { ev.stopPropagation(); openViewer(t); });
+				el.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+				polEls.set(key, el); pinsEl.appendChild(el);
+			}
+			el.style.width = w + 'px'; el.style.setProperty('--ox', (w / 2) + 'px');
+			el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) rotate(' + ang.toFixed(2) + 'deg)';
+			el.style.zIndex = String(999 + Math.round(y));
+		};
 		if (on) {
 			for (const c of cs) {
-				if (c.items.length !== 1) { continue; }
-				const t = c.items[0];
-				if (!t.ph.length || c.sx < -220 || c.sx > VW + 220 || c.sy < -120 || c.sy > VH + 280) { continue; }
-				keep.add(c.key);
-				let el = polEls.get(c.key);
-				const w = innerWidth <= 720 ? 120 : 158, ang = (t.id % 2 ? -1 : 1) * (2.5 + ((t.id * 37) % 10) * .55);
-				if (!el) {
-					el = h('button', { type: 'button', class: 'mv-polaroid', 'aria-label': t.t + ' ' + fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) },
-						h('span', { class: 'mv-pol-in' }, h('span', { class: 'mv-ph' }, h('img', { alt: '', draggable: 'false', src: photoSrc(t.ph[0].id) })), h('span', { class: 'mv-cap', text: t.t })));
-					el.addEventListener('click', (ev) => { ev.stopPropagation(); openViewer(t); });
-					el.addEventListener('pointerdown', (ev) => ev.stopPropagation());
-					polEls.set(c.key, el); pinsEl.appendChild(el);
+				const n = c.items.length;
+				if (c.sx < -300 || c.sx > VW + 300 || c.sy < -200 || c.sy > VH + 400) { continue; }
+				if (n === 1) {
+					const t = c.items[0]; if (!t.ph.length) { continue; }
+					const ang = (t.id % 2 ? -1 : 1) * (2.5 + ((t.id * 37) % 10) * .55), ax = (small ? 120 : 158) * (ang > 0 ? .1 : .9);
+					keep.add(c.key); let el = polEls.get(c.key); const pw = small ? 120 : 158;
+					if (!el) {
+						el = h('button', { type: 'button', class: 'mv-polaroid', 'aria-label': t.t + ' ' + fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) },
+							h('span', { class: 'mv-pol-in' }, h('span', { class: 'mv-ph' }, h('img', { alt: '', draggable: 'false', src: photoSrc(t.ph[0].id) })), h('span', { class: 'mv-cap', text: t.t })));
+						el.addEventListener('click', (ev) => { ev.stopPropagation(); openViewer(t); });
+						el.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+						polEls.set(c.key, el); pinsEl.appendChild(el);
+					}
+					el.style.width = pw + 'px'; el.style.setProperty('--ox', ax + 'px');
+					el.style.transform = 'translate(' + c.sx.toFixed(1) + 'px,' + c.sy.toFixed(1) + 'px) rotate(' + ang.toFixed(2) + 'deg) translate(' + (-ax) + 'px,-11px)';
+					el.style.zIndex = String(999 + Math.round(c.sy));
+				} else if (n <= 4) {
+					const rows = n === 2 ? [2] : n === 3 ? [2, 1] : [2, 2];
+					let idx = 0;
+					rows.forEach((cols, r) => {
+						const rowW = cols * w + (cols - 1) * gap, x0 = c.sx - rowW / 2;
+						for (let k = 0; k < cols; k++, idx++) {
+							const t = c.items[idx];
+							polaroid(c.key + ':' + t.id, t, x0 + k * (w + gap), c.sy + 6 + r * (cellH + gap), (idx % 2 ? 1 : -1) * (1 + (t.id % 3) * .45));
+						}
+					});
+				} else {
+					const key = c.key + ':tags'; keep.add(key);
+					let el = polEls.get(key);
+					const shown = c.items.slice(0, MAX_TAGS), more = n - shown.length, sig = c.items.map((i) => i.id).join(',');
+					if (!el || el._sig !== sig) {
+						if (el) { el.remove(); }
+						el = h('div', { class: 'mv-tags', role: 'group', 'aria-label': fmt(T('COM_MAPAVIAJES_JS_ALBUMS_N'), n) },
+							shown.map((t) => h('button', { type: 'button', class: 'mv-tag', onclick: (ev) => { ev.stopPropagation(); openViewer(t); } }, h('strong', { text: t.t }), h('small', { text: t.by }))),
+							more > 0 ? h('button', { type: 'button', class: 'mv-tag mv-tag-more', text: fmt(T('COM_MAPAVIAJES_JS_TAGS_MORE'), more), onclick: (ev) => { ev.stopPropagation(); openPop(c); } }) : null);
+						el._sig = sig; el.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+						polEls.set(key, el); pinsEl.appendChild(el);
+					}
+					el.style.transform = 'translate(' + (c.sx - 100).toFixed(1) + 'px,' + (c.sy + 8).toFixed(1) + 'px)';
+					el.style.zIndex = String(999 + Math.round(c.sy));
 				}
-				const ax = ang > 0 ? w * .1 : w * .9, ay = 11;
-				el.style.width = w + 'px'; el.style.setProperty('--ox', ax + 'px');
-				el.style.transform = 'translate(' + c.sx.toFixed(1) + 'px,' + c.sy.toFixed(1) + 'px) rotate(' + ang.toFixed(2) + 'deg) translate(' + (-ax) + 'px,' + (-ay) + 'px)';
-				el.style.zIndex = String(999 + Math.round(c.sy));
 			}
 		}
 		for (const [k, el] of polEls) { if (!keep.has(k)) { el.remove(); polEls.delete(k); } }
@@ -261,7 +303,7 @@
 					h('button', { type: 'button', class: 'mv-btn', text: T('COM_MAPAVIAJES_JS_OPEN'), onclick: () => { closePop(); openViewer(t); } })));
 		} else {
 			el.append(h('div', { class: 'mv-in', style: 'padding-top:18px' }, h('h3', { text: fmt(T('COM_MAPAVIAJES_JS_ALBUMS_N'), c.items.length) }),
-				h('ul', {}, c.items.slice(0, 6).map((i) => h('li', {}, h('button', { type: 'button', onclick: () => { closePop(); openViewer(i); } }, h('strong', { text: i.t }), h('small', { text: fmt(T('COM_MAPAVIAJES_JS_BY'), i.by) + ' · ' + photosLabel(i.ph.length) })))))));
+				h('ul', {}, c.items.map((i) => h('li', {}, h('button', { type: 'button', onclick: () => { closePop(); openViewer(i); } }, h('strong', { text: i.t }), h('small', { text: fmt(T('COM_MAPAVIAJES_JS_BY'), i.by) + ' · ' + photosLabel(i.ph.length) })))))));
 		}
 		el.append(h('button', { class: 'mv-x', type: 'button', 'aria-label': T('COM_MAPAVIAJES_JS_CLOSE'), onclick: closePop }, (() => { const s = document.createElementNS(SVGNS, 'svg'); s.setAttribute('width', '16'); s.setAttribute('height', '16'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2.4'); const p = document.createElementNS(SVGNS, 'path'); p.setAttribute('d', 'M6 6l12 12M18 6L6 18'); s.appendChild(p); return s; })()));
 		$('popHost').append(el);
@@ -319,7 +361,7 @@
 			h('a', { class: 'mv-arow-main', href: '#', onclick: (e) => { e.preventDefault(); openViewer(t); } },
 				t.ph.length ? h('img', { alt: '', src: photoSrc(t.ph[0].id), width: '64', height: '64' }) : h('span', { style: 'width:64px;height:64px' }),
 				h('span', { style: 'min-width:0' }, h('strong', { text: t.t }), h('small', { text: t.p + ' · ' + t.by }), h('small', { class: 'mv-m', text: meta.join(' · ') }))),
-			h('div', { class: 'mv-arow-act' }, t.by && t.u && t.u !== AUTHOR ? h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_POD_FILTER') + ': ' + t.by, onclick: () => setAuthor(t.u, t.by) }, h('span', { text: '👤' })) : null, h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_ON_MAP') + ': ' + t.t, onclick: () => {
+			h('div', { class: 'mv-arow-act' }, t.by && t.u && !(onlyUser() && onlyUser().u === t.u) ? h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_POD_FILTER') + ': ' + t.by, onclick: () => setAuthor(t.u, t.by) }, h('span', { text: '👤' })) : null, h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_ON_MAP') + ': ' + t.t, onclick: () => {
 				if (innerWidth <= 720) { closeDrawer(); }
 				flyTo(viewFor(t.x, t.y, Math.max(KMIN * 16, V.k)), 900);
 				setTimeout(() => { const c = clusters().find((cc) => cc.items.includes(t)); if (c && V.k / KMIN < ZP) { openPop(c); } }, 950);
@@ -378,19 +420,49 @@
 		if (n > 1) { for (const d of [1, -1]) { new Image().src = photoSrc(VWR.t.ph[(VWR.i + d + n) % n].id); } }
 	}
 
-	/* ---- show only one person's trips (from the podium or a trip row) ---- */
+	/* ---- filter by PERSON (not by trip): the people button lists everyone who has published, a ticked box shows their albums,
+	   an unticked one hides them. The podium and the trip rows use the same filter to show a single person. ---- */
+	let HIDE = new Set();
+	const peopleList = () => {
+		const m = new Map();
+		for (const t of ALL) { const k = t.u || ''; if (!m.has(k)) { m.set(k, { u: k, n: t.by || '—', c: 0 }); } m.get(k).c++; }
+		return [...m.values()].sort((x, y) => x.n.localeCompare(y.n, document.documentElement.lang || undefined));
+	};
+	const visibleTrips = () => (HIDE.size ? ALL.filter((t) => !HIDE.has(t.u || '')) : ALL);
+	const onlyUser = () => { const v = peopleList().filter((p) => !HIDE.has(p.u)); return HIDE.size && v.length === 1 ? v[0] : null; };
 	function syncChip() {
 		const c = $('chip'); if (!c) { return; }
-		c.hidden = !AUTHOR; $('chipT').textContent = AUTHOR ? fmt(T('COM_MAPAVIAJES_JS_FILTER_CHIP'), AUTHOR_NAME) : '';
+		const all = peopleList(), seen = all.filter((p) => !HIDE.has(p.u)), one = onlyUser();
+		c.hidden = !HIDE.size;
+		$('chipT').textContent = !HIDE.size ? '' : one ? fmt(T('COM_MAPAVIAJES_JS_FILTER_CHIP'), one.n) : fmt(T('COM_MAPAVIAJES_JS_FILTER_CHIP_N'), seen.length, all.length);
+	}
+	function refilter() {
+		TRIPS = visibleTrips();
+		for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }
+		if (HIDE.size) { $('hint').classList.add('mv-off'); }
+		syncChip(); closePop(); render(); if (drawerOpen()) { renderDrawer(); } if (pplOpen()) { renderPeople(); }
 	}
 	function setAuthor(u, name) {
-		AUTHOR = u || ''; AUTHOR_NAME = AUTHOR ? name : ''; TRIPS = AUTHOR ? ALL.filter((t) => t.u === AUTHOR) : ALL;
-		for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }
-		if (AUTHOR) { $('hint').classList.add('mv-off'); }
-		syncChip(); closePop(); render(); if (drawerOpen()) { renderDrawer(); }
-		if (AUTHOR && TRIPS.length) { const t = TRIPS[0]; flyTo(viewFor(t.x, t.y, KMIN * 2.2), 700); }
+		HIDE = u ? new Set(peopleList().map((p) => p.u).filter((x) => x !== u)) : new Set();
+		refilter();
+		if (u && TRIPS.length) { const t = TRIPS[0]; flyTo(viewFor(t.x, t.y, KMIN * 2.2), 700); }
 	}
 	if ($('chipX')) { $('chipX').onclick = () => setAuthor('', ''); }
+	const pplOpen = () => !!$('ppl') && !$('ppl').hidden;
+	function closePeople() { if ($('ppl')) { $('ppl').hidden = true; $('zppl').setAttribute('aria-expanded', 'false'); } }
+	function renderPeople() {
+		const list = $('pplList'); list.replaceChildren(...peopleList().map((p) => {
+			const cb = h('input', { type: 'checkbox', 'data-u': p.u }); cb.checked = !HIDE.has(p.u);
+			cb.addEventListener('change', () => { if (cb.checked) { HIDE.delete(p.u); } else { HIDE.add(p.u); } refilter(); });
+			return h('li', {}, h('label', { class: 'mv-ppl-row' }, cb, h('span', { class: 'mv-ppl-n', text: p.n }), h('small', { text: String(p.c) })));
+		}));
+	}
+	if ($('zppl')) {
+		$('zppl').onclick = () => { if (pplOpen()) { closePeople(); return; } closePop(); renderPeople(); $('ppl').hidden = false; $('zppl').setAttribute('aria-expanded', 'true'); const f = $('pplList').querySelector('input'); if (f) { f.focus({ preventScroll: true }); } };
+		$('pplX').onclick = () => { closePeople(); $('zppl').focus({ preventScroll: true }); };
+		$('pplAll').onclick = () => { HIDE = new Set(); refilter(); };
+		$('pplNone').onclick = () => { HIDE = new Set(peopleList().map((p) => p.u)); refilter(); };
+	}
 
 	/* ---- the weekly podium (comic style): data comes from our own server, names are escaped by textContent ---- */
 	if ($('pod')) {
@@ -708,9 +780,15 @@
 		if (panel && !$('list').hidden) { $('list').hidden = true; return; }
 		if ($('popHost').firstChild) { closePop(); return; }
 		if (panelOpen()) { closePanel(false); return; }
+		if (pplOpen()) { closePeople(); return; }
 		if (drawerOpen()) { closeDrawer(); }
 	});
 	addEventListener('resize', () => { limits(); clamp(V); apply(); });
+	if (window.visualViewport) {
+		const vv = window.visualViewport, root = document.documentElement;
+		const sync = () => { root.style.setProperty('--vvh', vv.height + 'px'); root.style.setProperty('--vvt', vv.offsetTop + 'px'); root.classList.toggle('mv-kb', vv.height < innerHeight * .8); };
+		vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync); sync();
+	}
 
 	async function loadTrips() {
 		try {
@@ -718,7 +796,7 @@
 			if (res.status === 403) { toast(T('COM_MAPAVIAJES_JS_SESSION')); return; }
 			const j = await res.json();
 			ALL = (j.trips || []).map((t) => { const [x, y] = project(t.lo, t.la); return { ...t, x, y }; });
-			TRIPS = AUTHOR ? ALL.filter((t) => t.u === AUTHOR) : ALL;
+			TRIPS = visibleTrips();
 			syncChip();
 			for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }
 			render(); if (drawerOpen()) { renderDrawer(); }

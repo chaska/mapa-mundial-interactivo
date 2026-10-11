@@ -63,7 +63,7 @@ $db->exec("UPDATE $AL SET published = 0 WHERE id = :i", [':i' => $album]); afirm
 $db->exec("UPDATE $AL SET published = 1, access = 3 WHERE id = :i", [':i' => $album]); afirma($ana->get('/index.php?option=com_mapaviajes&task=photo.logo&id=' . $album)['code'] === 404, 'mapa de nivel Especial: 404 para una registrada');
 $db->exec("UPDATE $AL SET access = 2 WHERE id = :i", [':i' => $album]);
 $page = $ana->get('/index.php?option=com_mapaviajes&album=' . $album)['body'];
-afirma(preg_match('~<img class="mv-logo mv-logo-img" src="[^"]*task=photo\.logo[^"]*" alt="" width="208" height="208"~', $page) === 1 && !str_contains($page, '<svg class="mv-logo"'), 'el mapa pinta el logo subido (y no el de por defecto) en su cuadrado de la cabecera');
+afirma(preg_match('~<img class="mv-logo mv-logo-img" src="[^"]*task=photo\.logo[^"]*" alt="" width="177" height="177"~', $page) === 1 && !str_contains($page, '<svg class="mv-logo"'), 'el mapa pinta el logo subido (y no el de por defecto) en su cuadrado de la cabecera');
 $css = file_get_contents($base . '/media/com_mapaviajes/css/mapa.css');
 afirma(str_contains((string) $css, '.mv-logo-img{object-fit:contain'), 'y se muestra entero con object-fit: contain (nunca recortado ni estirado)');
 

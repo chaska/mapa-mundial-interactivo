@@ -54,7 +54,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 <header class="mv-top mv-on-ocean<?php echo (string) ($this->album['logo'] ?? '') !== '' ? ' mv-has-logo' : ''; ?>">
 	<div class="mv-brand">
 		<?php if ((string) ($this->album['logo'] ?? '') !== '') : ?>
-			<img class="mv-logo mv-logo-img" src="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=photo.logo&id=' . (int) $this->album['id'] . '&v=' . substr((string) $this->album['logo'], 0, 8), false)); ?>" alt="" width="208" height="208" decoding="async">
+			<img class="mv-logo mv-logo-img" src="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=photo.logo&id=' . (int) $this->album['id'] . '&v=' . substr((string) $this->album['logo'], 0, 8), false)); ?>" alt="" width="177" height="177" decoding="async">
 		<?php else : ?>
 		<svg class="mv-logo" viewBox="0 0 52 52" aria-hidden="true">
 			<circle cx="26" cy="26" r="24" fill="#d49b55" stroke="#fbf7f0" stroke-width="2.5"/>
@@ -101,8 +101,17 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 <div class="mv-zoom" role="group" aria-label="<?php echo $t('COM_MAPAVIAJES_ZOOM'); ?>">
 	<button type="button" id="mv-zin" aria-label="<?php echo $t('COM_MAPAVIAJES_ZOOM_IN'); ?>"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 	<button type="button" id="mv-zout" aria-label="<?php echo $t('COM_MAPAVIAJES_ZOOM_OUT'); ?>"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+	<button type="button" id="mv-zppl" aria-controls="mv-ppl" aria-expanded="false" aria-label="<?php echo $t('COM_MAPAVIAJES_PEOPLE_BTN'); ?>" title="<?php echo $t('COM_MAPAVIAJES_PEOPLE_BTN'); ?>"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.8c2 .7 3.3 2.4 3.3 5.2"/></svg></button>
 	<button type="button" id="mv-zhome" aria-label="<?php echo $t('COM_MAPAVIAJES_ZOOM_HOME'); ?>"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17"/></svg></button>
 </div>
+
+<aside class="mv-ppl" id="mv-ppl" hidden aria-labelledby="mv-pplT">
+	<div class="mv-ppl-head"><h2 id="mv-pplT"><?php echo $t('COM_MAPAVIAJES_PEOPLE_TITLE'); ?></h2>
+		<button type="button" id="mv-pplX" aria-label="<?php echo $t('COM_MAPAVIAJES_JS_CLOSE'); ?>"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+	<p class="mv-ppl-help"><?php echo $t('COM_MAPAVIAJES_PEOPLE_HELP'); ?></p>
+	<div class="mv-ppl-act"><button type="button" id="mv-pplAll"><?php echo $t('COM_MAPAVIAJES_PEOPLE_ALL'); ?></button><button type="button" id="mv-pplNone"><?php echo $t('COM_MAPAVIAJES_PEOPLE_NONE'); ?></button></div>
+	<ul class="mv-ppl-list" id="mv-pplList"></ul>
+</aside>
 
 <svg class="mv-compass" viewBox="-60 -60 120 120" aria-hidden="true">
 	<g fill="none" stroke="#6e4522" stroke-linecap="round"><circle r="52" stroke-width="1.4"/><circle r="47" stroke-width=".7"/><circle r="30" stroke-width=".7" stroke-dasharray="1.5 3"/></g>

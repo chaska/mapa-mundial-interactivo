@@ -1,5 +1,5 @@
 // The logo in a real browser: whatever is uploaded, the header shows it at the size the design asks for
-// (208 px on a computer, down to 96 px on the smallest phones), whole, without moving anything.
+// (177 px on a computer, down to 96 px on the smallest phones), whole, without moving anything.
 const { chromium } = require('playwright');
 const { execFileSync } = require('child_process');
 const path = require('path');
@@ -23,10 +23,10 @@ const logo = (...a) => execFileSync('php', [path.join(__dirname, 'lib/logo.php')
       await page.setViewportSize({ width: vw, height: vh });
       await page.goto(BASE + '/index.php?option=com_mapaviajes'); await page.waitForSelector('.mv-logo-img', { timeout: 15000 });
       await page.waitForFunction(() => document.querySelector('.mv-logo-img').complete);
-      const r = await page.evaluate(() => { const i = document.querySelector('.mv-logo-img'), b = i.getBoundingClientRect(), a = document.querySelector('.mv-actions').getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), right: b.right, actLeft: a.left, nw: i.naturalWidth, nh: i.naturalHeight, fit: getComputedStyle(i).objectFit, docW: document.documentElement.scrollWidth, h1: getComputedStyle(document.querySelector('.mv-brand h1')).position }; });
-      const want = vw > 1100 ? 208 : vw > 900 ? 168 : vw > 720 ? 132 : vw > 400 ? 120 : vw > 340 ? 108 : 96;
+      const r = await page.evaluate(() => { const i = document.querySelector('.mv-logo-img'), b = i.getBoundingClientRect(), a = document.querySelector('.mv-actions').getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), right: b.right, actLeft: a.left, nw: i.naturalWidth, nh: i.naturalHeight, fit: getComputedStyle(i).objectFit, docW: document.documentElement.scrollWidth, h1b: document.querySelector('.mv-brand h1').getBoundingClientRect().bottom, h1r: document.querySelector('.mv-brand h1').getBoundingClientRect().right, top: b.top }; });
+      const want = vw > 1100 ? 177 : vw > 900 ? 150 : vw > 720 ? 132 : vw > 400 ? 120 : vw > 340 ? 108 : 96;
       afirma(r.w === want && r.h === want, `${vw}x${vh}: el logo se pinta a ${r.w}x${r.h} (el diseno pide ${want}x${want})`);
-      afirma(r.fit === 'contain' && Math.max(r.nw, r.nh) === 512 && r.right <= vw && r.actLeft >= r.right - 1 && r.docW <= vw && r.h1 === 'absolute', `${vw}x${vh}: entero (contain), imagen real de ${r.nw}x${r.nh}, los botones no lo tapan, el titulo sigue en la pagina (oculto a la vista) y no hay scroll horizontal`);
+      afirma(r.fit === 'contain' && Math.max(r.nw, r.nh) === 512 && r.right <= vw && r.actLeft >= r.right - 1 && r.docW <= vw && r.h1b <= r.top + 1 && r.h1r <= r.actLeft + 1, `${vw}x${vh}: entero (contain), imagen real de ${r.nw}x${r.nh}, los botones no lo tapan, el titulo del mapa va ENCIMA del logo sin pisar los botones y no hay scroll horizontal`);
     }
     if (w === 4000 && h === 4000) {
       for (const [n, vw, vh] of [['pc', 1440, 700], ['movil', 390, 844]]) { await page.setViewportSize({ width: vw, height: vh }); await page.goto(BASE + '/index.php?option=com_mapaviajes'); await page.waitForSelector('.mv-logo-img'); await page.waitForTimeout(1200); await page.screenshot({ path: `${process.env.MV_OUT || '.'}/logo-final-${n}.png`, clip: { x: 0, y: 0, width: vw, height: n === 'pc' ? 120 : 140 } }); }
