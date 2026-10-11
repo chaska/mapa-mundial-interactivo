@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.4.2 — 2026-10-16
+- Corrección: un PNG con metadatos de herramientas de IA (firmas C2PA, XMP, EXIF, texto) se rechazaba como «contiene datos que no son una imagen» porque el filtro buscaba código en todo el archivo. Ahora un PNG se lee por chunks: se buscan trampas solo en los chunks de píxeles y en lo que haya después de IEND; los chunks descriptivos se ignoran porque el re-codificado a WebP los descarta (se comprueba que el archivo guardado no conserva nada). Un chunk mal formado o sin IEND es ilegible. Código pegado tras IEND o dentro de IDAT sigue rechazado.
+- Pruebas nuevas en `02-imagen.php` (4).
+
 ## 1.4.1 — 2026-10-16
 - **Logo como emblema**: probado con el logo real («el sitio de pruebas», que lleva texto), 52/36 px era ilegible. Ahora se guarda a un máximo de **512 px** y el mapa lo pinta grande: **208 px en ordenador** (≥1101 px), 168 px (≤1100), 132 px (≤900), 120 px (≤720), 108 px (≤400) y 96 px (≤340), siempre entero (`object-fit: contain`, nunca estirado ni recortado).
 - Si el mapa tiene logo, el `<h1>` queda en la página solo para lectores de pantalla y buscadores (el logo ya lleva el nombre); el contador de álbumes pasa a una píldora junto al logo. En móvil (≤900 px) los botones pasan a una columna de iconos de 44 px a la derecha, sin tapar el logo.

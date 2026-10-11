@@ -106,6 +106,61 @@ final class ImageProcessor
 	}
 
 	/**
+	 * The byte ranges of the file that are scanned for hidden code. Anything but a PNG is scanned whole; a PNG is cut into its chunks
+	 * and only the critical ones (IHDR, PLTE, IDAT, IEND) and any trailing bytes are returned. A broken chunk list is unreadable.
+	 *
+	 * @return  string[]
+	 */
+	private static function scanRegions(string $bytes, string $kind): array
+	{
+		if ($kind !== 'png')
+		{
+			return [$bytes];
+		}
+
+		$regions = [];
+		$pos     = 8;
+		$len     = \strlen($bytes);
+		$ended   = false;
+
+		while ($pos + 12 <= $len)
+		{
+			$n    = (int) unpack('N', substr($bytes, $pos, 4))[1];
+			$type = substr($bytes, $pos + 4, 4);
+
+			if ($n < 0 || $pos + 12 + $n > $len || !preg_match('/^[A-Za-z]{4}$/', $type))
+			{
+				throw new SanitizeException('image_unreadable');
+			}
+
+			if (ctype_upper($type[0]))
+			{
+				$regions[] = substr($bytes, $pos + 8, $n);
+			}
+
+			$pos += 12 + $n;
+
+			if ($type === 'IEND')
+			{
+				$ended = true;
+				break;
+			}
+		}
+
+		if (!$ended)
+		{
+			throw new SanitizeException('image_unreadable');
+		}
+
+		if ($pos < $len)
+		{
+			$regions[] = substr($bytes, $pos);
+		}
+
+		return $regions;
+	}
+
+	/**
 	 * @param   array<string, mixed>  $file
 	 *
 	 * @return  array{width: int, height: int, bytes: int}
@@ -197,17 +252,6 @@ final class ImageProcessor
 			throw new SanitizeException('image_unreadable');
 		}
 
-		$lower = strtolower($bytes);
-
-		foreach (self::TRIPWIRES as $needle)
-		{
-			if (str_contains($lower, $needle))
-			{
-				throw new SanitizeException('image_polyglot');
-			}
-		}
-
-		unset($lower);
 
 		// Dimensions are read from the header BEFORE any decoding: this is what stops decompression bombs.
 		$info = @getimagesize($path);
@@ -226,6 +270,24 @@ final class ImageProcessor
 		}
 
 		$this->assertMemoryFor($w, $h);
+
+		// Code hidden in the file is looked for where it could survive. For a PNG that is the pixel chunks and anything after
+		// IEND; the descriptive chunks (text, XMP, EXIF, C2PA signatures that AI image tools add) are thrown away by the re-encode,
+		// and scanning them only produced false alarms on perfectly good logos.
+		foreach (self::scanRegions($bytes, $kind) as $region)
+		{
+			$lower = strtolower($region);
+
+			foreach (self::TRIPWIRES as $needle)
+			{
+				if (str_contains($lower, $needle))
+				{
+					throw new SanitizeException('image_polyglot');
+				}
+			}
+		}
+
+		unset($lower);
 
 		$orientation = $kind === 'jpeg' ? self::jpegOrientation($bytes) : 1;
 		unset($bytes);

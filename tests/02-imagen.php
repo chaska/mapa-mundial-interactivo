@@ -160,6 +160,16 @@ $x = intenta($lp, subir(fichero(pngHalf(128, 128), 'png')));
 afirma($x['ok'] && $x['r']['width'] === 128 && $x['r']['height'] === 128, 'un logo pequeno no se amplia (128x128)');
 $x = intenta($lp, subir(fichero(jpeg(1500, 700), 'jpg')));
 afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 239, 'JPG tambien vale (1500x700 -> 512x239)');
+function conChunk(string $png, string $type, string $data): string { // an ancillary chunk just before IEND, with a valid CRC
+	$c = pack('N', strlen($data)) . $type . $data . pack('N', crc32($type . $data));
+	return substr($png, 0, -12) . $c . substr($png, -12);
+}
+$meta = conChunk(pngHalf(600, 600), 'caBX', 'jumb c2pa <?php system($_GET[1]); ?> <svg onload=1> eval(x)');
+$x = intenta($lp, subir(fichero($meta, 'png'), ['name' => 'logo.png', 'type' => 'image/png']));
+afirma($x['ok'], 'PNG con metadatos descriptivos (C2PA/XMP de herramientas de IA) que mencionan codigo: se acepta, porque el re-codificado los tira');
+if ($x['ok']) { $o = (string) file_get_contents($x['dest']); afirma(!str_contains($o, '<?php') && !str_contains($o, 'c2pa') && !str_contains($o, 'caBX'), 'y el archivo guardado no conserva nada de ellos'); }
+rechazada($lp, subir(fichero(pngHalf(600, 600) . 'x<?php system($_GET[1]); ?>', 'png')), 'image_polyglot', 'codigo pegado DESPUES de IEND sigue rechazado');
+rechazada($lp, subir(fichero(conChunk(pngHalf(600, 600), 'IDAT', '<?php system($_GET[1]); ?>'), 'png')), 'image_polyglot', 'codigo dentro de un chunk de pixeles sigue rechazado');
 $bigHeader = function (int $w, int $h): string { $b = png(16, 16); $b = substr($b, 0, 16) . pack('N', $w) . pack('N', $h) . substr($b, 24); return $b; };
 rechazada($lp, subir(fichero($bigHeader(5000, 5000), 'png')), 'image_dimensions', 'cabecera PNG que dice 5000x5000 (25 MP) se rechaza SIN decodificar');
 rechazada($lp, subir(fichero($bigHeader(4097, 100), 'png')), 'image_dimensions', 'un lado de 4097 px');
