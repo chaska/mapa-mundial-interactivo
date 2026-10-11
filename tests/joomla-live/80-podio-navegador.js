@@ -48,7 +48,7 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
     const rows = await page.locator('#mv-dBody .mv-arow-main small:nth-of-type(1)').allTextContents();
     afirma(rows.length > 0 && rows.every((r) => r.includes('pd_alba')), 'el cajon solo lista viajes de esa persona (' + rows.length + ')');
-    await page.click('#mv-dClose'); await page.click('#mv-chip'); await page.waitForTimeout(400);
+    await page.click('#mv-dClose'); await page.click('#mv-chipX'); await page.waitForTimeout(400);
     afirma(await page.locator('#mv-chip[hidden]').count() === 1, 'pulsar el filtro lo quita');
     await ctx.close();
   }

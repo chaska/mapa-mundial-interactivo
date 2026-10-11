@@ -66,7 +66,6 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 		<div>
 			<h1><?php echo $e((string) $this->album['title']); ?></h1>
 			<p id="mv-stat">&nbsp;</p>
-			<button class="mv-chip" id="mv-chip" type="button" hidden></button>
 		</div>
 	</div>
 	<div class="mv-actions">
@@ -114,6 +113,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<text y="-53.5" text-anchor="middle" font-family="Cinzel,serif" font-weight="700" font-size="12" fill="#4d2e14">N</text>
 </svg>
 
+<div class="mv-chip" id="mv-chip" hidden><span id="mv-chipT"></span><button type="button" id="mv-chipX" aria-label="<?php echo $t('COM_MAPAVIAJES_JS_FILTER_CLEAR'); ?>"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
 <p class="mv-hint mv-on-ocean" id="mv-hint"><?php echo $t($this->canSubmit ? 'COM_MAPAVIAJES_HINT_ADD' : 'COM_MAPAVIAJES_HINT_VIEW'); ?></p>
 
 <div id="mv-popHost"></div>

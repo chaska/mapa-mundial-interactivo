@@ -381,15 +381,16 @@
 	/* ---- show only one person's trips (from the podium or a trip row) ---- */
 	function syncChip() {
 		const c = $('chip'); if (!c) { return; }
-		c.hidden = !AUTHOR; c.textContent = AUTHOR ? fmt(T('COM_MAPAVIAJES_JS_FILTER_CHIP'), AUTHOR_NAME) + ' ✕' : ''; c.setAttribute('aria-label', T('COM_MAPAVIAJES_JS_FILTER_CLEAR'));
+		c.hidden = !AUTHOR; $('chipT').textContent = AUTHOR ? fmt(T('COM_MAPAVIAJES_JS_FILTER_CHIP'), AUTHOR_NAME) : '';
 	}
 	function setAuthor(u, name) {
 		AUTHOR = u || ''; AUTHOR_NAME = AUTHOR ? name : ''; TRIPS = AUTHOR ? ALL.filter((t) => t.u === AUTHOR) : ALL;
 		for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }
+		if (AUTHOR) { $('hint').classList.add('mv-off'); }
 		syncChip(); closePop(); render(); if (drawerOpen()) { renderDrawer(); }
 		if (AUTHOR && TRIPS.length) { const t = TRIPS[0]; flyTo(viewFor(t.x, t.y, KMIN * 2.2), 700); }
 	}
-	if ($('chip')) { $('chip').onclick = () => setAuthor('', ''); }
+	if ($('chipX')) { $('chipX').onclick = () => setAuthor('', ''); }
 
 	/* ---- the weekly podium (comic style): data comes from our own server, names are escaped by textContent ---- */
 	if ($('pod')) {

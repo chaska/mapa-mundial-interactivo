@@ -400,10 +400,6 @@ html.mv-lock,body.mv-body{overflow:hidden;height:100%}
 #mv-cmFrame{flex:1;width:100%;border:0;background:#fff}
 @media (min-width:900px){.mv-cm{left:auto;right:16px;width:440px;height:calc(100% - 96px);bottom:16px;border-radius:20px}}
 
-/* ---- filter chip ---- */
-.mv-chip{margin:3px 0 0;padding:2px 10px;border:2px solid var(--ink);border-radius:999px;background:var(--gold,#f0b429);color:var(--ink);font:700 .75rem var(--text);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mv-chip[hidden]{display:none}
-
 /* ---- weekly podium: a comic page on top of the map ---- */
 .mv-pod{--gold:#f0b429;--gold-d:#b9770e;--silver:#cfc7b8;--silver-d:#8d8576;--bronze:#cd8446;--bronze-d:#8a4f22;--red:#a8321f;--cin:#2d1b10;--comic:Bangers,"Bricolage Grotesque",system-ui,sans-serif;position:fixed;inset:0;z-index:70;overflow:auto;background:radial-gradient(circle at 1px 1px,rgba(120,70,20,.16) 1.2px,transparent 1.6px) 0 0/9px 9px,radial-gradient(120% 90% at 50% 0%,#f6e9c6,#f3e4bf 55%,#e1c98f);color:var(--cin);animation:mv-vin .3s var(--ease) both;overscroll-behavior:contain}
 .mv-pod[hidden]{display:none}
@@ -478,3 +474,4 @@ html.mv-lock,body.mv-body{overflow:hidden;height:100%}
   .mv-brand{flex:1 1 100%}
   .mv-actions{flex:1 1 100%;justify-content:flex-end}
 }
+@media (max-width:400px){.mv-chip{top:112px}}
