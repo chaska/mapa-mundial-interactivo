@@ -475,3 +475,23 @@ html.mv-lock,body.mv-body{overflow:hidden;height:100%}
   .mv-actions{flex:1 1 100%;justify-content:flex-end}
 }
 @media (max-width:400px){.mv-chip{top:112px}}
+
+/* a map with its own emblem-style logo (it carries the name itself): the logo is the title, big enough to read its lettering.
+   The h1 stays in the page for screen readers and search engines, only hidden from sight. */
+.mv-has-logo{--logo:208px;align-items:flex-start}
+.mv-has-logo .mv-logo-img{width:var(--logo);height:var(--logo);max-width:var(--logo);max-height:var(--logo);border-radius:0;filter:drop-shadow(0 6px 10px rgba(60,30,10,.45))}
+.mv-has-logo .mv-brand{align-items:flex-start;gap:14px}
+.mv-has-logo .mv-brand h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mv-has-logo .mv-brand p{display:block;margin:10px 0 0;padding:6px 12px;border-radius:999px;background:rgba(251,247,240,.82);border:1px solid rgba(138,84,36,.35);font-size:.875rem;color:#5c3d24;text-shadow:none;width:max-content;max-width:100%}
+@media (max-width:1100px){.mv-has-logo{--logo:168px}}
+@media (max-width:900px){
+  .mv-has-logo{--logo:132px;flex-wrap:nowrap;row-gap:0}
+  .mv-has-logo .mv-brand{flex:1 1 auto}
+  .mv-has-logo .mv-brand p{display:none}
+  .mv-has-logo .mv-actions{flex:none;flex-direction:column;align-items:flex-end;gap:8px}
+  .mv-has-logo .mv-actions .mv-btn{width:44px;min-width:44px;padding:0;justify-content:center}
+  .mv-has-logo .mv-actions .mv-btn span,.mv-has-logo .mv-actions .mv-me,.mv-has-logo .mv-actions .mv-albumpick{display:none}
+}
+@media (max-width:720px){.mv-has-logo{--logo:120px}}
+@media (max-width:400px){.mv-has-logo{--logo:108px}.mv-has-logo .mv-brand{flex:1 1 auto}.mv-has-logo .mv-actions{flex:none}.mv-chip{top:112px}}
+@media (max-width:340px){.mv-has-logo{--logo:96px}}

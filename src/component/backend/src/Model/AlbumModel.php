@@ -44,10 +44,10 @@ class AlbumModel extends AdminModel
 	 * sharp on any retina screen and weighs a few kilobytes, however big the file that was uploaded. Aspect ratio untouched.
 	 * What is ACCEPTED (so that a big file is shrunk instead of refused) is bounded by the three limits below.
 	 */
-	public const LOGO_BOX_DESKTOP = 52;
-	public const LOGO_BOX_MOBILE  = 36;
-	public const LOGO_MAX_BYTES   = 2 * 1048576;
-	public const LOGO_SIDE        = 160;
+	public const LOGO_BOX_DESKTOP = 208;
+	public const LOGO_BOX_MOBILE  = 108;
+	public const LOGO_MAX_BYTES   = 5 * 1048576;
+	public const LOGO_SIDE        = 512;
 	public const LOGO_MAX_SIDE  = 4096;
 	public const LOGO_MAX_PIXELS = 16000000;
 

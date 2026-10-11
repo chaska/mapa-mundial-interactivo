@@ -51,10 +51,10 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<div id="mv-pins"></div>
 </main>
 
-<header class="mv-top mv-on-ocean">
+<header class="mv-top mv-on-ocean<?php echo (string) ($this->album['logo'] ?? '') !== '' ? ' mv-has-logo' : ''; ?>">
 	<div class="mv-brand">
 		<?php if ((string) ($this->album['logo'] ?? '') !== '') : ?>
-			<img class="mv-logo mv-logo-img" src="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=photo.logo&id=' . (int) $this->album['id'] . '&v=' . substr((string) $this->album['logo'], 0, 8), false)); ?>" alt="" width="52" height="52" decoding="async">
+			<img class="mv-logo mv-logo-img" src="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=photo.logo&id=' . (int) $this->album['id'] . '&v=' . substr((string) $this->album['logo'], 0, 8), false)); ?>" alt="" width="208" height="208" decoding="async">
 		<?php else : ?>
 		<svg class="mv-logo" viewBox="0 0 52 52" aria-hidden="true">
 			<circle cx="26" cy="26" r="24" fill="#d49b55" stroke="#fbf7f0" stroke-width="2.5"/>

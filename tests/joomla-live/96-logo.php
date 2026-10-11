@@ -42,9 +42,9 @@ afirma(in_array($r['code'], [302, 303], true), 'el guardado sale bien (' . $r['c
 $name = $logo();
 afirma(preg_match('/^[a-f0-9]{32}\.webp$/', $name) === 1 && is_file($storage . '/photos/' . $name), 'el logo queda con nombre aleatorio en el almacen privado: ' . $name);
 $info = @getimagesize($storage . '/photos/' . $name);
-afirma($info !== false && $info[0] === 160 && $info[1] === 80 && $info[2] === IMAGETYPE_WEBP, 'una imagen de 4000x2000 se queda en 160x80, el tamano que pide el diseno (' . ($info[0] ?? '?') . 'x' . ($info[1] ?? '?') . '), misma proporcion');
+afirma($info !== false && $info[0] === 512 && $info[1] === 256 && $info[2] === IMAGETYPE_WEBP, 'una imagen de 4000x2000 se queda en 512x256, el tamano que pide el diseno (' . ($info[0] ?? '?') . 'x' . ($info[1] ?? '?') . '), misma proporcion');
 $im = imagecreatefromwebp($storage . '/photos/' . $name); imagealphablending($im, false);
-afirma((imagecolorat($im, 6, 40) >> 24 & 0x7F) === 0 && (imagecolorat($im, 154, 40) >> 24 & 0x7F) === 127, 'la transparencia se conserva');
+afirma((imagecolorat($im, 6, 40) >> 24 & 0x7F) === 0 && (imagecolorat($im, 506, 40) >> 24 & 0x7F) === 127, 'la transparencia se conserva');
 afirma(filesize($storage . '/photos/' . $name) < 20000, 'pesa pocos kilobytes (' . filesize($storage . '/photos/' . $name) . ' bytes)');
 afirma(($stat = stat($storage . '/photos/' . $name)) && ($stat['mode'] & 0007) === 0, 'permisos sin acceso para otros');
 afirma($tmpLeft() === 0, 'no queda ningun temporal');
@@ -63,7 +63,7 @@ $db->exec("UPDATE $AL SET published = 0 WHERE id = :i", [':i' => $album]); afirm
 $db->exec("UPDATE $AL SET published = 1, access = 3 WHERE id = :i", [':i' => $album]); afirma($ana->get('/index.php?option=com_mapaviajes&task=photo.logo&id=' . $album)['code'] === 404, 'mapa de nivel Especial: 404 para una registrada');
 $db->exec("UPDATE $AL SET access = 2 WHERE id = :i", [':i' => $album]);
 $page = $ana->get('/index.php?option=com_mapaviajes&album=' . $album)['body'];
-afirma(preg_match('~<img class="mv-logo mv-logo-img" src="[^"]*task=photo\.logo[^"]*" alt="" width="52" height="52"~', $page) === 1 && !str_contains($page, '<svg class="mv-logo"'), 'el mapa pinta el logo subido (y no el de por defecto) en su cuadrado de la cabecera');
+afirma(preg_match('~<img class="mv-logo mv-logo-img" src="[^"]*task=photo\.logo[^"]*" alt="" width="208" height="208"~', $page) === 1 && !str_contains($page, '<svg class="mv-logo"'), 'el mapa pinta el logo subido (y no el de por defecto) en su cuadrado de la cabecera');
 $css = file_get_contents($base . '/media/com_mapaviajes/css/mapa.css');
 afirma(str_contains((string) $css, '.mv-logo-img{object-fit:contain'), 'y se muestra entero con object-fit: contain (nunca recortado ni estirado)');
 
@@ -87,9 +87,9 @@ foreach ($cases as [$label, $bytes, $fname, $ctype]) {
 	afirma($logo() === $good && is_file($storage . '/photos/' . $good) && $tmpLeft() === 0 && (str_contains($follow['body'], 'alert-error') || str_contains($follow['body'], 'alert-danger') || str_contains($follow['body'], 'alert-message')), "$label: rechazado con aviso, el logo anterior intacto, sin temporales");
 }
 $r = $save($up(random_bytes(3 * 1048576), 'logo.png')); afirma($logo() === $good, 'basura aleatoria de 3 MB: rechazada');
-$noise = imagecreatetruecolor(1300, 1300); for ($yy = 0; $yy < 1300; $yy += 1) { for ($xx = 0; $xx < 1300; $xx++) { imagesetpixel($noise, $xx, $yy, random_int(0, 0xFFFFFF)); } }
+$noise = imagecreatetruecolor(1500, 1500); for ($yy = 0; $yy < 1500; $yy += 1) { for ($xx = 0; $xx < 1500; $xx++) { imagesetpixel($noise, $xx, $yy, random_int(0, 0xFFFFFF)); } }
 ob_start(); imagepng($noise, null, 1); $big = (string) ob_get_clean();
-$r = $save($up($big)); afirma($logo() === $good && strlen($big) > 2 * 1048576, 'un PNG de ' . round(strlen($big) / 1048576, 1) . ' MB (mas de 2 MB): rechazado');
+$r = $save($up($big)); afirma($logo() === $good && strlen($big) > 5 * 1048576, 'un PNG de ' . round(strlen($big) / 1048576, 1) . ' MB (mas de 5 MB): rechazado');
 $r = $save([['field' => 'logo_upload[]', 'filename' => 'a.png', 'type' => 'image/png', 'data' => half(100, 100)], ['field' => 'logo_upload[]', 'filename' => 'b.png', 'type' => 'image/png', 'data' => half(100, 100)]]);
 afirma($logo() === $good, 'una lista de archivos en vez de uno: se ignora');
 $r = $save([], ['jform[logo]' => 'deadbeefdeadbeefdeadbeefdeadbeef.webp', 'logo' => '../../configuration.php']);
@@ -103,13 +103,13 @@ $r = $save($up(half(1000, 1000), 'nuevo.png'));
 $new = $logo();
 afirma($new !== '' && $new !== $good && is_file($storage . '/photos/' . $new), 'un logo nuevo sustituye al anterior');
 clearstatcache(); afirma(!is_file($storage . '/photos/' . $good), 'y el archivo del anterior se borra (no se acumulan)');
-$info = @getimagesize($storage . '/photos/' . $new); afirma($info !== false && $info[0] === 160 && $info[1] === 160, 'un logo de 1000x1000 se queda en 160x160');
+$info = @getimagesize($storage . '/photos/' . $new); afirma($info !== false && $info[0] === 512 && $info[1] === 512, 'un logo de 1000x1000 se queda en 512x512');
 $r = $save([], ['logo_remove' => '1']);
 clearstatcache(); afirma($logo() === '' && !is_file($storage . '/photos/' . $new), 'quitar el logo vacia la ficha y borra el archivo');
 $page = $ana->get('/index.php?option=com_mapaviajes&album=' . $album)['body'];
 afirma(str_contains($page, '<svg class="mv-logo"') && !str_contains($page, 'mv-logo-img'), 'sin logo vuelve el de por defecto');
 $r = $save($up(half(512, 512), 'mio.png')); $mine = $logo();
-$info = @getimagesize($storage . '/photos/' . $mine); afirma($info !== false && $info[0] === 160 && $info[1] === 160, 'tu logo de 512x512 se acepta y se reduce a 160x160');
+$info = @getimagesize($storage . '/photos/' . $mine); afirma($info !== false && $info[0] === 512 && $info[1] === 512, 'tu logo de 512x512 se acepta tal cual (512x512)');
 $r = $save([]); afirma($logo() === $mine && is_file($storage . '/photos/' . $mine), 'guardar el mapa sin tocar el logo lo conserva');
 
 seccion('Un mapa borrado se lleva su logo');

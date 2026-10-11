@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## 1.4.1 — 2026-10-16
+- **Logo como emblema**: probado con el logo real («el sitio de pruebas», que lleva texto), 52/36 px era ilegible. Ahora se guarda a un máximo de **512 px** y el mapa lo pinta grande: **208 px en ordenador** (≥1101 px), 168 px (≤1100), 132 px (≤900), 120 px (≤720), 108 px (≤400) y 96 px (≤340), siempre entero (`object-fit: contain`, nunca estirado ni recortado).
+- Si el mapa tiene logo, el `<h1>` queda en la página solo para lectores de pantalla y buscadores (el logo ya lleva el nombre); el contador de álbumes pasa a una píldora junto al logo. En móvil (≤900 px) los botones pasan a una columna de iconos de 44 px a la derecha, sin tapar el logo.
+- Límite de subida del logo de 2 a **5 MB** (un PNG con transparencia de ~1250 px ya pesa 2,2 MB). Mismos topes de 4096 px por lado y 16 MP, y la misma tubería de seguridad. Nota: el `upload_max_filesize` de PHP del servidor también cuenta.
+- Pruebas actualizadas (`02`, `96`, `97`).
+
 ## 1.4.0 — 2026-10-15
 - **Logo del mapa** subido desde el administrador (ficha del mapa → Logo), con la misma tubería de seguridad que las fotos: se identifica por sus bytes (nunca por nombre, extensión ni Content-Type), se rechazan SVG, GIF, poliglotas y PNG con código pegado, las cabeceras se leen **antes** de decodificar (una imagen que dice 60000x60000 se rechaza sin decodificarla), máximo 2 MB y 4096 px por lado (16 MP), y se guarda como una imagen **nueva** en el almacén privado con nombre aleatorio.
 - **Ajuste automático al tamaño del diseño**: el mapa pinta el logo en un cuadrado de **52 px en ordenador y 36 px en móvil** (≤720 px); se guarda a un máximo de **160 px** en el lado largo (3 píxeles por píxel CSS en el cuadrado grande: nítido en pantallas retina y de pocos KB), sin ampliar y sin deformar (4000x2000 → 160x80; 4000x4000 y tu 512x512 → 160x160). **PNG con transparencia**: el alfa se conserva y se guarda sin pérdida (WebP VP8L) para que los bordes duros no se emborronen. En la cabecera se muestra entero dentro del mismo cuadrado que el logo por defecto (`object-fit: contain`): nunca se estira ni se recorta.

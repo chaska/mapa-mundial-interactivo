@@ -137,7 +137,7 @@ $st->sweep(3600); afirma(!is_file($work . '/store/tmp/viejo.part'), 'sweep borra
 @unlink($work . '/store/tmp/../../../outside.part');
 
 seccion('Logo del mapa: PNG con transparencia, ajuste automatico, mismas defensas');
-$lp = new ImageProcessor(2 * 1048576, 160, 100, false, 16000000, 4096, static fn (string $f): bool => true, true);
+$lp = new ImageProcessor(5 * 1048576, 512, 100, false, 16000000, 4096, static fn (string $f): bool => true, true);
 function pngHalf(int $w, int $h): string { // left half opaque red, right half completely transparent
 	$im = imagecreatetruecolor($w, $h); imagealphablending($im, false); imagesavealpha($im, true);
 	imagefill($im, 0, 0, imagecolorallocatealpha($im, 0, 0, 0, 127));
@@ -145,36 +145,36 @@ function pngHalf(int $w, int $h): string { // left half opaque red, right half c
 	ob_start(); imagepng($im); return (string) ob_get_clean();
 }
 $x = intenta($lp, subir(fichero(pngHalf(4000, 2000), 'png'), ['name' => 'logo.png', 'type' => 'image/png']));
-afirma($x['ok'] && $x['r']['width'] === 160 && $x['r']['height'] === 80, 'logo 4000x2000 -> 160x80 (el tamano que pide el diseno): se ajusta solo y conserva la proporcion (' . ($x['r']['width'] ?? '?') . 'x' . ($x['r']['height'] ?? '?') . ')');
+afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 256, 'logo 4000x2000 -> 512x256 (el tamano que pide el diseno): se ajusta solo y conserva la proporcion (' . ($x['r']['width'] ?? '?') . 'x' . ($x['r']['height'] ?? '?') . ')');
 if ($x['ok']) {
 	$im = imagecreatefromwebp($x['dest']); imagealphablending($im, false);
-	$left = imagecolorat($im, 6, 40) >> 24 & 0x7F; $right = imagecolorat($im, 154, 40) >> 24 & 0x7F;
+	$left = imagecolorat($im, 6, 40) >> 24 & 0x7F; $right = imagecolorat($im, 506, 40) >> 24 & 0x7F;
 	afirma($left === 0 && $right === 127, 'la transparencia sobrevive: mitad izquierda opaca, derecha transparente (alfa ' . $left . ' / ' . $right . ')');
 	afirma(substr((string) file_get_contents($x['dest'], false, null, 12, 4), 0, 4) === 'VP8L', 'se guarda sin perdida (WebP VP8L): los bordes duros del logo no se emborronan');
 }
 $x = intenta($lp, subir(fichero(pngHalf(512, 512), 'png')));
-afirma($x['ok'] && $x['r']['width'] === 160 && $x['r']['height'] === 160, 'tu logo de 512x512 se reduce a 160x160 (el diseno lo pinta a 52 px: 3x para retina)');
+afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 512, 'tu logo de 512x512 se queda en 512x512 (el diseno lo pinta a 208 px: mas de 2x para retina)');
 $x = intenta($lp, subir(fichero(pngHalf(2000, 4000), 'png')));
-afirma($x['ok'] && $x['r']['width'] === 80 && $x['r']['height'] === 160, 'vertical 2000x4000 -> 80x160');
+afirma($x['ok'] && $x['r']['width'] === 256 && $x['r']['height'] === 512, 'vertical 2000x4000 -> 256x512');
 $x = intenta($lp, subir(fichero(pngHalf(128, 128), 'png')));
 afirma($x['ok'] && $x['r']['width'] === 128 && $x['r']['height'] === 128, 'un logo pequeno no se amplia (128x128)');
 $x = intenta($lp, subir(fichero(jpeg(1500, 700), 'jpg')));
-afirma($x['ok'] && $x['r']['width'] === 160 && $x['r']['height'] === 75, 'JPG tambien vale (1500x700 -> 160x75)');
+afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 239, 'JPG tambien vale (1500x700 -> 512x239)');
 $bigHeader = function (int $w, int $h): string { $b = png(16, 16); $b = substr($b, 0, 16) . pack('N', $w) . pack('N', $h) . substr($b, 24); return $b; };
 rechazada($lp, subir(fichero($bigHeader(5000, 5000), 'png')), 'image_dimensions', 'cabecera PNG que dice 5000x5000 (25 MP) se rechaza SIN decodificar');
 rechazada($lp, subir(fichero($bigHeader(4097, 100), 'png')), 'image_dimensions', 'un lado de 4097 px');
 rechazada($lp, subir(fichero($bigHeader(60000, 60000), 'png')), 'image_dimensions', 'bomba de descompresion 60000x60000');
 rechazada($lp, subir(fichero($bigHeader(8, 8), 'png')), 'image_dimensions', 'demasiado pequeno (8x8)');
-$noise = imagecreatetruecolor(1300, 1300); for ($yy = 0; $yy < 1300; $yy++) { for ($xx = 0; $xx < 1300; $xx++) { imagesetpixel($noise, $xx, $yy, random_int(0, 0xFFFFFF)); } }
+$noise = imagecreatetruecolor(1500, 1500); for ($yy = 0; $yy < 1500; $yy++) { for ($xx = 0; $xx < 1500; $xx++) { imagesetpixel($noise, $xx, $yy, random_int(0, 0xFFFFFF)); } }
 ob_start(); imagepng($noise, null, 1); $noisePng = (string) ob_get_clean();
-rechazada($lp, subir(fichero($noisePng, 'png')), 'image_too_big', 'un PNG de ' . round(strlen($noisePng) / 1048576, 1) . ' MB supera el limite de 2 MB');
+rechazada($lp, subir(fichero($noisePng, 'png')), 'image_too_big', 'un PNG de ' . round(strlen($noisePng) / 1048576, 1) . ' MB supera el limite de 5 MB');
 rechazada($lp, subir(fichero(png(300, 300) . '<?php system($_GET["c"]); ?>', 'png')), 'image_polyglot', 'PNG con PHP pegado detras (poliglota)');
 rechazada($lp, subir(fichero('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><script>alert(1)</script></svg>', 'png'), ['type' => 'image/png', 'name' => 'logo.png']), 'image_type', 'un SVG con script llamado logo.png (los SVG no se aceptan nunca)');
 rechazada($lp, subir(fichero("GIF89a" . str_repeat("\0", 200), 'png')), 'image_type', 'GIF disfrazado de PNG');
 rechazada($lp, subir(fichero("BM" . str_repeat("\0", 200), 'png')), 'image_type', 'BMP disfrazado de PNG');
 rechazada($lp, subir(fichero(substr(png(300, 300), 0, 200), 'png')), 'image_unreadable', 'PNG truncado');
 rechazada($lp, subir(fichero(png(300, 300), 'png'), ['error' => UPLOAD_ERR_PARTIAL]), 'image_upload', 'subida incompleta');
-$hostile = new ImageProcessor(2 * 1048576, 512, 100, false, 16000000, 4096, null, true);
+$hostile = new ImageProcessor(5 * 1048576, 512, 100, false, 16000000, 4096, null, true);
 rechazada($hostile, subir('/etc/passwd', ['name' => 'logo.png']), 'image_upload', 'tmp_name inventado apuntando a /etc/passwd (no lo subio PHP)');
 
 fin();
