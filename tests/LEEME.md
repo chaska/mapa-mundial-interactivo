@@ -29,6 +29,7 @@ node tests/joomla-live/30-navegador.js    # Chromium: formulario en iPhone (tác
 node tests/joomla-live/31-reacciones-navegador.js
 node tests/joomla-live/61-comentarios-navegador.js
 node tests/joomla-live/80-podio-navegador.js
+node tests/joomla-live/97-logo-navegador.js  # el logo medido en Chromium de 320 a 1920 px: 52 px en ordenador, 36 en móvil
 ```
 Engage solo trae tablas para MySQL: `tests/joomla-live/engage-pg.sql` las crea para el Joomla de pruebas en PostgreSQL.
 Las pruebas borran tablas del componente de ese Joomla: **no las ejecutes contra un sitio real**.

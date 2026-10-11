@@ -137,7 +137,7 @@ $st->sweep(3600); afirma(!is_file($work . '/store/tmp/viejo.part'), 'sweep borra
 @unlink($work . '/store/tmp/../../../outside.part');
 
 seccion('Logo del mapa: PNG con transparencia, ajuste automatico, mismas defensas');
-$lp = new ImageProcessor(2 * 1048576, 512, 100, false, 16000000, 4096, static fn (string $f): bool => true, true);
+$lp = new ImageProcessor(2 * 1048576, 160, 100, false, 16000000, 4096, static fn (string $f): bool => true, true);
 function pngHalf(int $w, int $h): string { // left half opaque red, right half completely transparent
 	$im = imagecreatetruecolor($w, $h); imagealphablending($im, false); imagesavealpha($im, true);
 	imagefill($im, 0, 0, imagecolorallocatealpha($im, 0, 0, 0, 127));
@@ -145,21 +145,21 @@ function pngHalf(int $w, int $h): string { // left half opaque red, right half c
 	ob_start(); imagepng($im); return (string) ob_get_clean();
 }
 $x = intenta($lp, subir(fichero(pngHalf(4000, 2000), 'png'), ['name' => 'logo.png', 'type' => 'image/png']));
-afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 256, 'logo 4000x2000 -> 512x256: se ajusta solo y conserva la proporcion (' . ($x['r']['width'] ?? '?') . 'x' . ($x['r']['height'] ?? '?') . ')');
+afirma($x['ok'] && $x['r']['width'] === 160 && $x['r']['height'] === 80, 'logo 4000x2000 -> 160x80 (el tamano que pide el diseno): se ajusta solo y conserva la proporcion (' . ($x['r']['width'] ?? '?') . 'x' . ($x['r']['height'] ?? '?') . ')');
 if ($x['ok']) {
 	$im = imagecreatefromwebp($x['dest']); imagealphablending($im, false);
-	$left = imagecolorat($im, 20, 128) >> 24 & 0x7F; $right = imagecolorat($im, 490, 128) >> 24 & 0x7F;
+	$left = imagecolorat($im, 6, 40) >> 24 & 0x7F; $right = imagecolorat($im, 154, 40) >> 24 & 0x7F;
 	afirma($left === 0 && $right === 127, 'la transparencia sobrevive: mitad izquierda opaca, derecha transparente (alfa ' . $left . ' / ' . $right . ')');
 	afirma(substr((string) file_get_contents($x['dest'], false, null, 12, 4), 0, 4) === 'VP8L', 'se guarda sin perdida (WebP VP8L): los bordes duros del logo no se emborronan');
 }
 $x = intenta($lp, subir(fichero(pngHalf(512, 512), 'png')));
-afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 512, 'tu logo de 512x512 se queda en 512x512');
+afirma($x['ok'] && $x['r']['width'] === 160 && $x['r']['height'] === 160, 'tu logo de 512x512 se reduce a 160x160 (el diseno lo pinta a 52 px: 3x para retina)');
 $x = intenta($lp, subir(fichero(pngHalf(2000, 4000), 'png')));
-afirma($x['ok'] && $x['r']['width'] === 256 && $x['r']['height'] === 512, 'vertical 2000x4000 -> 256x512');
+afirma($x['ok'] && $x['r']['width'] === 80 && $x['r']['height'] === 160, 'vertical 2000x4000 -> 80x160');
 $x = intenta($lp, subir(fichero(pngHalf(128, 128), 'png')));
 afirma($x['ok'] && $x['r']['width'] === 128 && $x['r']['height'] === 128, 'un logo pequeno no se amplia (128x128)');
 $x = intenta($lp, subir(fichero(jpeg(1500, 700), 'jpg')));
-afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 239, 'JPG tambien vale (1500x700 -> 512x239)');
+afirma($x['ok'] && $x['r']['width'] === 160 && $x['r']['height'] === 75, 'JPG tambien vale (1500x700 -> 160x75)');
 $bigHeader = function (int $w, int $h): string { $b = png(16, 16); $b = substr($b, 0, 16) . pack('N', $w) . pack('N', $h) . substr($b, 24); return $b; };
 rechazada($lp, subir(fichero($bigHeader(5000, 5000), 'png')), 'image_dimensions', 'cabecera PNG que dice 5000x5000 (25 MP) se rechaza SIN decodificar');
 rechazada($lp, subir(fichero($bigHeader(4097, 100), 'png')), 'image_dimensions', 'un lado de 4097 px');

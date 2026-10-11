@@ -42,9 +42,10 @@ afirma(in_array($r['code'], [302, 303], true), 'el guardado sale bien (' . $r['c
 $name = $logo();
 afirma(preg_match('/^[a-f0-9]{32}\.webp$/', $name) === 1 && is_file($storage . '/photos/' . $name), 'el logo queda con nombre aleatorio en el almacen privado: ' . $name);
 $info = @getimagesize($storage . '/photos/' . $name);
-afirma($info !== false && $info[0] === 512 && $info[1] === 256 && $info[2] === IMAGETYPE_WEBP, 'una imagen de 4000x2000 se queda en 512x256 (' . ($info[0] ?? '?') . 'x' . ($info[1] ?? '?') . '), misma proporcion');
+afirma($info !== false && $info[0] === 160 && $info[1] === 80 && $info[2] === IMAGETYPE_WEBP, 'una imagen de 4000x2000 se queda en 160x80, el tamano que pide el diseno (' . ($info[0] ?? '?') . 'x' . ($info[1] ?? '?') . '), misma proporcion');
 $im = imagecreatefromwebp($storage . '/photos/' . $name); imagealphablending($im, false);
-afirma((imagecolorat($im, 20, 128) >> 24 & 0x7F) === 0 && (imagecolorat($im, 490, 128) >> 24 & 0x7F) === 127, 'la transparencia se conserva');
+afirma((imagecolorat($im, 6, 40) >> 24 & 0x7F) === 0 && (imagecolorat($im, 154, 40) >> 24 & 0x7F) === 127, 'la transparencia se conserva');
+afirma(filesize($storage . '/photos/' . $name) < 20000, 'pesa pocos kilobytes (' . filesize($storage . '/photos/' . $name) . ' bytes)');
 afirma(($stat = stat($storage . '/photos/' . $name)) && ($stat['mode'] & 0007) === 0, 'permisos sin acceso para otros');
 afirma($tmpLeft() === 0, 'no queda ningun temporal');
 $p = $admin->get('/administrator/index.php?option=com_mapaviajes&view=album&layout=edit&id=' . $album);
@@ -102,13 +103,13 @@ $r = $save($up(half(1000, 1000), 'nuevo.png'));
 $new = $logo();
 afirma($new !== '' && $new !== $good && is_file($storage . '/photos/' . $new), 'un logo nuevo sustituye al anterior');
 clearstatcache(); afirma(!is_file($storage . '/photos/' . $good), 'y el archivo del anterior se borra (no se acumulan)');
-$info = @getimagesize($storage . '/photos/' . $new); afirma($info !== false && $info[0] === 512 && $info[1] === 512, 'un logo de 1000x1000 se queda en 512x512');
+$info = @getimagesize($storage . '/photos/' . $new); afirma($info !== false && $info[0] === 160 && $info[1] === 160, 'un logo de 1000x1000 se queda en 160x160');
 $r = $save([], ['logo_remove' => '1']);
 clearstatcache(); afirma($logo() === '' && !is_file($storage . '/photos/' . $new), 'quitar el logo vacia la ficha y borra el archivo');
 $page = $ana->get('/index.php?option=com_mapaviajes&album=' . $album)['body'];
 afirma(str_contains($page, '<svg class="mv-logo"') && !str_contains($page, 'mv-logo-img'), 'sin logo vuelve el de por defecto');
 $r = $save($up(half(512, 512), 'mio.png')); $mine = $logo();
-$info = @getimagesize($storage . '/photos/' . $mine); afirma($info !== false && $info[0] === 512 && $info[1] === 512, 'tu logo de 512x512 se acepta tal cual');
+$info = @getimagesize($storage . '/photos/' . $mine); afirma($info !== false && $info[0] === 160 && $info[1] === 160, 'tu logo de 512x512 se acepta y se reduce a 160x160');
 $r = $save([]); afirma($logo() === $mine && is_file($storage . '/photos/' . $mine), 'guardar el mapa sin tocar el logo lo conserva');
 
 seccion('Un mapa borrado se lleva su logo');

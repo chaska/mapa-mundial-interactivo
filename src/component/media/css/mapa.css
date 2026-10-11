@@ -468,4 +468,13 @@ html.mv-lock,body.mv-body{overflow:hidden;height:100%}
 @media (prefers-reduced-motion:reduce){.mv-pstar,.mv-pblock,.mv-pod{animation:none}}
 
 /* the map's own logo: whatever its shape, it is shown whole inside the same square as the built-in one (never stretched, never cropped) */
-.mv-logo-img{object-fit:contain;object-position:center;background:none;border-radius:6px}
+.mv-logo-img{object-fit:contain;object-position:center;background:none;border-radius:6px;width:52px;height:52px;max-width:52px;max-height:52px}
+@media (max-width:720px){.mv-logo-img{width:36px;height:36px;max-width:36px;max-height:36px}}
+
+/* very narrow phones (<= 400 px): the buttons would squeeze the map's title down to nothing, so the header takes two rows:
+   logo and title on top, the buttons underneath */
+@media (max-width:400px){
+  .mv-top{flex-wrap:wrap;row-gap:6px}
+  .mv-brand{flex:1 1 100%}
+  .mv-actions{flex:1 1 100%;justify-content:flex-end}
+}

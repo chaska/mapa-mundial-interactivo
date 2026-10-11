@@ -38,9 +38,16 @@ class AlbumModel extends AdminModel
 		return empty($data) ? $this->getItem() : $data;
 	}
 
-	/** Largest the logo may be on disk and in pixels; what is kept is at most LOGO_SIDE on the long side, with the shape it had. */
-	public const LOGO_MAX_BYTES = 2 * 1048576;
-	public const LOGO_SIDE      = 512;
+	/**
+	 * The design shows the logo in a square box of 52 CSS px on a computer and 36 CSS px on a phone (<= 720 px wide).
+	 * What is KEPT is at most 160 px on the long side: 3 device pixels per CSS pixel on the biggest box (52 x 3 = 156), so it is
+	 * sharp on any retina screen and weighs a few kilobytes, however big the file that was uploaded. Aspect ratio untouched.
+	 * What is ACCEPTED (so that a big file is shrunk instead of refused) is bounded by the three limits below.
+	 */
+	public const LOGO_BOX_DESKTOP = 52;
+	public const LOGO_BOX_MOBILE  = 36;
+	public const LOGO_MAX_BYTES   = 2 * 1048576;
+	public const LOGO_SIDE        = 160;
 	public const LOGO_MAX_SIDE  = 4096;
 	public const LOGO_MAX_PIXELS = 16000000;
 
