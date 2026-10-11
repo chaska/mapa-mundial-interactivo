@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.7.3 — 2026-10-18
+- Corrección: bajo «No hay comentarios» quedaba un hueco en blanco enorme (el marco de los comentarios se medía por la ventana y nunca encogía). Ahora mide lo que mide su contenido.
+
 ## 1.7.2 — 2026-10-18
 - **Comentarios en la ficha**: se ven los comentarios del hilo y el formulario de Engage queda oculto hasta que se pulsa «Escribir un comentario…» (o «Responder» en un comentario). Tras comentar vuelve a verse el hilo con el formulario cerrado.
 - **Compatibilidad con Engage 0.8.3**: la ficha del plugin lleva `type = mapaviajes` (Engage 0.8.3 exige que el tipo case con el componente del activo `com_mapaviajes.…`); con 0.8.2 también vale. Probado contra el commit 32e0429 de Engage.

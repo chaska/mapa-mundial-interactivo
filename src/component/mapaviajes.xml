@@ -12,7 +12,7 @@
 	<authorUrl></authorUrl>
 	<copyright>Copyright (c) 2026 ChasKa</copyright>
 	<license>GNU/GPL v3 or any later version</license>
-	<version>1.7.2</version>
+	<version>1.7.3</version>
 	<description>COM_MAPAVIAJES_XML_DESCRIPTION</description>
 	<namespace path="src">Chaska\Component\Mapaviajes</namespace>
 	<scriptfile>script.php</scriptfile>

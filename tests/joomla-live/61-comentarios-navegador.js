@@ -29,6 +29,8 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await page.waitForTimeout(800);
     afirma(!(await frame.locator('#akengageCommentForm').isVisible()), 'el formulario de Engage NO se ve al abrir: se ven los comentarios');
     afirma(await frame.locator('.akengage-title').first().isVisible(), 'y la cabecera del hilo (numero de comentarios) si');
+    const hs = await page.evaluate(() => { const f = document.getElementById('mv-fiFrame'); return { frame: f.offsetHeight, body: f.contentDocument.body.offsetHeight }; });
+    afirma(hs.frame - hs.body < 60 && hs.frame >= hs.body, 'el marco de comentarios mide lo que mide su contenido, sin hueco en blanco debajo (' + hs.frame + ' / ' + hs.body + ')');
     await page.click('#mv-fiWrite'); await frame.locator('#akengageCommentForm').waitFor({ state: 'visible', timeout: 10000 });
     afirma(true, 'al pulsar «Escribir un comentario…» aparece el formulario de Engage');
     afirma(true, 'la ficha carga el hilo de Engage con su formulario');

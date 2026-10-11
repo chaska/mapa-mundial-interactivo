@@ -435,7 +435,8 @@
 		$('fiLive').textContent = n > 1 ? fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n) : '';
 		if (n > 1) { for (const d of [1, -1]) { new Image().src = photoSrc(t.ph[(VWR.i + d + n) % n].id); } }
 	}
-	function fiHeight() { const f = $('fiFrame'); try { const d = f.contentDocument; if (d && d.documentElement) { f.style.height = Math.max(160, d.documentElement.scrollHeight) + 'px'; } } catch (_) { /* not ours */ } }
+	// the height comes from the body, not documentElement (that one never gets smaller than the frame)
+	function fiHeight() { const f = $('fiFrame'); try { const d = f.contentDocument; if (d && d.body) { const cs = d.defaultView.getComputedStyle(d.body); f.style.height = Math.max(120, Math.ceil(d.body.offsetHeight + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0)) + 6) + 'px'; } } catch (_) { /* not ours */ } }
 	function fiComments(on) {
 		const f = $('fiFrame'); if (!f) { return; }
 		$('fiCm').hidden = !on; $('fCom').hidden = !on; if ($('fiWriteBar')) { $('fiWriteBar').hidden = !on; }
