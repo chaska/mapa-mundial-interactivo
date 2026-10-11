@@ -103,7 +103,8 @@ class HtmlView extends BaseHtmlView
 		$base    = Uri::root(true) . '/media/com_mapaviajes/';
 		$options = [
 			'worldUrl'   => $base . 'data/world.json',
-			'placesUrl'  => $base . 'data/places.json',
+			'searchUrl'  => Route::_('index.php?option=com_mapaviajes&task=places.search&format=json', false),
+			'nearUrl'    => Route::_('index.php?option=com_mapaviajes&task=places.near&format=json', false),
 			'dataUrl'    => Route::_('index.php?option=com_mapaviajes&task=trips.data&album=' . (int) ($this->album['id'] ?? 0), false),
 			'submitUrl'  => Route::_('index.php?option=com_mapaviajes&task=trip.submit&format=json', false),
 			'reactUrl'   => Route::_('index.php?option=com_mapaviajes&task=reaction.toggle&format=json', false),

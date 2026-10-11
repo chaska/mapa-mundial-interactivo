@@ -49,7 +49,7 @@
 	const dist = (a, b, c, d) => { const dl = (c - a) * D2R, dp = (d - b) * D2R, q = Math.sin(dp / 2) ** 2 + Math.cos(b * D2R) * Math.cos(d * D2R) * Math.sin(dl / 2) ** 2; return 12742 * Math.asin(Math.sqrt(q)); };
 
 	/* ---------------------------------------------------------------- state */
-	let TRIPS = [], GAZ = [];
+	let TRIPS = [];
 	const stage = $('stage'), svg = $('svg'), worldG = $('world'), pinsEl = $('pins');
 	const V = { k: 1, tx: 0, ty: 0 };
 	let VW = innerWidth, VH = innerHeight, KMIN = 1, KMAX = 40;
@@ -432,16 +432,24 @@
 		draftEl.style.transform = 'translate(' + (V.tx + F.pt.x * V.k - 23).toFixed(1) + 'px,' + (V.ty + F.pt.y * V.k - 63.25).toFixed(1) + 'px)'; draftEl.style.zIndex = '9000';
 	}
 
+	let nearSeq = 0;
+	const getJSON = (url) => fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then((r) => (r.ok ? r.json() : null));
+	const regionNames = (() => { try { return new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'region' }); } catch (_) { return null; } })();
+	const countryName = (cc) => { try { return (regionNames && regionNames.of(cc)) || cc; } catch (_) { return cc; } };
 	function mapClick(sx, sy, target) {
 		closePop();
 		if (!panel) { return; }
 		const mx = (sx - V.tx) / V.k, my = (sy - V.ty) / V.k;
 		if (mx < 0 || mx > W || my < 0 || my > H) { return; }
 		const [lon, lat] = invert(mx, my);
-		let near = null, nd = 1e9; for (const g of GAZ) { const d = dist(lon, lat, g.lo, g.la); if (d < nd) { nd = d; near = g; } }
-		let label, city = null;
-		if (near && nd < 260) { label = fmt(T('COM_MAPAVIAJES_JS_NEAR'), near.n + ', ' + near.c); city = near.n; } else if (target && target.dataset && target.dataset.c) { label = T('COM_MAPAVIAJES_JS_POINT'); } else { label = T('COM_MAPAVIAJES_JS_SEA'); }
-		setPoint({ la: lat, lo: lon, x: mx, y: my, label, city }, false); openPanel();
+		const seq = ++nearSeq, onLand = !!(target && target.dataset && target.dataset.c);
+		setPoint({ la: lat, lo: lon, x: mx, y: my, label: onLand ? T('COM_MAPAVIAJES_JS_POINT') : T('COM_MAPAVIAJES_JS_SEA'), city: null }, false); openPanel();
+		getJSON(O.nearUrl + '&lat=' + lat.toFixed(5) + '&lon=' + lon.toFixed(5)).then((r) => {
+			const g = r && r.place; if (seq !== nearSeq || !g || !F.pt || F.pt.x !== mx || F.pt.y !== my) { return; }
+			const name = String(g.n), place = name + ', ' + countryName(String(g.c));
+			F.pt.label = fmt(T('COM_MAPAVIAJES_JS_NEAR'), place); F.pt.city = name; $('q').value = F.pt.label;
+			if (!F.titleTouched) { $('title').value = fmt(T('COM_MAPAVIAJES_JS_TITLE_AUTO', 'Fotos en %s'), name); }
+		}).catch(() => {});
 	}
 	function setPoint(pt, fly) {
 		F.pt = pt; $('q').value = pt.label; $('q').removeAttribute('aria-invalid'); $('qerr').textContent = '';
@@ -471,14 +479,21 @@
 		const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 		let opts = [], act = -1;
 		const parseCoords = (s) => { const m = s.match(/^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/); if (!m) { return null; } const la = +m[1].replace(',', '.'), lo = +m[2].replace(',', '.'); return Math.abs(la) <= 90 && Math.abs(lo) <= 180 ? { la, lo } : null; };
+		let searchTimer = 0, searchSeq = 0;
 		function search() {
-			const q = $('q').value, n = norm(q); opts = [];
-			if (n.length < 2) { hideList(); return; }
+			const q = $('q').value; opts = []; clearTimeout(searchTimer);
+			if (norm(q).length < 2) { searchSeq++; hideList(); return; }
 			const c = parseCoords(q);
-			if (c) { const [x, y] = project(c.lo, c.la), lb = fmt(T('COM_MAPAVIAJES_JS_COORDS'), c.la.toFixed(3) + ', ' + c.lo.toFixed(3)); opts.push({ label: lb, sub: T('COM_MAPAVIAJES_JS_USE_POINT'), pt: { la: c.la, lo: c.lo, x, y, label: lb, city: null } }); }
-			GAZ.filter((g) => norm(g.n).includes(n) || norm(g.c).startsWith(n)).sort((a, b) => (norm(a.n).startsWith(n) ? 0 : 1) - (norm(b.n).startsWith(n) ? 0 : 1)).slice(0, 6)
-				.forEach((g) => opts.push({ label: g.n, sub: g.c, pt: { la: g.la, lo: g.lo, x: g.x, y: g.y, label: g.n + ', ' + g.c, city: g.n } }));
-			act = opts.length ? 0 : -1; showList();
+			if (c) { const [x, y] = project(c.lo, c.la), lb = fmt(T('COM_MAPAVIAJES_JS_COORDS'), c.la.toFixed(3) + ', ' + c.lo.toFixed(3)); opts.push({ label: lb, sub: T('COM_MAPAVIAJES_JS_USE_POINT'), pt: { la: c.la, lo: c.lo, x, y, label: lb, city: null } }); act = 0; showList(); return; }
+			// our own server answers (GeoNames file, nothing leaves the site); wait for a pause in typing, ignore late answers
+			const seq = ++searchSeq;
+			searchTimer = setTimeout(() => {
+				getJSON(O.searchUrl + '&q=' + encodeURIComponent(q.slice(0, 80))).then((r) => {
+					if (seq !== searchSeq) { return; }
+					opts = ((r && r.places) || []).slice(0, 8).map((g) => { const [x, y] = project(+g.lo, +g.la), n = String(g.n), cn = countryName(String(g.c)); return { label: n, sub: cn, pt: { la: +g.la, lo: +g.lo, x, y, label: n + ', ' + cn, city: n } }; });
+					act = opts.length ? 0 : -1; showList();
+				}).catch(() => { if (seq === searchSeq) { opts = []; act = -1; showList(); } });
+			}, 160);
 		}
 		function showList() {
 			const l = $('list'); l.hidden = false; $('q').setAttribute('aria-expanded', 'true');
@@ -624,9 +639,8 @@
 
 	(async function boot() {
 		try {
-			const [w, g] = await Promise.all([fetch(O.worldUrl).then((r) => r.json()), fetch(O.placesUrl).then((r) => r.json())]);
+			const w = await fetch(O.worldUrl).then((r) => r.json());
 			WORLD = w; W = w.W; H = w.H; drawWorld();
-			GAZ = g.map((r) => { const [x, y] = project(r[3], r[2]); return { n: String(r[0]), c: String(r[1]), la: +r[2], lo: +r[3], x, y }; });
 		} catch (_) { toast(T('COM_MAPAVIAJES_JS_LOAD_ERROR'), 20000); return; }
 		limits(); Object.assign(V, viewFor(W / 2, H / 2 + (VW <= 720 ? -18 : 0), KMIN)); V.ty = VW <= 720 ? (VH - H * KMIN) / 2 - 20 : V.ty; clamp(V);
 		if (panel) { renderPhotos(); syncSub(); }

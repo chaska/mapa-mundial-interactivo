@@ -154,7 +154,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 					<input class="mv-input" id="mv-q" type="text" role="combobox" aria-expanded="false" aria-controls="mv-list" aria-autocomplete="list" aria-describedby="mv-qhelp mv-qerr" placeholder="<?php echo $t('COM_MAPAVIAJES_FIELD_PLACE_PH'); ?>" maxlength="120" enterkeyhint="search" autocapitalize="off" spellcheck="false">
 					<ul class="mv-list" id="mv-list" role="listbox" hidden></ul>
 				</div>
-				<p class="mv-help" id="mv-qhelp"><?php echo $t('COM_MAPAVIAJES_FIELD_PLACE_HELP'); ?></p>
+				<p class="mv-help" id="mv-qhelp"><?php echo $t('COM_MAPAVIAJES_FIELD_PLACE_HELP'); ?> <span class="mv-credit"><?php echo $t('COM_MAPAVIAJES_GEONAMES_CREDIT'); ?></span></p>
 				<p class="mv-where" id="mv-where" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span><code id="mv-coords"></code> · <?php echo $t('COM_MAPAVIAJES_FIELD_PLACE_MOVE'); ?></span></p>
 				<p class="mv-err" id="mv-qerr" role="alert"></p>
 			</div>

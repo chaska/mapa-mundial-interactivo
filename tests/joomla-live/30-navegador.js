@@ -43,7 +43,7 @@ function jpeg(w, h) { // a real JPEG made by the browser itself would need a can
     await page.click('#mv-btnSend'); await page.waitForTimeout(300);
     afirma(sent === 0 && (await page.locator('#mv-qerr').textContent()).length > 0 && (await page.locator('#mv-terr').textContent()).length > 0 && (await page.locator('#mv-perr').textContent()).length > 0, 'enviar vacio: tres errores claros y no se envia nada');
     // search a place
-    await page.fill('#mv-q', 'ciudad del'); await page.waitForTimeout(250);
+    await page.fill("#mv-q", "ciudad del"); await page.waitForTimeout(900);
     afirma(await page.locator('#mv-list li[role=option]').count() >= 1, 'la busqueda de lugares sugiere "Ciudad del Cabo" (lista propia)');
     await page.screenshot({ path: `${OUT}/${name}-2-busqueda.png` });
     await page.keyboard.press('Enter'); await page.waitForTimeout(900);
