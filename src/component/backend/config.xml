@@ -32,6 +32,23 @@
 		</field>
 	</fieldset>
 
+	<fieldset name="ranking" label="COM_MAPAVIAJES_CONFIG_RANKING" description="COM_MAPAVIAJES_CONFIG_RANKING_DESC">
+		<field name="rank_enabled" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_RANK_ENABLED" description="COM_MAPAVIAJES_CONFIG_RANK_ENABLED_DESC" default="1" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="rank_w_trip" type="number" label="COM_MAPAVIAJES_CONFIG_RANK_W_TRIP" description="COM_MAPAVIAJES_CONFIG_RANK_W_DESC" default="20" min="0" max="1000" step="1" filter="integer" validate="number" />
+		<field name="rank_w_photo" type="number" label="COM_MAPAVIAJES_CONFIG_RANK_W_PHOTO" description="COM_MAPAVIAJES_CONFIG_RANK_W_DESC" default="3" min="0" max="1000" step="1" filter="integer" validate="number" />
+		<field name="rank_w_like" type="number" label="COM_MAPAVIAJES_CONFIG_RANK_W_LIKE" description="COM_MAPAVIAJES_CONFIG_RANK_W_DESC" default="1" min="0" max="1000" step="1" filter="integer" validate="number" />
+		<field name="rank_w_comment" type="number" label="COM_MAPAVIAJES_CONFIG_RANK_W_COMMENT" description="COM_MAPAVIAJES_CONFIG_RANK_W_DESC" default="2" min="0" max="1000" step="1" filter="integer" validate="number" />
+		<field name="rank_like_cap" type="number" label="COM_MAPAVIAJES_CONFIG_RANK_LIKE_CAP" description="COM_MAPAVIAJES_CONFIG_RANK_CAP_DESC" default="20" min="0" max="500" step="1" filter="integer" validate="number" />
+		<field name="rank_comment_cap" type="number" label="COM_MAPAVIAJES_CONFIG_RANK_COMMENT_CAP" description="COM_MAPAVIAJES_CONFIG_RANK_CAP_DESC" default="20" min="0" max="500" step="1" filter="integer" validate="number" />
+		<field name="notify_podium" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_NOTIFY_PODIUM" description="COM_MAPAVIAJES_CONFIG_NOTIFY_PODIUM_DESC" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+	</fieldset>
+
 	<fieldset name="privacy" label="COM_MAPAVIAJES_CONFIG_PRIVACY" description="COM_MAPAVIAJES_CONFIG_PRIVACY_DESC">
 		<field name="show_real_names" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_REAL_NAMES" description="COM_MAPAVIAJES_CONFIG_REAL_NAMES_DESC" default="0" filter="integer">
 			<option value="0">JNO</option>
@@ -40,6 +57,10 @@
 	</fieldset>
 
 	<fieldset name="notifications" label="COM_MAPAVIAJES_CONFIG_NOTIFY" description="COM_MAPAVIAJES_CONFIG_NOTIFY_DESC">
+		<field name="notify_author" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_NOTIFY_AUTHOR" description="COM_MAPAVIAJES_CONFIG_NOTIFY_AUTHOR_DESC" default="1" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
 		<field name="notify_admin" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_NOTIFY_ADMIN" description="COM_MAPAVIAJES_CONFIG_NOTIFY_ADMIN_DESC" default="1" filter="integer">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>

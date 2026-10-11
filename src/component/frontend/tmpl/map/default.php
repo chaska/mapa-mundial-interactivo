@@ -62,6 +62,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 		<div>
 			<h1><?php echo $e((string) $this->album['title']); ?></h1>
 			<p id="mv-stat">&nbsp;</p>
+			<button class="mv-chip" id="mv-chip" type="button" hidden></button>
 		</div>
 	</div>
 	<div class="mv-actions">
@@ -74,6 +75,11 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			</select>
 		<?php endif; ?>
 		<div class="mv-me" title="<?php echo $t('COM_MAPAVIAJES_SIGNED_IN'); ?>"><i><?php echo $e(mb_strtoupper(mb_substr($this->userName, 0, 1)) ?: '·'); ?></i><span><?php echo $e($this->userName); ?></span></div>
+		<?php if ($this->rankOn) : ?>
+		<button class="mv-btn mv-btn-soft" id="mv-btnPod" type="button" aria-controls="mv-pod" aria-label="<?php echo $t('COM_MAPAVIAJES_PODIUM'); ?>">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></svg><span><?php echo $t('COM_MAPAVIAJES_PODIUM'); ?></span>
+		</button>
+		<?php endif; ?>
 		<button class="mv-btn mv-btn-soft" id="mv-btnDisc" type="button" aria-controls="mv-drawer" aria-label="<?php echo $t('COM_MAPAVIAJES_DISCOVER'); ?>">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span><?php echo $t('COM_MAPAVIAJES_DISCOVER'); ?></span>
 		</button>
@@ -143,6 +149,20 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	</section>
 	<?php endif; ?>
 </div>
+
+<?php if ($this->rankOn) : ?>
+<section class="mv-pod" id="mv-pod" role="dialog" aria-modal="true" aria-labelledby="mv-podT" hidden>
+	<div class="mv-pod-bar">
+		<button class="mv-pod-x" type="button" id="mv-podClose" aria-label="<?php echo $t('COM_MAPAVIAJES_CLOSE'); ?>"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+		<div class="mv-pod-tabs" role="tablist" aria-label="<?php echo $t('COM_MAPAVIAJES_PODIUM'); ?>">
+			<button type="button" role="tab" data-v="week" aria-selected="true"><?php echo $t('COM_MAPAVIAJES_JS_POD_TAB_WEEK'); ?></button>
+			<button type="button" role="tab" data-v="last" aria-selected="false"><?php echo $t('COM_MAPAVIAJES_JS_POD_TAB_LAST'); ?></button>
+			<button type="button" role="tab" data-v="all" aria-selected="false"><?php echo $t('COM_MAPAVIAJES_JS_POD_TAB_ALL'); ?></button>
+		</div>
+	</div>
+	<div class="mv-pod-page" id="mv-podPage" role="tabpanel" aria-live="polite" tabindex="-1"></div>
+</section>
+<?php endif; ?>
 
 <?php if ($this->canSubmit) : ?>
 <aside class="mv-panel" id="mv-panel" role="dialog" aria-labelledby="mv-panelTitle" aria-modal="false">

@@ -32,6 +32,7 @@ class HtmlView extends BaseHtmlView
 
 	protected bool $canSubmit = false;
 	protected bool $commentsOn = false;
+	protected bool $rankOn = false;
 	protected int $maxPhotos = 5;
 	protected int $maxWords = 256;
 	protected string $userName = '';
@@ -49,7 +50,7 @@ class HtmlView extends BaseHtmlView
 		'COM_MAPAVIAJES_JS_AGO_D', 'COM_MAPAVIAJES_JS_LATEST_HELP', 'COM_MAPAVIAJES_JS_ON_MAP', 'COM_MAPAVIAJES_JS_NOTIFY_OFF', 'COM_MAPAVIAJES_JS_FULLSCREEN',
 		'COM_MAPAVIAJES_JS_LOAD_ERROR', 'COM_MAPAVIAJES_JS_SESSION', 'COM_MAPAVIAJES_JS_LOGIN', 'COM_MAPAVIAJES_JS_OCEAN_PACIFIC', 'COM_MAPAVIAJES_JS_OCEAN_ATLANTIC',
 		'COM_MAPAVIAJES_JS_OCEAN_INDIAN', 'COM_MAPAVIAJES_JS_OCEAN_ARCTIC', 'COM_MAPAVIAJES_JS_OCEAN_SOUTHERN', 'COM_MAPAVIAJES_JS_NO_TRIPS', 'COM_MAPAVIAJES_JS_TITLE_AUTO',
-		'COM_MAPAVIAJES_JS_LIKE_1', 'COM_MAPAVIAJES_JS_LIKE_2', 'COM_MAPAVIAJES_JS_LIKE_3', 'COM_MAPAVIAJES_JS_LIKE_4', 'COM_MAPAVIAJES_JS_LIKE_5', 'COM_MAPAVIAJES_JS_LIKE_6', 'COM_MAPAVIAJES_JS_LIKE_7', 'COM_MAPAVIAJES_JS_LIKE_8', 'COM_MAPAVIAJES_JS_LIKE_9', 'COM_MAPAVIAJES_JS_LIKE_10', 'COM_MAPAVIAJES_JS_FAN_MSG', 'COM_MAPAVIAJES_JS_LIKE_LABEL', 'COM_MAPAVIAJES_JS_LIKE_UNDO', 'COM_MAPAVIAJES_JS_FAN_LABEL', 'COM_MAPAVIAJES_JS_FAN_UNDO', 'COM_MAPAVIAJES_JS_OWN_REACT', 'COM_MAPAVIAJES_JS_LIKES_N', 'COM_MAPAVIAJES_JS_TAB_NEW', 'COM_MAPAVIAJES_JS_TAB_FAV', 'COM_MAPAVIAJES_JS_FAV_EMPTY', 'COM_MAPAVIAJES_JS_FAV_EMPTY_HELP', 'COM_MAPAVIAJES_JS_FAV_HELP', 'COM_MAPAVIAJES_JS_REACT_ERR', 'COM_MAPAVIAJES_JS_COMMENTS_BTN',
+		'COM_MAPAVIAJES_JS_LIKE_1', 'COM_MAPAVIAJES_JS_LIKE_2', 'COM_MAPAVIAJES_JS_LIKE_3', 'COM_MAPAVIAJES_JS_LIKE_4', 'COM_MAPAVIAJES_JS_LIKE_5', 'COM_MAPAVIAJES_JS_LIKE_6', 'COM_MAPAVIAJES_JS_LIKE_7', 'COM_MAPAVIAJES_JS_LIKE_8', 'COM_MAPAVIAJES_JS_LIKE_9', 'COM_MAPAVIAJES_JS_LIKE_10', 'COM_MAPAVIAJES_JS_FAN_MSG', 'COM_MAPAVIAJES_JS_LIKE_LABEL', 'COM_MAPAVIAJES_JS_LIKE_UNDO', 'COM_MAPAVIAJES_JS_FAN_LABEL', 'COM_MAPAVIAJES_JS_FAN_UNDO', 'COM_MAPAVIAJES_JS_OWN_REACT', 'COM_MAPAVIAJES_JS_LIKES_N', 'COM_MAPAVIAJES_JS_TAB_NEW', 'COM_MAPAVIAJES_JS_TAB_FAV', 'COM_MAPAVIAJES_JS_FAV_EMPTY', 'COM_MAPAVIAJES_JS_FAV_EMPTY_HELP', 'COM_MAPAVIAJES_JS_FAV_HELP', 'COM_MAPAVIAJES_JS_REACT_ERR', 'COM_MAPAVIAJES_JS_COMMENTS_BTN', 'COM_MAPAVIAJES_JS_POD_TAB_WEEK', 'COM_MAPAVIAJES_JS_POD_TAB_LAST', 'COM_MAPAVIAJES_JS_POD_TAB_ALL', 'COM_MAPAVIAJES_JS_POD_TITLE_WEEK', 'COM_MAPAVIAJES_JS_POD_TITLE_LAST', 'COM_MAPAVIAJES_JS_POD_TITLE_ALL', 'COM_MAPAVIAJES_JS_POD_RANGE', 'COM_MAPAVIAJES_JS_POD_NONE', 'COM_MAPAVIAJES_JS_POD_REST', 'COM_MAPAVIAJES_JS_POD_MINE', 'COM_MAPAVIAJES_JS_POD_MINE_N', 'COM_MAPAVIAJES_JS_POD_MINE_NONE', 'COM_MAPAVIAJES_JS_POD_MINE_ALL', 'COM_MAPAVIAJES_JS_POD_HIDE', 'COM_MAPAVIAJES_JS_POD_HIDE_HELP', 'COM_MAPAVIAJES_JS_POD_HOW', 'COM_MAPAVIAJES_JS_POD_HOW_TRIP', 'COM_MAPAVIAJES_JS_POD_HOW_PHOTO', 'COM_MAPAVIAJES_JS_POD_HOW_LIKE', 'COM_MAPAVIAJES_JS_POD_HOW_COMMENT', 'COM_MAPAVIAJES_JS_POD_HOW_CAP', 'COM_MAPAVIAJES_JS_POD_HOW_WEEK', 'COM_MAPAVIAJES_JS_POD_PTS', 'COM_MAPAVIAJES_JS_POD_STATS', 'COM_MAPAVIAJES_JS_POD_ALLSTATS', 'COM_MAPAVIAJES_JS_POD_FILTER', 'COM_MAPAVIAJES_JS_POD_ERR', 'COM_MAPAVIAJES_JS_POD_LOADING', 'COM_MAPAVIAJES_JS_FILTER_CHIP', 'COM_MAPAVIAJES_JS_FILTER_CLEAR', 'COM_MAPAVIAJES_JS_POD_LAST_NONE',
 	];
 
 	public function display($tpl = null): void
@@ -87,6 +88,7 @@ class HtmlView extends BaseHtmlView
 		$this->maxWords  = $settings->maxWords();
 		$this->userName  = (string) $user->name;
 		$this->commentsOn = $settings->commentsProvider() !== 'none' && $this->album !== null && (int) $this->album['allow_comments'] === 1;
+		$this->rankOn = $settings->rankEnabled();
 		$this->canSubmit = $this->album !== null && $user->authorise('mapaviajes.submit', 'com_mapaviajes') && ImageProcessor::isSupported();
 
 		// Nothing here may be cached by the site, a proxy or the browser history: it is personal.
@@ -112,6 +114,9 @@ class HtmlView extends BaseHtmlView
 			'commentsOn' => $this->commentsOn,
 			'commentsUrl' => Route::_('index.php?option=com_mapaviajes&view=tripcomments&tmpl=component&id=', false),
 			'openTrip'   => (int) preg_replace('/\D/', '', substr((string) ($_GET['trip'] ?? ''), 0, 9)),
+			'rankOn'     => $this->rankOn,
+			'rankUrl'    => Route::_('index.php?option=com_mapaviajes&task=ranking.data&format=json', false),
+			'hideUrl'    => Route::_('index.php?option=com_mapaviajes&task=ranking.hide&format=json', false),
 			'reactUrl'   => Route::_('index.php?option=com_mapaviajes&task=reaction.toggle&format=json', false),
 			'photoUrl'   => Route::_('index.php?option=com_mapaviajes&task=photo.view&id=', false),
 			'loginUrl'   => Route::_('index.php?option=com_users&view=login', false),

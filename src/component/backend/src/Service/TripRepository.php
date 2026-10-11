@@ -122,7 +122,7 @@ final class TripRepository
 			$out[] = [
 				'id' => $id, 't' => (string) $t['title'], 'p' => (string) $t['place'],
 				'la' => (float) $t['lat'], 'lo' => (float) $t['lon'],
-				'by' => (string) ($t['author'] ?? ''), 'mine' => (int) $t['user_id'] === $uid,
+				'by' => (string) ($t['author'] ?? ''), 'u' => Settings::userKey((int) $t['user_id']), 'mine' => (int) $t['user_id'] === $uid,
 				'pending' => (int) $t['published'] === 0, 'cm' => (int) $t['allow_comments'] === 1,
 				'ts' => strtotime((string) $t['created'] . ' UTC') ?: 0,
 				'lk' => $counts[$id]['like'] ?? 0, 'fn' => $counts[$id]['fan'] ?? 0,

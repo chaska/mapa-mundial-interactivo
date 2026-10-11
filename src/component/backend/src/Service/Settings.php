@@ -47,6 +47,33 @@ final class Settings
 		return \in_array($v, ['engage', 'events'], true) ? $v : 'none';
 	}
 
+	/** Weekly ranking: points per published trip, per photo on it, per reaction given and per comment left (engagement is capped, see RankingService). */
+	public function rankWeights(): array
+	{
+		return [
+			'trip'    => $this->int('rank_w_trip', 20, 0, 1000),
+			'photo'   => $this->int('rank_w_photo', 3, 0, 1000),
+			'like'    => $this->int('rank_w_like', 1, 0, 1000),
+			'comment' => $this->int('rank_w_comment', 2, 0, 1000),
+		];
+	}
+
+	public function rankLikeCap(): int    { return $this->int('rank_like_cap', 20, 0, 500); }
+	public function rankCommentCap(): int { return $this->int('rank_comment_cap', 20, 0, 500); }
+	public function rankEnabled(): bool   { return (int) $this->params->get('rank_enabled', 1) === 1; }
+	/** E-mail the author when a moderator publishes or rejects their trip. */
+	public function notifyAuthor(): bool  { return (int) $this->params->get('notify_author', 1) === 1; }
+	/** E-mail the podium of the week when it closes (off by default: it is not a transactional message). */
+	public function notifyPodium(): bool  { return (int) $this->params->get('notify_podium', 0) === 1; }
+
+	/** An opaque, stable key for a person (so the map can filter by author without publishing user ids). Same person, same key, on this site only. */
+	public static function userKey(int $userId): string
+	{
+		$secret = (string) \Joomla\CMS\Factory::getApplication()->get('secret', '');
+
+		return substr(hash_hmac('sha256', 'mapaviajes-user-' . $userId, $secret !== '' ? $secret : JPATH_ROOT), 0, 12);
+	}
+
 	public function reactionsPerDay(): int { return $this->int('reactions_per_day', 300, 1, 5000); }
 	public function showRealNames(): bool { return (int) $this->params->get('show_real_names', 0) === 1; }
 	public function notifyAdmin(): bool   { return (int) $this->params->get('notify_admin', 1) === 1; }

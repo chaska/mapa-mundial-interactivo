@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS `#__mapaviajes_prefs`;
+DROP TABLE IF EXISTS `#__mapaviajes_ranking`;
+DROP TABLE IF EXISTS `#__mapaviajes_weeks`;
 DROP TABLE IF EXISTS `#__mapaviajes_reactions`;
 DROP TABLE IF EXISTS `#__mapaviajes_events`;
 DROP TABLE IF EXISTS `#__mapaviajes_photos`;

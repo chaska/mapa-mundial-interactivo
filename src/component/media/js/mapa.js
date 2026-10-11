@@ -49,7 +49,7 @@
 	const dist = (a, b, c, d) => { const dl = (c - a) * D2R, dp = (d - b) * D2R, q = Math.sin(dp / 2) ** 2 + Math.cos(b * D2R) * Math.cos(d * D2R) * Math.sin(dl / 2) ** 2; return 12742 * Math.asin(Math.sqrt(q)); };
 
 	/* ---------------------------------------------------------------- state */
-	let TRIPS = [];
+	let TRIPS = [], ALL = [], AUTHOR = '', AUTHOR_NAME = '';
 	const stage = $('stage'), svg = $('svg'), worldG = $('world'), pinsEl = $('pins');
 	const V = { k: 1, tx: 0, ty: 0 };
 	let VW = innerWidth, VH = innerHeight, KMIN = 1, KMAX = 40;
@@ -319,7 +319,7 @@
 			h('a', { class: 'mv-arow-main', href: '#', onclick: (e) => { e.preventDefault(); openViewer(t); } },
 				t.ph.length ? h('img', { alt: '', src: photoSrc(t.ph[0].id), width: '64', height: '64' }) : h('span', { style: 'width:64px;height:64px' }),
 				h('span', { style: 'min-width:0' }, h('strong', { text: t.t }), h('small', { text: t.p + ' · ' + t.by }), h('small', { class: 'mv-m', text: meta.join(' · ') }))),
-			h('div', { class: 'mv-arow-act' }, h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_ON_MAP') + ': ' + t.t, onclick: () => {
+			h('div', { class: 'mv-arow-act' }, t.by && t.u && t.u !== AUTHOR ? h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_POD_FILTER') + ': ' + t.by, onclick: () => setAuthor(t.u, t.by) }, h('span', { text: '👤' })) : null, h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_ON_MAP') + ': ' + t.t, onclick: () => {
 				if (innerWidth <= 720) { closeDrawer(); }
 				flyTo(viewFor(t.x, t.y, Math.max(KMIN * 16, V.k)), 900);
 				setTimeout(() => { const c = clusters().find((cc) => cc.items.includes(t)); if (c && V.k / KMIN < ZP) { openPop(c); } }, 950);
@@ -377,6 +377,78 @@
 		$('vLive').textContent = n > 1 ? fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n) : '';
 		if (n > 1) { for (const d of [1, -1]) { new Image().src = photoSrc(VWR.t.ph[(VWR.i + d + n) % n].id); } }
 	}
+
+	/* ---- show only one person's trips (from the podium or a trip row) ---- */
+	function syncChip() {
+		const c = $('chip'); if (!c) { return; }
+		c.hidden = !AUTHOR; c.textContent = AUTHOR ? fmt(T('COM_MAPAVIAJES_JS_FILTER_CHIP'), AUTHOR_NAME) + ' ✕' : ''; c.setAttribute('aria-label', T('COM_MAPAVIAJES_JS_FILTER_CLEAR'));
+	}
+	function setAuthor(u, name) {
+		AUTHOR = u || ''; AUTHOR_NAME = AUTHOR ? name : ''; TRIPS = AUTHOR ? ALL.filter((t) => t.u === AUTHOR) : ALL;
+		for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }
+		syncChip(); closePop(); render(); if (drawerOpen()) { renderDrawer(); }
+		if (AUTHOR && TRIPS.length) { const t = TRIPS[0]; flyTo(viewFor(t.x, t.y, KMIN * 2.2), 700); }
+	}
+	if ($('chip')) { $('chip').onclick = () => setAuthor('', ''); }
+
+	/* ---- the weekly podium (comic style): data comes from our own server, names are escaped by textContent ---- */
+	if ($('pod')) {
+		const COLORS = ['#a8321f', '#1f6f78', '#7a5a1f', '#5b3f8a', '#2f6b3b', '#a05a1a'];
+		const colorOf = (key) => { let n = 0; for (const ch of String(key)) { n = (n * 31 + ch.charCodeAt(0)) >>> 0; } return COLORS[n % COLORS.length]; };
+		let podData = null, podView = 'week', podOpener = null;
+		const star = (on, i) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'mv-pstar' + (on ? '' : ' mv-off')); s.setAttribute('aria-hidden', 'true'); s.style.setProperty('--d', (0.25 + i * 0.12) + 's'); s.style.setProperty('--r', [-8, 0, 8][i % 3] + 'deg'); const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z'); s.append(p); return s; };
+		const who = (r) => h('button', { type: 'button', class: 'mv-pname', title: T('COM_MAPAVIAJES_JS_POD_FILTER'), onclick: () => { closePod(); setAuthor(r.u, r.n); } }, h('span', { text: r.n }));
+		const avatar = (r) => h('span', { class: 'mv-pav', style: 'background:' + colorOf(r.u), 'aria-hidden': 'true', text: (r.n || '?').charAt(0).toUpperCase() });
+		function slot(r, place, kind) {
+			if (!r) { return h('div', { class: 'mv-pslot mv-p' + place + ' mv-empty' }, h('div', { class: 'mv-pstars' }), h('span', { class: 'mv-pav mv-pnone', 'aria-hidden': 'true', text: '?' }), h('p', { class: 'mv-pwho mv-pdim', text: '—' }), h('div', { class: 'mv-pblock' }, h('span', { text: String(place) }))); }
+			const stars = h('div', { class: 'mv-pstars', 'aria-hidden': 'true' }, [0, 1, 2].slice(0, 4 - place).map((i) => star(true, i)));
+			return h('div', { class: 'mv-pslot mv-p' + place + (r.me ? ' mv-me' : '') }, stars, avatar(r), h('div', { class: 'mv-pwho' }, who(r)),
+				h('p', { class: 'mv-ppts' }, String(r.s), h('small', { text: T('COM_MAPAVIAJES_JS_POD_PTS') })), h('div', { class: 'mv-pblock' }, h('span', { text: String(place) })));
+		}
+		function detail(r, kind) { return kind === 'all' ? fmt(T('COM_MAPAVIAJES_JS_POD_ALLSTATS'), r.w || 0, r.pd || 0) : fmt(T('COM_MAPAVIAJES_JS_POD_STATS'), r.t || 0, r.p || 0, r.l || 0, r.c || 0); }
+		function range(a, b) { const f = (d) => { const [y, m, dd] = d.split('-').map(Number); try { return new Intl.DateTimeFormat(document.documentElement.lang || undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, dd))); } catch (_) { return d; } }; return fmt(T('COM_MAPAVIAJES_JS_POD_RANGE'), f(a), f(b)); }
+		function renderPod() {
+			const pg = $('podPage'), d = podData; pg.replaceChildren();
+			for (const tb of $('pod').querySelectorAll('[role=tab]')) { tb.setAttribute('aria-selected', String(tb.dataset.v === podView)); }
+			if (!d) { pg.append(h('p', { class: 'mv-pnote', text: T('COM_MAPAVIAJES_JS_POD_LOADING') })); return; }
+			const kind = podView, block = kind === 'week' ? d.week : kind === 'last' ? d.last : d.general, rows = block.rows || [];
+			const title = kind === 'week' ? 'COM_MAPAVIAJES_JS_POD_TITLE_WEEK' : kind === 'last' ? 'COM_MAPAVIAJES_JS_POD_TITLE_LAST' : 'COM_MAPAVIAJES_JS_POD_TITLE_ALL';
+			pg.append(h('h2', { class: 'mv-ptitle', id: 'mv-podT', text: T(title) }));
+			if (kind !== 'all' && block.start) { pg.append(h('p', { class: 'mv-prange', text: range(block.start, block.end) })); }
+			if (!rows.length) { pg.append(h('p', { class: 'mv-pnote', text: T(kind === 'last' ? 'COM_MAPAVIAJES_JS_POD_LAST_NONE' : 'COM_MAPAVIAJES_JS_POD_NONE') })); }
+			else {
+				pg.append(h('div', { class: 'mv-pstage' }, slot(rows[1], 2, kind), slot(rows[0], 1, kind), slot(rows[2], 3, kind)), h('div', { class: 'mv-pfloor', 'aria-hidden': 'true' }));
+				if (rows.length > 3) {
+					pg.append(h('h3', { class: 'mv-pstrip', text: T('COM_MAPAVIAJES_JS_POD_REST') }), h('ol', { class: 'mv-prest', start: '4' }, rows.slice(3).map((r) => h('li', { class: r.me ? 'mv-me' : '' }, avatar(r), h('span', { class: 'mv-pwho2' }, who(r), h('small', { text: detail(r, kind) })), h('b', { text: String(r.s) + ' ' + T('COM_MAPAVIAJES_JS_POD_PTS') })))));
+				}
+			}
+			const mine = block.mine;
+			pg.append(h('h3', { class: 'mv-pstrip', text: T('COM_MAPAVIAJES_JS_POD_MINE') }),
+				h('p', { class: 'mv-pmine', text: kind === 'all' ? (mine ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_ALL'), mine.s, mine.w) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) : (kind === 'week' && mine ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_N'), mine.pos, mine.s) : kind === 'last' ? (rows.find((r) => r.me) ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_N'), rows.find((r) => r.me).pos, rows.find((r) => r.me).s) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) }));
+			const w = d.weights || {}, hid = h('input', { type: 'checkbox', id: 'mv-podHide', role: 'switch' }); hid.checked = !!d.hidden;
+			hid.onchange = async () => {
+				const fd = new FormData(); fd.append(O.token, '1'); fd.append('hidden', hid.checked ? '1' : '0');
+				try { const r = await fetch(O.hideUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } }); const j = await r.json(); if (!r.ok || !j.ok) { throw new Error('hide'); } d.hidden = !!j.hidden; }
+				catch (_) { hid.checked = !hid.checked; toast(T('COM_MAPAVIAJES_JS_POD_ERR')); }
+			};
+			pg.append(h('label', { class: 'mv-phide', for: 'mv-podHide' }, hid, h('span', { class: 'mv-pswitch', 'aria-hidden': 'true' }), h('span', {}, h('strong', { text: T('COM_MAPAVIAJES_JS_POD_HIDE') }), h('small', { text: T('COM_MAPAVIAJES_JS_POD_HIDE_HELP') }))));
+			pg.append(h('details', { class: 'mv-phow' }, h('summary', { text: T('COM_MAPAVIAJES_JS_POD_HOW') }), h('ul', {},
+				h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_TRIP'), w.trip || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_PHOTO'), w.photo || 0) }),
+				h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_LIKE'), (d.caps || {}).likes || 0, w.like || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_COMMENT'), (d.caps || {}).comments || 0, w.comment || 0) })),
+				h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_CAP') }), h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_WEEK') })));
+		}
+		async function openPod() {
+			closePop(); if (drawerOpen()) { closeDrawer(); } if (panelOpen()) { closePanel(false); }
+			podOpener = document.activeElement; $('pod').hidden = false; renderPod(); $('podPage').focus({ preventScroll: true });
+			try { const j = await getJSON(O.rankUrl); if (!j || !j.ok) { throw new Error('rank'); } podData = j; if (podView === 'last' && !(j.last.rows || []).length) { podView = 'week'; } renderPod(); }
+			catch (_) { $('podPage').replaceChildren(h('p', { class: 'mv-pnote', text: T('COM_MAPAVIAJES_JS_POD_ERR') })); }
+		}
+		function closePod() { $('pod').hidden = true; if (podOpener && podOpener.focus) { podOpener.focus({ preventScroll: true }); } }
+		$('btnPod').onclick = openPod; $('podClose').onclick = closePod;
+		for (const tb of $('pod').querySelectorAll('[role=tab]')) { tb.onclick = () => { podView = tb.dataset.v; renderPod(); }; }
+		document.addEventListener('keydown', (e) => { if (!$('pod').hidden && e.key === 'Escape') { closePod(); } });
+	}
+
 	/* ---- reactions: a heart with a random kind word underneath, and a star that says "I'm your fan!" ---- */
 	const LIKE_MSGS = Array.from({ length: 10 }, (_, i) => 'COM_MAPAVIAJES_JS_LIKE_' + (i + 1));
 	let lastMsg = -1, msgTimer = 0;
@@ -642,7 +714,9 @@
 			const res = await fetch(O.dataUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
 			if (res.status === 403) { toast(T('COM_MAPAVIAJES_JS_SESSION')); return; }
 			const j = await res.json();
-			TRIPS = (j.trips || []).map((t) => { const [x, y] = project(t.lo, t.la); return { ...t, x, y }; });
+			ALL = (j.trips || []).map((t) => { const [x, y] = project(t.lo, t.la); return { ...t, x, y }; });
+			TRIPS = AUTHOR ? ALL.filter((t) => t.u === AUTHOR) : ALL;
+			syncChip();
 			for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }
 			render(); if (drawerOpen()) { renderDrawer(); }
 		} catch (_) { toast(T('COM_MAPAVIAJES_JS_LOAD_ERROR')); }
