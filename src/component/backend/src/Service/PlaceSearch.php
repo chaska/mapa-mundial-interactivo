@@ -112,11 +112,21 @@ final class PlaceSearch
 		// Exact name first, then the most populated.
 		usort($found, static fn (array $a, array $b): int => [$a[0][0] === $key ? 0 : 1, $b[1]] <=> [$b[0][0] === $key ? 0 : 1, $a[1]]);
 
-		$out = [];
+		$out  = [];
+		$seen = [];
 
 		foreach ($found as [$f])
 		{
-			$out[] = ['n' => $f[1], 'c' => $f[2], 'la' => (float) $f[3], 'lo' => (float) $f[4]];
+			// A place is listed once even if both its Spanish and its local name start with what was typed.
+			$id = $f[1] . '|' . $f[2] . '|' . $f[3] . '|' . $f[4];
+
+			if (isset($seen[$id]))
+			{
+				continue;
+			}
+
+			$seen[$id] = true;
+			$out[]     = ['n' => $f[1], 'c' => $f[2], 'la' => (float) $f[3], 'lo' => (float) $f[4]];
 
 			if (\count($out) >= $limit)
 			{

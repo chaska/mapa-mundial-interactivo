@@ -21,12 +21,12 @@ foreach (new SplFileObject($file) as $line) {
 	$f = explode("\t", $line); $n++;
 	if (count($f) !== 6 || !is_numeric($f[3]) || !is_numeric($f[4]) || !preg_match('/^[A-Z]{2}$/', $f[2])) { $bad++; continue; }
 	if (strcmp($prev, $f[0]) > 0) { $sorted = false; } $prev = $f[0];
-	if ($f[0] !== PlaceSearch::normalise($f[1]) && count($unsafe) < 5) { $unsafe[] = "clave $f[0] != " . PlaceSearch::normalise($f[1]); }
+	if ($f[0] !== PlaceSearch::normalise($f[0]) && count($unsafe) < 5) { $unsafe[] = "clave $f[0] no normalizada"; }
 }
 afirma($n > 120000, "mas de 120 000 lugares ($n)");
 afirma($bad === 0, 'todas las filas tienen 6 columnas validas');
 afirma($sorted, 'ordenado por clave (condicion de la busqueda binaria)');
-afirma($unsafe === [], 'la clave del archivo coincide con la normalizacion de PHP' . ($unsafe ? ': ' . $unsafe[0] : ''));
+afirma($unsafe === [], 'toda clave de busqueda ya esta normalizada (minusculas, sin tildes)' . ($unsafe ? ': ' . $unsafe[0] : ''));
 
 seccion('Que cada nombre se puede guardar');
 $rej = []; $tot = 0;
@@ -43,6 +43,12 @@ afirma(($first('Ciudad del')['n'] ?? '') === 'Ciudad del Cabo', '"Ciudad del" ->
 afirma(($first('lisboa')['c'] ?? '') === 'PT', '"lisboa" (nombre en español) -> Portugal');
 afirma(($first('MADRID')['c'] ?? '') === 'ES', 'mayusculas: Madrid de España antes que el de Colombia');
 afirma(($first('londres')['c'] ?? '') === 'GB', '"londres" (español) -> Reino Unido primero');
+afirma(($first('gante')['n'] ?? '') === 'Gante' && ($first('gante')['c'] ?? '') === 'BE', '"gante" -> Gante (Bélgica)');
+afirma(($first('gent')['n'] ?? '') === 'Gante', 'el nombre local "gent" encuentra Gante');
+afirma(($first('mumbai')['n'] ?? '') === 'Bombay', 'el nombre inglés "mumbai" encuentra Bombay');
+afirma(($first('cuzco')['c'] ?? '') === 'PE' && ($first('cusco')['c'] ?? '') === 'PE', 'Cuzco y Cusco');
+$sh = $first('shanghai'); afirma(abs(($sh['la'] ?? 0) - 31.2) < 0.5 && abs(($sh['lo'] ?? 0) - 121.5) < 0.5, 'Shanghái está donde debe (31,2 N 121,5 E)');
+$ge = $p->search('ge', 8); afirma(count($ge) === count(array_unique(array_map(fn ($x) => $x['n'] . $x['c'] . $x['la'] . $x['lo'], $ge))), 'sin resultados repetidos');
 afirma(($first('sao pa')['n'] ?? '') === 'São Paulo', 'sin tilde encuentra "São Paulo"');
 afirma(($first('  kioto ')['n'] ?? '') !== '', 'espacios sobrantes no molestan');
 afirma(count($p->search('springfield', 8)) === 8, 'tope de 8 resultados');
