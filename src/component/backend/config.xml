@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<fieldset name="photos" label="COM_MAPAVIAJES_CONFIG_PHOTOS" description="COM_MAPAVIAJES_CONFIG_PHOTOS_DESC">
+		<field name="max_photos" type="number" label="COM_MAPAVIAJES_CONFIG_MAX_PHOTOS" description="COM_MAPAVIAJES_CONFIG_MAX_PHOTOS_DESC" default="5" min="1" max="10" step="1" filter="integer" validate="number" />
+		<field name="long_side" type="list" label="COM_MAPAVIAJES_CONFIG_LONG_SIDE" description="COM_MAPAVIAJES_CONFIG_LONG_SIDE_DESC" default="1000" filter="integer">
+			<option value="800">800 px</option>
+			<option value="1000">1000 px</option>
+			<option value="1600">1600 px</option>
+		</field>
+		<field name="webp_quality" type="number" label="COM_MAPAVIAJES_CONFIG_QUALITY" description="COM_MAPAVIAJES_CONFIG_QUALITY_DESC" default="80" min="50" max="95" step="1" filter="integer" validate="number" />
+		<field name="upload_max_mb" type="number" label="COM_MAPAVIAJES_CONFIG_UPLOAD_MB" description="COM_MAPAVIAJES_CONFIG_UPLOAD_MB_DESC" default="10" min="1" max="20" step="1" filter="integer" validate="number" />
+		<field name="max_words" type="number" label="COM_MAPAVIAJES_CONFIG_MAX_WORDS" description="COM_MAPAVIAJES_CONFIG_MAX_WORDS_DESC" default="256" min="20" max="500" step="1" filter="integer" validate="number" />
+		<field name="storage_path" type="text" label="COM_MAPAVIAJES_CONFIG_STORAGE" description="COM_MAPAVIAJES_CONFIG_STORAGE_DESC" default="" filter="string" size="60" />
+	</fieldset>
+
+	<fieldset name="moderation" label="COM_MAPAVIAJES_CONFIG_MODERATION" description="COM_MAPAVIAJES_CONFIG_MODERATION_DESC">
+		<field name="review_first" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_REVIEW_FIRST" description="COM_MAPAVIAJES_CONFIG_REVIEW_FIRST_DESC" default="1" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="trips_per_hour" type="number" label="COM_MAPAVIAJES_CONFIG_PER_HOUR" description="COM_MAPAVIAJES_CONFIG_PER_HOUR_DESC" default="3" min="1" max="50" step="1" filter="integer" validate="number" />
+		<field name="trips_per_day" type="number" label="COM_MAPAVIAJES_CONFIG_PER_DAY" description="COM_MAPAVIAJES_CONFIG_PER_DAY_DESC" default="10" min="1" max="200" step="1" filter="integer" validate="number" />
+		<field name="comments_default" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_COMMENTS_DEFAULT" description="COM_MAPAVIAJES_CONFIG_COMMENTS_DEFAULT_DESC" default="1" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+	</fieldset>
+
+	<fieldset name="notifications" label="COM_MAPAVIAJES_CONFIG_NOTIFY" description="COM_MAPAVIAJES_CONFIG_NOTIFY_DESC">
+		<field name="notify_admin" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_NOTIFY_ADMIN" description="COM_MAPAVIAJES_CONFIG_NOTIFY_ADMIN_DESC" default="1" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_emails" type="text" label="COM_MAPAVIAJES_CONFIG_NOTIFY_EMAILS" description="COM_MAPAVIAJES_CONFIG_NOTIFY_EMAILS_DESC" default="" filter="string" size="60" />
+	</fieldset>
+
+	<fieldset name="permissions" label="JCONFIG_PERMISSIONS_LABEL" description="JCONFIG_PERMISSIONS_DESC">
+		<field name="rules" type="rules" label="JCONFIG_PERMISSIONS_LABEL" validate="rules" filter="rules" component="com_mapaviajes" section="component" />
+	</fieldset>
+</config>

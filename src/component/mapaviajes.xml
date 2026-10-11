@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--~
+  ~ @package   MapaViajes
+  ~ @copyright Copyright (c) 2026 ChasKa
+  ~ @license   GNU General Public License version 3, or later
+  -->
+<extension type="component" version="4.0.0" method="upgrade">
+	<name>COM_MAPAVIAJES</name>
+	<creationDate>2026-10-11</creationDate>
+	<author>ChasKa</author>
+	<authorEmail>no-reply@example.invalid</authorEmail>
+	<authorUrl></authorUrl>
+	<copyright>Copyright (c) 2026 ChasKa</copyright>
+	<license>GNU/GPL v3 or any later version</license>
+	<version>1.0.0</version>
+	<description>COM_MAPAVIAJES_XML_DESCRIPTION</description>
+	<namespace path="src">Chaska\Component\Mapaviajes</namespace>
+	<scriptfile>script.php</scriptfile>
+	<php_minimum>8.1.0</php_minimum>
+
+	<files folder="frontend">
+		<folder>src</folder>
+		<folder>tmpl</folder>
+		<filename>.htaccess</filename>
+		<filename>web.config</filename>
+	</files>
+
+	<languages folder="frontend/language">
+		<language tag="en-GB">en-GB/com_mapaviajes.ini</language>
+		<language tag="es-ES">es-ES/com_mapaviajes.ini</language>
+	</languages>
+
+	<administration>
+		<menu>COM_MAPAVIAJES</menu>
+		<submenu>
+			<menu link="option=com_mapaviajes&amp;view=trips">COM_MAPAVIAJES_MENU_TRIPS</menu>
+			<menu link="option=com_mapaviajes&amp;view=albums">COM_MAPAVIAJES_MENU_ALBUMS</menu>
+		</submenu>
+
+		<files folder="backend">
+			<folder>forms</folder>
+			<folder>services</folder>
+			<folder>sql</folder>
+			<folder>src</folder>
+			<folder>tmpl</folder>
+			<filename>access.xml</filename>
+			<filename>config.xml</filename>
+			<filename>.htaccess</filename>
+			<filename>web.config</filename>
+		</files>
+
+		<languages folder="backend/language">
+			<language tag="en-GB">en-GB/com_mapaviajes.ini</language>
+			<language tag="en-GB">en-GB/com_mapaviajes.sys.ini</language>
+			<language tag="es-ES">es-ES/com_mapaviajes.ini</language>
+			<language tag="es-ES">es-ES/com_mapaviajes.sys.ini</language>
+		</languages>
+	</administration>
+
+	<media destination="com_mapaviajes" folder="media">
+		<folder>css</folder>
+		<folder>data</folder>
+		<folder>fonts</folder>
+		<folder>js</folder>
+		<filename>joomla.asset.json</filename>
+	</media>
+
+	<install>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+			<file driver="postgresql" charset="utf8">sql/install.postgresql.sql</file>
+		</sql>
+	</install>
+
+	<uninstall>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+			<file driver="postgresql" charset="utf8">sql/uninstall.postgresql.sql</file>
+		</sql>
+	</uninstall>
+
+	<update>
+		<schemas>
+			<schemapath type="mysql">sql/updates/mysql</schemapath>
+			<schemapath type="postgresql">sql/updates/postgresql</schemapath>
+		</schemas>
+	</update>
+</extension>

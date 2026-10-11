@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="filter">
+		<field name="search" type="text" label="COM_MAPAVIAJES_FILTER_SEARCH" hint="JSEARCH_FILTER" />
+		<field name="published" type="list" label="JSTATUS" onchange="this.form.submit();">
+			<option value="">COM_MAPAVIAJES_FILTER_STATE</option>
+			<option value="0">COM_MAPAVIAJES_STATE_PENDING</option>
+			<option value="1">JPUBLISHED</option>
+			<option value="2">COM_MAPAVIAJES_STATE_HIDDEN</option>
+			<option value="-3">COM_MAPAVIAJES_STATE_SPAM</option>
+			<option value="-2">JTRASHED</option>
+			<option value="*">JALL</option>
+		</field>
+		<field name="album_id" type="sql" label="COM_MAPAVIAJES_COL_ALBUM" onchange="this.form.submit();" query="SELECT id AS value, title AS text FROM #__mapaviajes_albums ORDER BY ordering, id" key_field="value" value_field="text">
+			<option value="">COM_MAPAVIAJES_FILTER_ALBUM</option>
+		</field>
+	</fields>
+	<fields name="list">
+		<field name="fullordering" type="list" label="JGLOBAL_SORT_BY" default="a.created DESC" onchange="this.form.submit();">
+			<option value="">JGLOBAL_SORT_BY</option>
+			<option value="a.created ASC">COM_MAPAVIAJES_COL_DATE_ASC</option>
+			<option value="a.created DESC">COM_MAPAVIAJES_COL_DATE_DESC</option>
+			<option value="a.title ASC">COM_MAPAVIAJES_COL_TITLE_ASC</option>
+			<option value="a.title DESC">COM_MAPAVIAJES_COL_TITLE_DESC</option>
+		</field>
+		<field name="limit" type="limitbox" class="input-mini" default="25" onchange="this.form.submit();" />
+	</fields>
+</form>
