@@ -47,7 +47,7 @@ final class PhotoServer
 			@ob_end_clean();
 		}
 
-		self::deliver($app, $path, $gate['logo'] ?? '', 'logo.webp');
+		self::deliver($app, $path, $gate['logo'] ?? '', 'logo.png');
 	}
 
 	private static function deliver(CMSApplicationInterface $app, ?string $path, string $etagSeed, string $downloadName): never
@@ -80,7 +80,7 @@ final class PhotoServer
 			exit;
 		}
 
-		header('Content-Type: image/webp');
+		header('Content-Type: ' . (str_ends_with($path, '.png') ? 'image/png' : 'image/webp'));
 		header('Content-Length: ' . $size);
 		header('Content-Disposition: inline; filename="' . $downloadName . '"');
 

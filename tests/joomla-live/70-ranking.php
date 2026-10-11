@@ -47,7 +47,7 @@ $trip = function (int $uid, string $created, int $photos, int $published = 1, st
 };
 $react = fn (int $uid, int $tripId, string $kind, string $created, int $active = 1) => $db->exec("INSERT INTO $R (trip_id, user_id, kind, active, created, changed) VALUES (:t, :u, :k, :a, :c, :c)", [':t' => $tripId, ':u' => $uid, ':k' => $kind, ':a' => $active, ':c' => $created]);
 
-$a = $mkUser('a'); $b = $mkUser('b'); $c = $mkUser('c'); $d = $mkUser('d'); $e = $mkUser('e'); $f = $mkUser('f'); $g = $mkUser('g'); $h = $mkUser('h', 1); $i2 = $mkUser('i');
+$a = $mkUser('a'); $b = $mkUser('b'); $c = $mkUser('c'); $d = $mkUser('d'); $e = $mkUser('e'); $f = $mkUser('f'); $g = $mkUser('g'); $h = $mkUser('h', 1); $i2 = $mkUser('i', 1);
 // a: 2 trips with 3+2 photos            -> base 20*2 + 3*5 = 55
 $ta1 = $trip($a, $at(0), 3); $ta2 = $trip($a, $at(1), 2);
 // b: 1 trip with 5 photos + 30 reactions given (cap 20) -> base 20+15 = 35, engagement min(20, 35) -> 55
@@ -58,10 +58,9 @@ $tc_target = $ta1;
 $td = $trip($d, $at(3), 1);
 // e: same score as d (tie): trip made LATER -> d before e
 $te = $trip($e, $at(4), 1);
-// f: unpublished trip -> nothing;   g: trip OUTSIDE the week -> nothing;  h: blocked user;  i: hidden by choice
+// f: unpublished trip -> nothing;   g: trip OUTSIDE the week -> nothing;  h, i: blocked users (nobody can opt out of the ranking any more)
 $trip($f, $at(0), 4, 0); $trip($g, gmdate('Y-m-d H:i:s', strtotime("$week UTC") - 3600), 2); $trip($mkUser('hb', 0), $at(0), 0);
 $trip($h, $at(0), 5); $ti = $trip($i2, $at(0), 5);
-$db->exec("INSERT INTO $PF (user_id, hide_ranking) VALUES (:u, 1)", [':u' => $i2]);
 // reactions: b gives 30 to trips of other people (needs distinct trip/kind pairs: use trips + both kinds on several trips)
 $others = [$ta1, $ta2, $td, $te, $ti]; $n = 0;
 foreach ($others as $o) { foreach (['like', 'fan'] as $k) { if ($n < 10) { $react($b, $o, $k, $at(2, 13)); $n++; } } }
@@ -127,9 +126,6 @@ afirma(array_column($all, 'username') === ['rk_b', 'rk_a'] || array_column($all,
 $allB = array_values(array_filter($all, fn ($r) => $r['username'] === 'rk_b'))[0] ?? [];
 afirma((int) ($allB['points'] ?? 0) === 10 + 6 + 1 && (int) ($allB['podiums'] ?? 0) === 2 && (int) ($allB['best'] ?? 9) === 1, 'b: 6 + 10 + 1 = 17 puntos, 2 podios, mejor puesto 1 (' . json_encode($allB) . ')');
 afirma(array_column($all, 'username')[0] === 'rk_b', 'orden por puntos: b (17) antes que a (16)');
-$svc->setHidden($a, true); afirma($svc->isHidden($a) && array_column($svc->allTime(), 'username') === ['rk_b'], 'pedir no aparecer te saca del ranking');
-$svc->setHidden($a, false); afirma(!$svc->isHidden($a), 'y se puede volver a aparecer');
-$svc->setHidden($a, true); $svc->setHidden($a, true); afirma((int) $db->uno("SELECT COUNT(*) FROM $PF WHERE user_id = :u", [':u' => $a]) === 1, 'preferencia guardada una sola vez');
 
 // tidy
 foreach ([$K, $W, $R, $EC, $PF] as $t) { $db->exec("DELETE FROM $t"); }

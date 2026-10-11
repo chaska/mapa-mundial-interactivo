@@ -81,6 +81,7 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 				'comments_enabled'    => TripRepository::commentsAllowed($row) ? 1 : 0,
 				'comments_close_after' => 0,
 				'default_publish'     => -1,
+				'comments_show'       => 1,
 			]),
 		]]));
 	}

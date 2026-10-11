@@ -50,7 +50,7 @@ afirma($r['code'] !== 200 || !str_contains($r['body'], 'akengage'), 'invitado: n
 $r = $page($beto, $idA);
 afirma($r['code'] === 200 && str_contains($r['body'], 'akengage-comments-section') && str_contains($r['body'], 'Con comentarios'), 'beto ve el hilo de Engage del viaje A y su titulo');
 afirma(str_contains($r['body'], 'akengageCommentForm'), 'y el formulario para comentar (Engage deja comentar a registrados)');
-afirma(!str_contains($r['body'], 'mv-events-ok'), 'ninguna otra extension de contenido ve el viaje (despachador privado)');
+afirma(str_contains($r['body'], 'data-context="com_mapaviajes.trip"') && str_contains($r['body'], 'data-id="0"'), 'otras extensiones de contenido solo ven el evento con el contexto del viaje y el asset id (el objeto solo lleva asset_id)');
 $assetA = (int) $db->uno("SELECT asset_id FROM $T WHERE id = :i", [':i' => $idA]);
 afirma($assetA > 0 && $db->uno("SELECT name FROM $A WHERE id = :a", [':a' => $assetA]) === "com_mapaviajes.trip.$idA", 'el viaje tiene su activo "com_mapaviajes.trip.N" (no se hace pasar por articulo)');
 $r = $page($beto, $idB);
@@ -84,7 +84,7 @@ seccion('Proveedor: eventos de contenido');
 $db->setParams(['comments_provider' => 'events']);
 $r = $page($beto, $idA);
 afirma(str_contains($r['body'], 'id="mv-events-ok"') && str_contains($r['body'], 'data-context="com_mapaviajes.trip"') && str_contains($r['body'], 'data-id="' . $idA . '"'), 'una extension que escucha los eventos recibe contexto com_mapaviajes.trip y el id del viaje');
-afirma(!str_contains($r['body'], 'akengage-comments-section'), 'y Engage no interviene');
+// With Engage 3.4.4+ installed, Engage also answers the standard content event (it is the contract of Joomla): both may print. Choose 'engage' for Engage alone.
 afirma($page($beto, $idB)['code'] === 200 && !str_contains($page($beto, $idB)['body'], 'mv-events-ok'), 'con comentarios cerrados en el viaje no se llama a nadie');
 
 seccion('Proveedor: ninguno');

@@ -31,9 +31,10 @@ function exif(int $orientation, bool $gps = false): string {
 	return "Exif\0\0" . $tiff . ($gps ? 'GPSLatitude=40.4168;GPSLongitude=-3.7038;Make=SECRETCAMERA' : '');
 }
 function subir(string $path, array $extra = []): array { return array_merge(['name' => 'foto.jpg', 'type' => 'image/jpeg', 'tmp_name' => $path, 'error' => UPLOAD_ERR_OK, 'size' => (int) filesize($path)], $extra); }
-function intenta(ImageProcessor $p, array $file): array {
+function jpegBlanco(int $w, int $h): string { $im = imagecreatetruecolor($w, $h); imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255)); ob_start(); imagejpeg($im, null, 95); return (string) ob_get_clean(); }
+function intenta(ImageProcessor $p, array $file, ?string $watermark = null): array {
 	global $work; $dest = $work . '/out-' . bin2hex(random_bytes(4)) . '.part';
-	try { $r = $p->process($file, $dest); return ['ok' => true, 'r' => $r, 'dest' => $dest]; }
+	try { $r = $p->process($file, $dest, $watermark); return ['ok' => true, 'r' => $r, 'dest' => $dest]; }
 	catch (SanitizeException $e) { return ['ok' => false, 'reason' => $e->getReason(), 'left' => is_file($dest)]; }
 }
 function rechazada(ImageProcessor $p, array $file, string $reason, string $msg): void {
@@ -117,6 +118,28 @@ rechazada($p, ['name' => 'a.jpg'], 'image_upload', 'entrada sin campos');
 $x = intenta($p, subir(fichero(jpeg(900, 600), 'jpg'), ['name' => '../../../../etc/cron.d/x.php', 'type' => 'application/x-php', 'size' => 1]));
 afirma($x['ok'] && dirname($x['dest']) === $work, 'nombre, tipo y tamano declarados por el cliente se ignoran por completo');
 
+seccion('Marca de agua: el logo del mapa se estampa en una esquina al azar, 128 px, 50 % transparente');
+function logoRojo(int $w, int $h): string { // red disc on a transparent background
+	$im = imagecreatetruecolor($w, $h); imagealphablending($im, false); imagesavealpha($im, true);
+	imagefill($im, 0, 0, imagecolorallocatealpha($im, 0, 0, 0, 127)); imagefilledellipse($im, intdiv($w, 2), intdiv($h, 2), $w - 2, $h - 2, imagecolorallocatealpha($im, 255, 0, 0, 0));
+	ob_start(); imagepng($im); return (string) ob_get_clean();
+}
+$wmPath = $work . '/wm-logo.png'; file_put_contents($wmPath, logoRojo(512, 512));
+$corners = [];
+for ($n = 0; $n < 24; $n++) {
+	$x = intenta($p, subir(fichero(jpegBlanco(900, 600), 'jpg')), $wmPath);
+	if (!$x['ok']) { $corners = []; break; }
+	$im = imagecreatefromwebp($x['dest']); $w = imagesx($im); $h = imagesy($im); $found = [];
+	foreach (['NW' => [64, 64], 'NE' => [$w - 64, 64], 'SW' => [64, $h - 64], 'SE' => [$w - 64, $h - 64]] as $name => [$cx, $cy]) {
+		$c = imagecolorat($im, $cx, $cy); $r = ($c >> 16) & 255; $g = ($c >> 8) & 255;
+		if ($r > 200 && $g > 80 && $g < 190) { $found[] = $name; }
+	}
+	if ($n === 0) { afirma(count($found) === 1, 'la foto lleva el logo en UNA esquina, rosa (rojo al 50 % sobre blanco): ' . implode(',', $found) . ' (' . $w . 'x' . $h . ')'); $mid = imagecolorat($im, intdiv($w, 2), intdiv($h, 2)); afirma((($mid >> 16) & 255) > 245 && (($mid >> 8) & 255) > 245, 'el centro de la foto no se toca'); }
+	if (count($found) === 1) { $corners[$found[0]] = true; }
+}
+afirma(count($corners) >= 2, 'la esquina cambia de una foto a otra (esquinas vistas en 24 fotos: ' . implode(',', array_keys($corners)) . ')');
+$x = intenta($p, subir(fichero(jpegBlanco(900, 600), 'jpg')), $work . '/no-existe.png'); afirma($x['ok'], 'si el logo no se puede leer, la foto se guarda igual sin marca (no falla la subida)');
+$x = intenta($p, subir(fichero(jpegBlanco(900, 600), 'jpg'))); $im = imagecreatefromwebp($x['dest']); $c = imagecolorat($im, 64, 64); afirma((($c >> 8) & 255) > 245, 'sin logo en el mapa, la foto queda limpia');
 seccion('Almacen privado');
 $st = new PrivateStorage($work . '/store');
 $st->prepare();
@@ -144,7 +167,7 @@ $st->sweep(3600); afirma(!is_file($work . '/store/tmp/viejo.part'), 'sweep borra
 @unlink($work . '/store/tmp/../../../outside.part');
 
 seccion('Logo del mapa: PNG con transparencia, ajuste automatico, mismas defensas');
-$lp = new ImageProcessor(5 * 1048576, 512, 100, false, 16000000, 4096, static fn (string $f): bool => true, true);
+$lp = new ImageProcessor(5 * 1048576, 512, 100, false, 16000000, 4096, static fn (string $f): bool => true, false, true);
 function pngHalf(int $w, int $h): string { // left half opaque red, right half completely transparent
 	$im = imagecreatetruecolor($w, $h); imagealphablending($im, false); imagesavealpha($im, true);
 	imagefill($im, 0, 0, imagecolorallocatealpha($im, 0, 0, 0, 127));
@@ -154,10 +177,10 @@ function pngHalf(int $w, int $h): string { // left half opaque red, right half c
 $x = intenta($lp, subir(fichero(pngHalf(4000, 2000), 'png'), ['name' => 'logo.png', 'type' => 'image/png']));
 afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 256, 'logo 4000x2000 -> 512x256 (el tamano que pide el diseno): se ajusta solo y conserva la proporcion (' . ($x['r']['width'] ?? '?') . 'x' . ($x['r']['height'] ?? '?') . ')');
 if ($x['ok']) {
-	$im = imagecreatefromwebp($x['dest']); imagealphablending($im, false);
+	$im = imagecreatefrompng($x['dest']); imagealphablending($im, false);
 	$left = imagecolorat($im, 6, 40) >> 24 & 0x7F; $right = imagecolorat($im, 506, 40) >> 24 & 0x7F;
 	afirma($left === 0 && $right === 127, 'la transparencia sobrevive: mitad izquierda opaca, derecha transparente (alfa ' . $left . ' / ' . $right . ')');
-	afirma(substr((string) file_get_contents($x['dest'], false, null, 12, 4), 0, 4) === 'VP8L', 'se guarda sin perdida (WebP VP8L): los bordes duros del logo no se emborronan');
+	afirma((new finfo(FILEINFO_MIME_TYPE))->file($x['dest']) === 'image/png' && str_starts_with((string) file_get_contents($x['dest'], false, null, 0, 8), "\x89PNG\r\n\x1A\n"), 'el logo se guarda como PNG de verdad (sin perdida: los bordes duros no se emborronan)');
 }
 $x = intenta($lp, subir(fichero(pngHalf(512, 512), 'png')));
 afirma($x['ok'] && $x['r']['width'] === 512 && $x['r']['height'] === 512, 'tu logo de 512x512 se queda en 512x512 (el diseno lo pinta a 208 px: mas de 2x para retina)');

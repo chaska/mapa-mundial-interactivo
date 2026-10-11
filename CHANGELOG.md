@@ -1,5 +1,14 @@
 # Registro de cambios
 
+## 1.6.0 — 2026-10-17
+- **El logo del mapa se guarda como PNG** (`logo_<16 hex>.png`, reescalado a ≤ 512 px y re-codificado: transparencia intacta) y **se estampa como marca de agua en cada foto nueva** de ese mapa: esquina al azar, caja de 128 px (menos en fotos pequeñas), 50 % de transparencia, con un margen. Si la foto se descarga de la web se sabe de dónde viene. Si el logo no se puede leer, la foto se guarda igual sin marca. Las fotos ya subidas no se tocan.
+- **Comentarios con Engage 3.4.4+**: la vista usa el contrato genérico (`onContentAfterDisplay` con el contexto `com_mapaviajes.trip`, un objeto que solo lleva el `asset_id` y un `Registry` vacío); desaparecen el despachador privado y la fila de artículo de relleno. El plugin de contenido responde a `onAkeebaEngageGetAssetMeta` (añade `comments_show`). Al borrar un viaje se llama a `Meta::deleteAssetData` de Engage. Para verlos: Opciones → Comentarios → proveedor **Engage** (por defecto es «ninguno»), Engage 3.4.4 o posterior, plugin «Content – Engage» activo y permiso «Comentario» para el grupo que comenta. Con Engage instalado, el proveedor «eventos» también hace que Engage responda al evento estándar de Joomla.
+- **Ranking**: quitado el interruptor «No aparecer en el ranking» (aparece todo el mundo salvo cuentas bloqueadas). «¿Cómo se puntúa?» sale abierto con todas las puntuaciones: viaje, foto, reacciones, comentarios y el reparto semanal (1.º 3 estrellas y 10 puntos, 2.º 2 y 6, 3.º 1 y 3, del 4.º al 10.º 1 punto).
+- **Ventana**: al cambiar el tamaño de la ventana el mapa se reescala con ella (antes se quedaba al tamaño anterior).
+- **Móvil**: los mandos (+, −, personas, mundo) suben 40 px para no chocar con el menú inferior de la app.
+- **Reacciones a los propios viajes** (solo pruebas): opción en Opciones con tres valores: Nadie / Solo Super Users (por defecto) / Todo el mundo. Los viajes pendientes de moderación no admiten reacciones.
+- Pruebas nuevas: marca de agua (unitarias y contra Joomla), `99-ajuste-navegador.js` (reescalado y mandos).
+
 ## 1.5.0 — 2026-10-16
 - **Fotos ordenadas por persona**: cada foto se guarda en `…/photos/<id de usuario>/viaje_<año>_<n>_<8 hex>.webp` (por ejemplo `12/viaje_2019_1_a3f9c2d1.webp`). Las de cada persona quedan juntas y se localizan años después; el sufijo aleatorio sigue haciendo el nombre inadivinable por si un servidor sirviera la carpeta por error. La carpeta se borra sola con la última foto. La ruta guardada se valida con una expresión estricta (nada de `..`, subcarpetas extra, mayúsculas ni caracteres raros). Las fotos y logos anteriores siguen funcionando. Actualización de base de datos incluida (`filename` a 120 caracteres y `trip_year`).
 - **Año del viaje**: el formulario lo pide (obligatorio, de 1900 al año actual; el servidor lo valida) y se muestra en la lista de últimos añadidos.

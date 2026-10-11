@@ -32,7 +32,7 @@ En un viaje **no hay artículo ni texto donde poner esas cadenas**, y es a prop�
 
 ### Engage
 Dos piezas, ambas en el paquete `pkg_mapaviajes`:
-- El componente prepara el hilo y se lo pide al plugin de Engage (a ese plugin solo, con un despachador privado: ninguna otra extensión de contenido ve el viaje). Engage solo muestra comentarios cuando se los pide su propio plugin y por eso hay que pasar por él.
+- Con Engage 3.4.4 o posterior (contrato genérico de otros componentes): la vista lanza `onContentAfterDisplay` con el contexto `com_mapaviajes.trip`, un objeto que solo lleva el `asset_id` y un `Registry` vacío; Engage pregunta a nuestro plugin de contenido (`onAkeebaEngageGetAssetMeta`) qué es el elemento, quién puede verlo y si los comentarios están abiertos, y pinta el hilo. Requisitos: proveedor «Engage» en Opciones, plugin «Content – Engage» activo y permiso «Comentario» para quien comenta.
 - `plg_content_mapaviajes` responde a `onAkeebaEngageGetAssetMeta` y `onAkeebaEngageGetAssetIDsByTitle` para los activos de los viajes: título, mapa, autor (alias salvo que actives los nombres reales), enlace, si está publicado, nivel de acceso y si los comentarios están abiertos. **No entrega el correo del autor.** Sin Engage instalado no hace nada.
 - Con Engage hay que dejar que los usuarios registrados comenten: **Engage → Opciones → Permisos → Registrado → Crear**.
 - Los avisos, la moderación, el antispam y las suscripciones los gestiona Engage; el enlace de vuelta del formulario se conserva porque usamos el parámetro `id`, que la lista blanca de Engage respeta.

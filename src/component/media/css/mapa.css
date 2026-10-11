@@ -177,7 +177,7 @@ body{margin:0}
   .mv-panel-foot{padding:12px 20px calc(14px + env(safe-area-inset-bottom));border-radius:0}
   .mv-foot-row .mv-btn-primary{max-width:none}
   .mv-hint{bottom:max(80px,env(safe-area-inset-bottom));max-width:calc(100vw - 32px)}
-  .mv-zoom{bottom:max(18px,env(safe-area-inset-bottom))}
+  .mv-zoom{bottom:calc(max(18px,env(safe-area-inset-bottom)) + 40px)} /* clear of the app's bottom menu */
     .mv-pop{left:12px!important;right:12px;top:auto!important;bottom:12px;width:auto}
 }
 @media (prefers-reduced-motion:reduce){

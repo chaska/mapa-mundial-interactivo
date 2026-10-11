@@ -316,5 +316,21 @@ $page = $ana->get('/index.php?option=com_mapaviajes')['body'];
 afirma(!str_contains($page, 'id="mv-btnAdd"') && !str_contains($page, 'id="mv-form"'), 'y la pagina ni siquiera dibuja el boton ni el formulario');
 $db->exec('UPDATE ' . $db->t('assets') . " SET rules = :r WHERE name = 'com_mapaviajes'", [':r' => $rules]);
 
+echo "\n== Marca de agua con el logo del mapa ==\n";
+$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: [] as $f) { unlink($f); }
+$db->setParams(['trips_per_hour' => 50, 'trips_per_day' => 50, 'notify_admin' => 0]);
+$im = imagecreatetruecolor(300, 300); imagealphablending($im, false); imagesavealpha($im, true); imagefill($im, 0, 0, imagecolorallocatealpha($im, 0, 0, 0, 127));
+imagefilledellipse($im, 150, 150, 296, 296, imagecolorallocatealpha($im, 255, 0, 0, 0)); $logoName = 'logo_' . bin2hex(random_bytes(8)) . '.png'; imagepng($im, "$storage/photos/$logoName");
+$oldLogo = (string) $db->uno('SELECT logo FROM ' . $db->t('mapaviajes_albums') . ' WHERE id = ' . (int) $o['albumId']);
+$db->exec('UPDATE ' . $db->t('mapaviajes_albums') . " SET logo = '$logoName' WHERE id = " . (int) $o['albumId']);
+$white = (function () { $w = imagecreatetruecolor(1200, 800); imagefill($w, 0, 0, imagecolorallocate($w, 255, 255, 255)); ob_start(); imagejpeg($w, null, 95); return (string) ob_get_clean(); })();
+$r = enviar($ana, $o, [], [$foto($white)]);
+afirma($r['code'] === 201, 'envio con el mapa que tiene logo: 201 (' . $r['code'] . ')');
+$f = (string) $db->uno("SELECT filename FROM $P ORDER BY id DESC LIMIT 1"); $wi = @imagecreatefromwebp("$storage/photos/$f");
+$pink = 0; if ($wi) { $w = imagesx($wi); $h = imagesy($wi); foreach ([[64, 64], [$w - 64, 64], [64, $h - 64], [$w - 64, $h - 64]] as [$cx, $cy]) { $c = imagecolorat($wi, $cx, $cy); if (((($c >> 16) & 255) > 200) && ((($c >> 8) & 255) > 80) && ((($c >> 8) & 255) < 190)) { $pink++; } } }
+afirma($pink === 1, 'la foto guardada lleva el logo (50 % transparente) en una sola esquina (' . $pink . ')');
+$db->exec('UPDATE ' . $db->t('mapaviajes_albums') . " SET logo = '" . str_replace("'", '', $oldLogo) . "' WHERE id = " . (int) $o['albumId']); @unlink("$storage/photos/$logoName");
+$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: [] as $f2) { unlink($f2); }
+
 $db->setParams(['trips_per_hour' => 3, 'trips_per_day' => 10, 'notify_admin' => 1]);
 fin();

@@ -18,8 +18,8 @@ defined('_JEXEC') || die;
  */
 final class PrivateStorage
 {
-	/** Either a bare random name (logos, and photos from before 1.5.0) or <user id>/viaje_<year>_<n>_<8 random hex>.webp */
-	public const NAME_PATTERN = '/^(?:[0-9]{1,10}\/)?[a-z0-9_]{1,90}\.webp$/D';
+	/** A map logo (logo_<16 hex>.png), a photo from before 1.5.0 (bare random .webp), or <user id>/viaje_<year>_<n>_<8 random hex>.webp */
+	public const NAME_PATTERN = '/^(?:[0-9]{1,10}\/)?[a-z0-9_]{1,90}\.(?:webp|png)$/D';
 
 	private string $root;
 
@@ -106,6 +106,33 @@ final class PrivateStorage
 			$name = $userId > 0
 				? $userId . '/viaje_' . max(0, min(9999, $year)) . '_' . max(1, min(99, $number)) . '_' . bin2hex(random_bytes(4)) . '.webp'
 				: bin2hex(random_bytes(16)) . '.webp';
+			$dest = $this->root . '/photos/' . $name;
+
+			if (!file_exists($dest) && @rename($real, $dest))
+			{
+				@chmod($dest, 0640);
+
+				return $name;
+			}
+		}
+
+		throw new \RuntimeException('storage');
+	}
+
+	/** Moves a verified logo PNG to photos/logo_<16 random hex>.png and returns that name. */
+	public function commitLogo(string $temporary): string
+	{
+		$real    = realpath($temporary);
+		$tmpRoot = realpath($this->root . '/tmp');
+
+		if ($real === false || $tmpRoot === false || !str_starts_with($real, $tmpRoot . DIRECTORY_SEPARATOR))
+		{
+			throw new \RuntimeException('storage');
+		}
+
+		for ($i = 0; $i < 5; $i++)
+		{
+			$name = 'logo_' . bin2hex(random_bytes(8)) . '.png';
 			$dest = $this->root . '/photos/' . $name;
 
 			if (!file_exists($dest) && @rename($real, $dest))

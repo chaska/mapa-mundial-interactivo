@@ -498,17 +498,12 @@
 			const mine = block.mine;
 			pg.append(h('h3', { class: 'mv-pstrip', text: T('COM_MAPAVIAJES_JS_POD_MINE') }),
 				h('p', { class: 'mv-pmine', text: kind === 'all' ? (mine ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_ALL'), mine.s, mine.w) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) : (kind === 'week' && mine ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_N'), mine.pos, mine.s) : kind === 'last' ? (rows.find((r) => r.me) ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_N'), rows.find((r) => r.me).pos, rows.find((r) => r.me).s) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) }));
-			const w = d.weights || {}, hid = h('input', { type: 'checkbox', id: 'mv-podHide', role: 'switch' }); hid.checked = !!d.hidden;
-			hid.onchange = async () => {
-				const fd = new FormData(); fd.append(O.token, '1'); fd.append('hidden', hid.checked ? '1' : '0');
-				try { const r = await fetch(O.hideUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } }); const j = await r.json(); if (!r.ok || !j.ok) { throw new Error('hide'); } d.hidden = !!j.hidden; }
-				catch (_) { hid.checked = !hid.checked; toast(T('COM_MAPAVIAJES_JS_POD_ERR')); }
-			};
-			pg.append(h('label', { class: 'mv-phide', for: 'mv-podHide' }, hid, h('span', { class: 'mv-pswitch', 'aria-hidden': 'true' }), h('span', {}, h('strong', { text: T('COM_MAPAVIAJES_JS_POD_HIDE') }), h('small', { text: T('COM_MAPAVIAJES_JS_POD_HIDE_HELP') }))));
-			pg.append(h('details', { class: 'mv-phow' }, h('summary', { text: T('COM_MAPAVIAJES_JS_POD_HOW') }), h('ul', {},
+			const w = d.weights || {};
+			pg.append(h('details', { class: 'mv-phow', open: '' }, h('summary', { text: T('COM_MAPAVIAJES_JS_POD_HOW') }), h('ul', {},
 				h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_TRIP'), w.trip || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_PHOTO'), w.photo || 0) }),
 				h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_LIKE'), (d.caps || {}).likes || 0, w.like || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_COMMENT'), (d.caps || {}).comments || 0, w.comment || 0) })),
-				h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_CAP') }), h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_WEEK') })));
+				h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_CAP') }), h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_WEEK') }),
+				h('ul', {}, ['S1', 'S2', 'S3', 'S4'].map((k) => h('li', { text: T('COM_MAPAVIAJES_JS_POD_HOW_' + k) })))));
 		}
 		async function openPod() {
 			closePop(); if (drawerOpen()) { closeDrawer(); } if (panelOpen()) { closePanel(false); }
@@ -783,7 +778,13 @@
 		if (pplOpen()) { closePeople(); return; }
 		if (drawerOpen()) { closeDrawer(); }
 	});
-	addEventListener('resize', () => { limits(); clamp(V); apply(); });
+	// Resizing the window keeps the same view: the map is rescaled with it (so a map that fitted the width still fits it) around the same centre
+	addEventListener('resize', () => {
+		const ok = KMIN, ow = VW, oh = VH, cx = (ow / 2 - V.tx) / V.k, cy = (oh / 2 - V.ty) / V.k;
+		limits();
+		const r = KMIN / ok; if (r !== 1 && isFinite(r)) { V.k *= r; V.tx = VW / 2 - cx * V.k; V.ty = VH / 2 - cy * V.k; }
+		clamp(V); apply();
+	});
 	if (window.visualViewport) {
 		const vv = window.visualViewport, root = document.documentElement;
 		const sync = () => { root.style.setProperty('--vvh', vv.height + 'px'); root.style.setProperty('--vvt', vv.offsetTop + 'px'); root.classList.toggle('mv-kb', vv.height < innerHeight * .8); };

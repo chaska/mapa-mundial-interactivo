@@ -33,13 +33,8 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-podio-pasada.png` });
     await page.click('#mv-pod [data-v=all]'); await page.waitForTimeout(300);
     afirma((await page.locator('.mv-pslot .mv-pname').allTextContents())[1] === 'pd_alba', 'general: alba lidera');
-    // hide me
-    await page.click('.mv-phide'); await page.waitForTimeout(500);
-    afirma(await page.locator('#mv-podHide:checked').count() === 1, 'el interruptor «No aparecer» queda activado');
-    await page.click('#mv-podClose'); await page.click('#mv-btnPod'); await page.waitForSelector('.mv-ptitle');
-    await page.click('#mv-pod [data-v=week]'); await page.waitForTimeout(300);
-    afirma(!(await page.locator('.mv-pname').allTextContents()).includes('beto'), 'oculto: beto ya no aparece en la lista');
-    await page.click('.mv-phide'); await page.waitForTimeout(500);
+    afirma(await page.locator('.mv-phide').count() === 0, 'ya no hay interruptor «No aparecer en el ranking»: aparece todo el mundo');
+    afirma(/20/.test(await page.locator('.mv-phow').textContent()) && await page.locator('.mv-phow[open]').count() === 1, '«Cómo se puntúa» está abierto y trae las puntuaciones');
     // filter by one person
     await page.click('#mv-pod [data-v=last]'); await page.waitForTimeout(200);
     await page.locator('.mv-pslot .mv-pname', { hasText: 'pd_alba' }).click(); await page.waitForTimeout(900);

@@ -71,7 +71,7 @@ class AlbumModel extends AdminModel
 
 			try
 			{
-				(new ImageProcessor(self::LOGO_MAX_BYTES, self::LOGO_SIDE, 100, false, self::LOGO_MAX_PIXELS, self::LOGO_MAX_SIDE, null, true))->process($file, $tmp);
+				(new ImageProcessor(self::LOGO_MAX_BYTES, self::LOGO_SIDE, 100, false, self::LOGO_MAX_PIXELS, self::LOGO_MAX_SIDE, null, false, true))->process($file, $tmp);
 			}
 			catch (SanitizeException $e)
 			{
@@ -99,7 +99,7 @@ class AlbumModel extends AdminModel
 		{
 			$db  = $this->getDatabase();
 			$old = (string) $db->setQuery($db->getQuery(true)->select($db->quoteName('logo'))->from($db->quoteName('#__mapaviajes_albums'))->where($db->quoteName('id') . ' = :i')->bind(':i', $id, ParameterType::INTEGER))->loadResult();
-			$new = $tmp !== null ? $storage->commit($tmp) : '';
+			$new = $tmp !== null ? $storage->commitLogo($tmp) : '';
 			$bind = $new;
 			$id2  = $id;
 			$db->setQuery($db->getQuery(true)->update($db->quoteName('#__mapaviajes_albums'))->set($db->quoteName('logo') . ' = :l')->where($db->quoteName('id') . ' = :i')->bind(':l', $bind)->bind(':i', $id2, ParameterType::INTEGER))->execute();

@@ -117,6 +117,11 @@ final class CommentsBridge
 					}
 				}
 
+				if (class_exists('\\Akeeba\\Component\\Engage\\Site\\Helper\\Meta') && method_exists('\\Akeeba\\Component\\Engage\\Site\\Helper\\Meta', 'deleteAssetData'))
+				{
+					\Akeeba\Component\Engage\Site\Helper\Meta::deleteAssetData($assetId); // Engage's own cache of the element
+				}
+
 				$asset = new Asset($this->db);
 
 				if ($asset->load($assetId) && str_starts_with((string) $asset->name, self::ASSET))
@@ -165,32 +170,18 @@ final class CommentsBridge
 			return '';
 		}
 
-		// Engage only renders its comments when its own content plugin asks for them ("we must be called by the plugin").
-		// So we ask that plugin, and ONLY that plugin (a private dispatcher: other content plugins never see this item),
-		// the way Joomla asks it for an article. The asset id is what ties the thread to the trip; the row is a stand-in.
+		// The generic contract of Engage 3.4.4+: the view fires onContentAfterDisplay for the element (context + an object that only
+		// carries the asset id + an empty Registry); Engage then asks OUR content plugin (onAkeebaEngageGetAssetMeta) what the element is,
+		// who may see it and whether comments are open, and prints the thread. Nothing else of the trip is handed over.
 		try
 		{
-			$dispatcher = new Dispatcher();
-			PluginHelper::importPlugin('content', 'engage', true, $dispatcher);
+			PluginHelper::importPlugin('content');
 
-			$item = (object) [
-				'id'           => (int) $trip['id'],
-				'asset_id'     => $assetId,
-				'title'        => (string) $trip['title'],
-				'alias'        => 'trip-' . (int) $trip['id'],
-				'state'        => 1,
-				'catid'        => 1, // Joomla's root category: it always exists, so Engage's inheritance lookup ends at once
-				'attribs'      => '{}',
-				'publish_up'   => (string) $trip['created'],
-				'publish_down' => null,
-				'access'       => (int) $trip['album_access'],
-				'created_by'   => (int) $trip['user_id'],
-				'language'     => '*',
-			];
-			$args  = ['context' => 'com_content.article', 'subject' => $item, 'params' => new Registry(), 'page' => 0];
-			$event = $dispatcher->dispatch('onContentAfterDisplay', new AfterDisplayEvent('onContentAfterDisplay', $args));
+			$item   = (object) ['asset_id' => $assetId];
+			$params = new Registry();
+			$result = $app->triggerEvent('onContentAfterDisplay', [self::CONTEXT, &$item, &$params, 0]);
 
-			return trim(implode("\n", (array) $event->getArgument('result', [])));
+			return trim(implode('', array_map('strval', (array) $result)));
 		}
 		catch (\Throwable $e)
 		{

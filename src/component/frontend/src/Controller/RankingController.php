@@ -22,7 +22,6 @@ use Joomla\Database\DatabaseInterface;
 
 /**
  * GET  ?option=com_mapaviajes&task=ranking.data&format=json   the podium of the week, the last closed week and the all-time table
- * POST ?option=com_mapaviajes&task=ranking.hide&format=json   hidden=0|1: appear or not appear in the ranking (own choice)
  * Registered users only.
  */
 class RankingController extends BaseController
@@ -107,38 +106,11 @@ class RankingController extends BaseController
 
 		$this->json([
 			'ok'      => true,
-			'hidden'  => $svc->isHidden($me),
 			'weights' => $set->rankWeights(),
 			'caps'    => ['likes' => $set->rankLikeCap(), 'comments' => $set->rankCommentCap()],
 			'week'    => ['start' => $week, 'end' => gmdate('Y-m-d', strtotime(RankingService::weekEnd($week) . ' UTC') - 86400), 'rows' => array_map(fn (array $r): array => $this->row($r, $real, $me), \array_slice($live, 0, RankingService::TOP)), 'mine' => $mine, 'count' => \count($live)],
 			'last'    => ['start' => $lastWeek, 'end' => $lastWeek !== null ? gmdate('Y-m-d', strtotime(RankingService::weekEnd($lastWeek) . ' UTC') - 86400) : null, 'rows' => $last],
 			'general' => ['rows' => $general, 'mine' => $mineAll],
 		]);
-	}
-
-	public function hide(): void
-	{
-		$user = $this->app->getIdentity();
-
-		if (strtoupper((string) $this->app->getInput()->getMethod()) !== 'POST')
-		{
-			header('Allow: POST');
-			$this->json(['ok' => false], 405);
-		}
-
-		if (strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) !== 'xmlhttprequest' || !Session::checkToken('post') || $user->guest)
-		{
-			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SESSION'), 'expired' => true], 403);
-		}
-
-		$raw = $_POST['hidden'] ?? '';
-
-		if (!\is_string($raw) || !\in_array($raw, ['0', '1'], true))
-		{
-			$this->json(['ok' => false], 400);
-		}
-
-		$this->service()->setHidden((int) $user->id, $raw === '1');
-		$this->json(['ok' => true, 'hidden' => $raw === '1']);
 	}
 }

@@ -37,6 +37,8 @@ final class ImageProcessor
 	private int $maxDimension;
 	private bool $upscale;
 	private bool $lossless;
+	private bool $png;
+	private ?string $watermark = null;
 
 	/**
 	 * @param   callable(string): bool|null  $isUploaded  Defaults to is_uploaded_file(); tests inject their own.
@@ -49,7 +51,8 @@ final class ImageProcessor
 		int $maxPixels = 24000000,
 		int $maxDimension = 12000,
 		?callable $isUploaded = null,
-		bool $lossless = false
+		bool $lossless = false,
+		bool $png = false
 	)
 	{
 		$this->maxBytes     = max(1024, $maxBytes);
@@ -61,6 +64,8 @@ final class ImageProcessor
 		$this->isUploaded   = $isUploaded ?? 'is_uploaded_file';
 		// Logos: lossless WebP keeps hard edges and transparency exactly as designed (needs the constant from PHP 8.1 + libwebp)
 		$this->lossless     = $lossless && \defined('IMG_WEBP_LOSSLESS');
+		// Logos are stored as a clean PNG (logo_<random>.png): it is also what is stamped on the photos as a watermark
+		$this->png          = $png;
 	}
 
 	public static function isSupported(): bool
@@ -78,12 +83,15 @@ final class ImageProcessor
 	/**
 	 * @param   array<string, mixed>  $file         One entry of $_FILES, already flattened (name, tmp_name, error, size).
 	 * @param   string                $destination  Where to write the new WebP (a private temporary path chosen by us).
+	 * @param   string|null           $watermark    Path of OUR stored logo PNG: stamped in a random corner, 128 px, 50 % transparent.
 	 *
 	 * @return  array{width: int, height: int, bytes: int}
 	 * @throws  SanitizeException
 	 */
-	public function process(array $file, string $destination): array
+	public function process(array $file, string $destination, ?string $watermark = null): array
 	{
+		$this->watermark = $watermark;
+
 		try
 		{
 			return $this->doProcess($file, $destination);
@@ -330,7 +338,14 @@ final class ImageProcessor
 				throw new SanitizeException('image_unreadable');
 			}
 
-			if (!imagewebp($canvas, $destination, $this->lossless ? IMG_WEBP_LOSSLESS : $this->quality))
+			if (!$this->png && $this->watermark !== null)
+			{
+				$this->stamp($canvas, $nw, $nh, $this->watermark);
+			}
+
+			$saved = $this->png ? imagepng($canvas, $destination, 9) : imagewebp($canvas, $destination, $this->lossless ? IMG_WEBP_LOSSLESS : $this->quality);
+
+			if (!$saved)
 			{
 				throw new SanitizeException('image_unreadable');
 			}
@@ -353,13 +368,78 @@ final class ImageProcessor
 
 		$check = @getimagesize($destination);
 
-		if ($check === false || (int) $check[2] !== IMAGETYPE_WEBP || (int) $check[0] !== $nw || (int) $check[1] !== $nh
-			|| (new \finfo(FILEINFO_MIME_TYPE))->file($destination) !== 'image/webp')
+		$outType = $this->png ? IMAGETYPE_PNG : IMAGETYPE_WEBP;
+		$outMime = $this->png ? 'image/png' : 'image/webp';
+
+		if ($check === false || (int) $check[2] !== $outType || (int) $check[0] !== $nw || (int) $check[1] !== $nh
+			|| (new \finfo(FILEINFO_MIME_TYPE))->file($destination) !== $outMime)
 		{
 			throw new SanitizeException('image_unreadable');
 		}
 
 		return ['width' => $nw, 'height' => $nh, 'bytes' => (int) $outSize];
+	}
+
+	/**
+	 * Stamps the album's logo on the photo: 128 px box (smaller on a small photo), 50 % transparent, in a random corner with a margin,
+	 * so a photo taken from the site can always be traced back to it. The logo is our own stored PNG; if anything about it is off the photo
+	 * is simply stored without the mark rather than failing the upload.
+	 *
+	 * @param  \GdImage  $canvas
+	 */
+	private function stamp($canvas, int $nw, int $nh, string $path): void
+	{
+		$wm = @imagecreatefrompng($path);
+
+		if ($wm === false)
+		{
+			return;
+		}
+
+		$box = max(24, min(128, (int) floor(min($nw, $nh) * .4)));
+		$sw  = imagesx($wm);
+		$sh  = imagesy($wm);
+
+		if ($sw < 1 || $sh < 1)
+		{
+			return;
+		}
+
+		$k  = $box / max($sw, $sh);
+		$ww = max(1, (int) round($sw * $k));
+		$wh = max(1, (int) round($sh * $k));
+		$o  = imagecreatetruecolor($ww, $wh);
+
+		imagealphablending($o, false);
+		imagesavealpha($o, true);
+		imagefill($o, 0, 0, (int) imagecolorallocatealpha($o, 0, 0, 0, 127));
+		imagecopyresampled($o, $wm, 0, 0, 0, 0, $ww, $wh, $sw, $sh);
+
+		for ($y = 0; $y < $wh; $y++)
+		{
+			for ($x = 0; $x < $ww; $x++)
+			{
+				$c = imagecolorat($o, $x, $y);
+				$a = ($c >> 24) & 0x7F;
+
+				if ($a >= 127)
+				{
+					continue;
+				}
+
+				imagesetpixel($o, $x, $y, ($c & 0xFFFFFF) | ((127 - (int) round((127 - $a) * .5)) << 24));
+			}
+		}
+
+		$m  = max(8, (int) round(min($nw, $nh) * .02));
+		$m  = min($m, 24);
+		$px = random_int(0, 1) === 0 ? $m : max(0, $nw - $ww - $m);
+		$py = random_int(0, 1) === 0 ? $m : max(0, $nh - $wh - $m);
+
+		imagealphablending($canvas, true);
+		imagecopy($canvas, $o, $px, $py, 0, 0, $ww, $wh);
+		imagealphablending($canvas, false);
+		unset($wm, $o);
 	}
 
 	/**

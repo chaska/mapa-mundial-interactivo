@@ -38,7 +38,7 @@ class HtmlView extends BaseHtmlView
 
 		if ($path !== null && (int) filesize($path) <= AlbumModel::LOGO_MAX_BYTES)
 		{
-			$this->logoPreview = 'data:image/webp;base64,' . base64_encode((string) file_get_contents($path));
+			$this->logoPreview = 'data:image/png;base64,' . base64_encode((string) file_get_contents($path));
 		}
 
 		Factory::getApplication()->getInput()->set('hidemainmenu', true);

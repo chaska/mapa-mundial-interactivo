@@ -149,6 +149,7 @@ final class TripSubmission
 
 		$temporaries = [];
 		$meta        = [];
+		$watermark   = $album['logo'] !== '' ? $storage->pathFor($album['logo']) : null; // the map's own logo, stamped on every new photo
 
 		try
 		{
@@ -158,7 +159,7 @@ final class TripSubmission
 
 				try
 				{
-					$meta[$i] = $this->processor->process($file, $tmp);
+					$meta[$i] = $this->processor->process($file, $tmp, $watermark);
 				}
 				catch (SanitizeException $e)
 				{
@@ -314,7 +315,7 @@ final class TripSubmission
 		}
 
 		$query = $this->db->getQuery(true)
-			->select($this->db->quoteName(['id', 'title', 'access', 'allow_comments']))
+			->select($this->db->quoteName(['id', 'title', 'access', 'allow_comments', 'logo']))
 			->from($this->db->quoteName('#__mapaviajes_albums'))
 			->where($this->db->quoteName('id') . ' = :id')
 			->where($this->db->quoteName('published') . ' = 1')
@@ -327,7 +328,7 @@ final class TripSubmission
 			throw new SubmissionException('album', 422);
 		}
 
-		return ['id' => (int) $row['id'], 'title' => (string) $row['title'], 'allow_comments' => (int) $row['allow_comments']];
+		return ['id' => (int) $row['id'], 'title' => (string) $row['title'], 'allow_comments' => (int) $row['allow_comments'], 'logo' => (string) ($row['logo'] ?? '')];
 	}
 
 	/** @return array{0: float, 1: float} */

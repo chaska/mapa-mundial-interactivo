@@ -109,7 +109,7 @@ final class RankingService
 		{
 			if (!isset($people[$uid]))
 			{
-				continue; // blocked, deleted or hidden by choice
+				continue; // blocked or deleted
 			}
 
 			$nTrips    = (int) $trips[$uid]['n'];
@@ -282,53 +282,20 @@ final class RankingService
 			->select([$this->db->quoteName('r.user_id'), 'SUM(r.points) AS points', 'SUM(r.stars) AS stars', 'COUNT(*) AS weeks', 'SUM(CASE WHEN r.position <= 3 THEN 1 ELSE 0 END) AS podiums', 'MIN(r.position) AS best', $this->db->quoteName('u.username'), $this->db->quoteName('u.name')])
 			->from($this->db->quoteName('#__mapaviajes_ranking', 'r'))
 			->join('INNER', $this->db->quoteName('#__users', 'u') . ' ON u.id = r.user_id AND u.block = 0')
-			->join('LEFT', $this->db->quoteName('#__mapaviajes_prefs', 'p') . ' ON p.user_id = r.user_id')
-			->where('(p.hide_ranking IS NULL OR p.hide_ranking = 0)')
 			->group([$this->db->quoteName('r.user_id'), $this->db->quoteName('u.username'), $this->db->quoteName('u.name')])
 			->order('SUM(r.points) DESC, SUM(r.stars) DESC, MIN(r.position) ASC, r.user_id ASC');
 
 		return $this->db->setQuery($q, 0, max(1, $limit))->loadAssocList() ?: [];
 	}
 
-	public function isHidden(int $userId): bool
-	{
-		$u = $userId;
-
-		return (int) $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName('hide_ranking'))->from($this->db->quoteName('#__mapaviajes_prefs'))->where($this->db->quoteName('user_id') . ' = :u')->bind(':u', $u, ParameterType::INTEGER))->loadResult() === 1;
-	}
-
-	public function setHidden(int $userId, bool $hidden): void
-	{
-		$u = $userId;
-		$v = $hidden ? 1 : 0;
-		$q = $this->db->getQuery(true)->update($this->db->quoteName('#__mapaviajes_prefs'))->set($this->db->quoteName('hide_ranking') . ' = :v')->where($this->db->quoteName('user_id') . ' = :u')->bind(':v', $v, ParameterType::INTEGER)->bind(':u', $u, ParameterType::INTEGER);
-		$this->db->setQuery($q)->execute();
-
-		if ($this->db->getAffectedRows() === 0 && !$this->prefsExists($userId))
-		{
-			$u2 = $userId;
-			$v2 = $hidden ? 1 : 0;
-			$this->db->setQuery($this->db->getQuery(true)->insert($this->db->quoteName('#__mapaviajes_prefs'))->columns($this->db->quoteName(['user_id', 'hide_ranking']))->values(':u, :v')->bind(':u', $u2, ParameterType::INTEGER)->bind(':v', $v2, ParameterType::INTEGER))->execute();
-		}
-	}
-
-	private function prefsExists(int $userId): bool
-	{
-		$u = $userId;
-
-		return (int) $this->db->setQuery($this->db->getQuery(true)->select('COUNT(*)')->from($this->db->quoteName('#__mapaviajes_prefs'))->where($this->db->quoteName('user_id') . ' = :u')->bind(':u', $u, ParameterType::INTEGER))->loadResult() > 0;
-	}
-
-	/** @param list<int> $ids  @return array<int, array{username: string, name: string}> only people who may appear */
+	/** @param list<int> $ids  @return array<int, array{username: string, name: string}> everyone who is not blocked */
 	private function people(array $ids): array
 	{
 		$ids = array_values(array_unique(array_map('intval', $ids)));
 		$q   = $this->db->getQuery(true)
 			->select([$this->db->quoteName('u.id'), $this->db->quoteName('u.username'), $this->db->quoteName('u.name')])
 			->from($this->db->quoteName('#__users', 'u'))
-			->join('LEFT', $this->db->quoteName('#__mapaviajes_prefs', 'p') . ' ON p.user_id = u.id')
 			->where($this->db->quoteName('u.block') . ' = 0')
-			->where('(p.hide_ranking IS NULL OR p.hide_ranking = 0)')
 			->whereIn($this->db->quoteName('u.id'), $ids);
 		$out = [];
 

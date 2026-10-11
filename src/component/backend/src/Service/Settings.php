@@ -74,8 +74,13 @@ final class Settings
 		return substr(hash_hmac('sha256', 'mapaviajes-user-' . $userId, $secret !== '' ? $secret : JPATH_ROOT), 0, 12);
 	}
 
-	/** Lets Super Users like / favourite their own trips (to try the feature out). Off for a real launch: it would feed the podium. */
-	public function adminSelfReact(): bool { return (int) $this->params->get('admin_self_react', 1) === 1; }
+	/** Lets people like / favourite their own trips so the feature can be tried out: 0 nobody, 1 Super Users, 2 everybody. Keep it at 0 for a real launch: it would feed the podium. */
+	public function canSelfReact(\Joomla\CMS\User\User $user): bool
+	{
+		$mode = (int) $this->params->get('admin_self_react', 1);
+
+		return $mode === 2 || ($mode === 1 && $user->authorise('core.admin'));
+	}
 	public function reactionsPerDay(): int { return $this->int('reactions_per_day', 300, 1, 5000); }
 	public function showRealNames(): bool { return (int) $this->params->get('show_real_names', 0) === 1; }
 	public function notifyAdmin(): bool   { return (int) $this->params->get('notify_admin', 1) === 1; }
