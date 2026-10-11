@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.7.5 — 2026-10-18
+- El mapa y la página de comentarios se sirven con `Cache-Control: no-store` y `X-LiteSpeed-Cache-Control: no-cache`: llevan el token de seguridad de la sesión y contenido de cada persona; una caché del servidor (LiteSpeed, proxy, página en caché de Joomla) con una copia vieja hace que el comentario se rechace por token inválido y que la lista no se actualice.
+
 ## 1.7.4 — 2026-10-18
 - Lista de viajes del administrador: botón **Comentarios (Engage)** que abre la lista de comentarios de Engage (donde se guardan, en `#__engage_comments`, enlazados al viaje por su `asset_id`). Solo con el proveedor «Engage» y permiso de gestión en Engage.
 

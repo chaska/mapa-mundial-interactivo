@@ -58,6 +58,11 @@ class HtmlView extends BaseHtmlView
 	{
 		$app  = Factory::getApplication();
 		$user = $app->getIdentity();
+		// These pages carry the session's CSRF token and per-person content: no cache of any kind (browser, proxy, LiteSpeed) may keep them
+		$app->allowCache(false);
+		$app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private', true);
+		$app->setHeader('Pragma', 'no-cache', true);
+		$app->setHeader('X-LiteSpeed-Cache-Control', 'no-cache', true);
 
 		// The login gate also lives here: Joomla falls back to display() for unknown tasks on any controller.
 		if ($user->guest)
