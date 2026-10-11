@@ -59,7 +59,7 @@ class TripController extends BaseController
 			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_LOGIN'), 'expired' => true], 403);
 		}
 
-		if (!$user->authorise('core.create', 'com_mapaviajes'))
+		if (!$user->authorise('mapaviajes.submit', 'com_mapaviajes'))
 		{
 			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_FORBIDDEN')], 403);
 		}

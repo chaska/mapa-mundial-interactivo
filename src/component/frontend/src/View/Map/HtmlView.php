@@ -85,7 +85,7 @@ class HtmlView extends BaseHtmlView
 		$this->maxPhotos = $settings->maxPhotos();
 		$this->maxWords  = $settings->maxWords();
 		$this->userName  = (string) $user->name;
-		$this->canSubmit = $this->album !== null && $user->authorise('core.create', 'com_mapaviajes') && ImageProcessor::isSupported();
+		$this->canSubmit = $this->album !== null && $user->authorise('mapaviajes.submit', 'com_mapaviajes') && ImageProcessor::isSupported();
 
 		// Nothing here may be cached by the site, a proxy or the browser history: it is personal.
 		$app->allowCache(false);

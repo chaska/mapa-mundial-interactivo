@@ -71,12 +71,8 @@ return new class () implements InstallerScriptInterface {
 			$app->enqueueMessage('GD con soporte WebP no está disponible: no se podrán subir fotos hasta activarlo. / GD with WebP support is missing: photo uploads stay disabled until it is enabled.', 'warning');
 		}
 
-		if ($type !== 'install')
-		{
-			return true;
-		}
-
-		// A fresh install lets Registered users add trips (core.create). Everything else keeps Joomla's defaults.
+		// Two separate permissions: `mapaviajes.submit` (add trips with photos: Registered users) and `core.create`
+		// (create maps/albums in the back end: administrators only, i.e. nobody unless granted). Everything else keeps Joomla's defaults.
 		try
 		{
 			$db    = Factory::getContainer()->get(DatabaseInterface::class);
@@ -87,10 +83,32 @@ return new class () implements InstallerScriptInterface {
 			{
 				$rules = json_decode((string) $row->rules, true);
 				$rules = \is_array($rules) ? $rules : [];
+				$dirty = false;
 
-				if (!isset($rules['core.create']))
+				if (!isset($rules['mapaviajes.submit']))
 				{
-					$rules['core.create'] = ['2' => 1];
+					if ($type === 'install')
+					{
+						$rules['mapaviajes.submit'] = ['2' => 1];
+						$dirty = true;
+					}
+					elseif (isset($rules['core.create']) && \is_array($rules['core.create']))
+					{
+						// 1.0.x / 1.1.0 used core.create for "add trips": carry that over, then stop letting Registered create maps.
+						$rules['mapaviajes.submit'] = $rules['core.create'];
+						unset($rules['core.create']['2']);
+
+						if ($rules['core.create'] === [])
+						{
+							unset($rules['core.create']);
+						}
+
+						$dirty = true;
+					}
+				}
+
+				if ($dirty)
+				{
 					$json = json_encode($rules, JSON_THROW_ON_ERROR);
 					$id   = (int) $row->id;
 					$db->setQuery($db->getQuery(true)->update($db->quoteName('#__assets'))->set($db->quoteName('rules') . ' = :r')->where($db->quoteName('id') . ' = :i')->bind(':r', $json)->bind(':i', $id, \Joomla\Database\ParameterType::INTEGER))->execute();

@@ -302,7 +302,10 @@ $rules = $db->uno("SELECT rules FROM " . $db->t('assets') . " WHERE name = 'com_
 $db->exec('UPDATE ' . $db->t('assets') . " SET rules = '{}' WHERE name = 'com_mapaviajes'");
 $db->exec("DELETE FROM $T WHERE user_id = (SELECT id FROM " . $db->t('users') . " WHERE username = 'ana')");
 $r = enviar($ana, $o, ['title' => 'Sin permiso'], [$foto()]);
-afirma($r['code'] === 403, 'sin el permiso core.create en su grupo: 403');
+afirma($r['code'] === 403, 'sin el permiso de enviar viajes en su grupo: 403');
+$db->exec('UPDATE ' . $db->t('assets') . " SET rules = '{\"core.create\":{\"2\":1}}' WHERE name = 'com_mapaviajes'");
+$r = enviar($ana, $o, ['title' => 'Solo crear mapas'], [$foto()]);
+afirma($r['code'] === 403, 'crear mapas (core.create) NO da permiso para enviar viajes: 403');
 $page = $ana->get('/index.php?option=com_mapaviajes')['body'];
 afirma(!str_contains($page, 'id="mv-btnAdd"') && !str_contains($page, 'id="mv-form"'), 'y la pagina ni siquiera dibuja el boton ni el formulario');
 $db->exec('UPDATE ' . $db->t('assets') . " SET rules = :r WHERE name = 'com_mapaviajes'", [':r' => $rules]);
