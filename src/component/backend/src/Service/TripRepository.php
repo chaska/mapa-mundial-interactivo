@@ -50,7 +50,7 @@ final class TripRepository
 		$query = $this->db->getQuery(true)
 			->select([
 				$this->db->quoteName('t.id'), $this->db->quoteName('t.title'), $this->db->quoteName('t.place'),
-				$this->db->quoteName('t.lat'), $this->db->quoteName('t.lon'), $this->db->quoteName('t.photo_count'),
+				$this->db->quoteName('t.lat'), $this->db->quoteName('t.lon'), $this->db->quoteName('t.photo_count'), $this->db->quoteName('t.trip_year'),
 				$this->db->quoteName('t.allow_comments'), $this->db->quoteName('t.published'), $this->db->quoteName('t.created'),
 				$this->db->quoteName('t.user_id'), $this->db->quoteName($realNames ? 'u.name' : 'u.username', 'author'),
 			])
@@ -120,7 +120,7 @@ final class TripRepository
 		{
 			$id    = (int) $t['id'];
 			$out[] = [
-				'id' => $id, 't' => (string) $t['title'], 'p' => (string) $t['place'],
+				'id' => $id, 't' => (string) $t['title'], 'p' => (string) $t['place'], 'yr' => (int) $t['trip_year'],
 				'la' => (float) $t['lat'], 'lo' => (float) $t['lon'],
 				'by' => (string) ($t['author'] ?? ''), 'u' => Settings::userKey((int) $t['user_id']), 'mine' => (int) $t['user_id'] === $uid,
 				'pending' => (int) $t['published'] === 0, 'cm' => (int) $t['allow_comments'] === 1,

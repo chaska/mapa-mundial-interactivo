@@ -192,6 +192,17 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			</div>
 
 			<div class="mv-field">
+				<label for="mv-year"><?php echo $t('COM_MAPAVIAJES_FIELD_YEAR'); ?></label>
+				<select class="mv-input" id="mv-year" aria-describedby="mv-yerr">
+					<option value=""><?php echo $t('COM_MAPAVIAJES_FIELD_YEAR_PH'); ?></option>
+					<?php for ($y = (int) date('Y'); $y >= 1950; $y--) : ?>
+						<option value="<?php echo $y; ?>"><?php echo $y; ?></option>
+					<?php endfor; ?>
+				</select>
+				<p class="mv-err" id="mv-yerr" role="alert"></p>
+			</div>
+
+			<div class="mv-field">
 				<label for="mv-title"><?php echo $t('COM_MAPAVIAJES_FIELD_TITLE'); ?></label>
 				<input class="mv-input" id="mv-title" type="text" maxlength="80" placeholder="<?php echo $t('COM_MAPAVIAJES_FIELD_TITLE_PH'); ?>" aria-describedby="mv-terr">
 				<p class="mv-err" id="mv-terr" role="alert"></p>
@@ -213,6 +224,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			<?php if ($this->album['allow_comments']) : ?>
 			<fieldset class="mv-field">
 				<legend><?php echo $t('COM_MAPAVIAJES_FIELD_COMMENTS'); ?></legend>
+				<?php if ($this->rankOn) : ?><p class="mv-help"><?php echo $t('COM_MAPAVIAJES_FIELD_COMMENTS_RANK'); ?></p><?php endif; ?>
 				<div class="mv-seg">
 					<label><input type="radio" name="mv-comments" value="1" checked><span><?php echo $t('JYES'); ?></span></label>
 					<label><input type="radio" name="mv-comments" value="0"><span><?php echo $t('JNO'); ?></span></label>

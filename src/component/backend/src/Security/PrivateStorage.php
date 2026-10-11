@@ -18,7 +18,8 @@ defined('_JEXEC') || die;
  */
 final class PrivateStorage
 {
-	public const NAME_PATTERN = '/^[a-f0-9]{32}\.webp$/D';
+	/** Either a bare random name (logos, and photos from before 1.5.0) or <user id>/viaje_<year>_<n>_<8 random hex>.webp */
+	public const NAME_PATTERN = '/^(?:[0-9]{1,10}\/)?[a-z0-9_]{1,90}\.webp$/D';
 
 	private string $root;
 
@@ -73,8 +74,12 @@ final class PrivateStorage
 		return $this->root . '/tmp/' . bin2hex(random_bytes(16)) . '.part';
 	}
 
-	/** Moves a verified temporary file to its final, random name. Returns that name. */
-	public function commit(string $temporary): string
+	/**
+	 * Moves a verified temporary file to its final place. Without a user it gets a random name straight under photos/ (map logos).
+	 * With a user it goes to photos/<user id>/viaje_<year>_<n>_<random>.webp so a person's photos stay together and easy to find years
+	 * later; the random tail keeps the name unguessable should the server ever serve the folder by mistake. Returns the name relative to photos/.
+	 */
+	public function commit(string $temporary, int $userId = 0, int $year = 0, int $number = 1): string
 	{
 		$real = realpath($temporary);
 		$tmpRoot = realpath($this->root . '/tmp');
@@ -84,9 +89,23 @@ final class PrivateStorage
 			throw new \RuntimeException('storage');
 		}
 
+		$dir = $this->root . '/photos';
+
+		if ($userId > 0)
+		{
+			$dir .= '/' . $userId;
+
+			if (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir))
+			{
+				throw new \RuntimeException('storage');
+			}
+		}
+
 		for ($i = 0; $i < 5; $i++)
 		{
-			$name = bin2hex(random_bytes(16)) . '.webp';
+			$name = $userId > 0
+				? $userId . '/viaje_' . max(0, min(9999, $year)) . '_' . max(1, min(99, $number)) . '_' . bin2hex(random_bytes(4)) . '.webp'
+				: bin2hex(random_bytes(16)) . '.webp';
 			$dest = $this->root . '/photos/' . $name;
 
 			if (!file_exists($dest) && @rename($real, $dest))
@@ -126,6 +145,12 @@ final class PrivateStorage
 		if ($path !== null)
 		{
 			@unlink($path);
+
+			// A person's folder goes when their last photo does (rmdir refuses a folder that still has files).
+			if (str_contains($name, '/'))
+			{
+				@rmdir(\dirname($path));
+			}
 		}
 	}
 

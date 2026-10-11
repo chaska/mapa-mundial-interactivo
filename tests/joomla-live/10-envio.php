@@ -16,9 +16,9 @@ $T = $db->t('mapaviajes_trips'); $P = $db->t('mapaviajes_photos');
 
 $db->setParams(['trips_per_hour' => 1000, 'trips_per_day' => 1000, 'review_first' => 1, 'notify_admin' => 0, 'max_photos' => 5, 'long_side' => 1000]);
 $db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); $db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
-foreach (glob("$storage/photos/*.webp") ?: [] as $f) { unlink($f); }
+foreach (glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: [] as $f) { unlink($f); }
 $db->exec('UPDATE ' . $db->t('mapaviajes_albums') . " SET title = 'Nuestro mundo en fotos', published = 1, access = 2");
-$archivos = fn () => count(glob("$storage/photos/*.webp") ?: []) + count(glob("$storage/tmp/*") ?: []);
+$archivos = fn () => count(glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: []) + count(glob("$storage/tmp/*") ?: []);
 
 $guest = new Cliente($base, 'guest'); $ana = new Cliente($base, 'ana'); $beto = new Cliente($base, 'beto');
 const XHR = ['X-Requested-With: XMLHttpRequest', 'Accept: application/json'];
@@ -48,7 +48,7 @@ $d = json_decode($ana->get('/index.php?option=com_mapaviajes&task=trips.data&alb
 afirma(($d['ok'] ?? false) === true && $d['trips'] === [], 'los datos del mapa llegan (aun vacios)');
 
 function enviar(Cliente $c, array $o, array $fields, array $files, array $extraHeaders = [], bool $withToken = true, string $path = '/index.php?option=com_mapaviajes&task=trip.submit&format=json'): array {
-	$f = $fields + ['album_id' => (string) $o['albumId'], 'title' => 'Fotos en Kioto', 'place' => 'Kioto, Japón', 'lat' => '35.011600', 'lon' => '135.768300', 'allow_comments' => '1', 'notify' => '1', 'website' => ''];
+	$f = $fields + ['trip_year' => '2024', 'album_id' => (string) $o['albumId'], 'title' => 'Fotos en Kioto', 'place' => 'Kioto, Japón', 'lat' => '35.011600', 'lon' => '135.768300', 'allow_comments' => '1', 'notify' => '1', 'website' => ''];
 	if ($withToken) { $f[$o['token']] = '1'; }
 	$ct = ''; $body = multipart($f, $files, $ct);
 	$r = $c->post($path, $body, array_merge(XHR, ["Content-Type: $ct"], $extraHeaders));
@@ -68,7 +68,9 @@ $fotos = $db->filas("SELECT * FROM $P WHERE trip_id = :t ORDER BY ordering", [':
 afirma(count($fotos) === 2 && $fotos[0]['caption'] === 'Yo en el templo, al amanecer' && str_contains($fotos[1]['caption'], "\n"), 'dos fotos y sus pies de foto');
 afirma((int) $fotos[0]['width'] === 1000 && (int) $fotos[0]['height'] === 667, "horizontal 2400x1600 -> 1000x667 ({$fotos[0]['width']}x{$fotos[0]['height']})");
 $f0 = "$storage/photos/{$fotos[0]['filename']}";
-afirma(preg_match('/^[a-f0-9]{32}\.webp$/', $fotos[0]['filename']) === 1 && is_file($f0) && (new finfo(FILEINFO_MIME_TYPE))->file($f0) === 'image/webp', 'archivo guardado con nombre aleatorio y es WebP real');
+$anaId = (int) $trip['user_id'];
+afirma(preg_match('~^' . $anaId . '/viaje_2024_1_[a-f0-9]{8}\.webp$~', $fotos[0]['filename']) === 1 && preg_match('~^' . $anaId . '/viaje_2024_2_[a-f0-9]{8}\.webp$~', $fotos[1]['filename']) === 1 && is_file($f0) && (new finfo(FILEINFO_MIME_TYPE))->file($f0) === 'image/webp', 'la foto va a la carpeta de su autora (' . $fotos[0]['filename'] . ') con el ano del viaje y es WebP real');
+afirma((int) $trip['trip_year'] === 2024, 'el ano del viaje se guarda');
 $bytes = file_get_contents("$storage/photos/{$fotos[1]['filename']}");
 afirma(!str_contains($bytes, 'GPS') && !str_contains($bytes, 'SECRETCAMERA') && !str_contains($bytes, 'Exif'), 'ni GPS ni EXIF sobreviven en el archivo guardado');
 afirma(($fm = fileperms($f0) & 0007) === 0, 'permisos: ningun acceso para "otros"');
@@ -127,12 +129,12 @@ seccion('Ataques al envio: sesion y metodo');
 $base0 = $db->uno("SELECT COUNT(*) FROM $T"); $files0 = $archivos();
 $r = enviar($ana, $o, [], [$foto()], [], false);
 afirma($r['code'] === 403, 'sin token CSRF: 403');
-$ct = ''; $f = ['album_id' => '1', 'title' => 'x', 'lat' => '1', 'lon' => '1']; $body = multipart($f, [$foto()], $ct);
+$ct = ''; $f = ['trip_year' => '2024', 'album_id' => '1', 'title' => 'x', 'lat' => '1', 'lon' => '1']; $body = multipart($f, [$foto()], $ct);
 $r = $ana->post('/index.php?option=com_mapaviajes&task=trip.submit&format=json&' . $o['token'] . '=1', $body, array_merge(XHR, ["Content-Type: $ct"]));
 afirma($r['code'] === 403, 'token solo en la URL (no en el cuerpo): 403');
 $bad = enviar($ana, array_merge($o, ['token' => str_repeat('a', 32)]), [], [$foto()]);
 afirma($bad['code'] === 403, 'token inventado: 403');
-$ct = ''; $f = ['album_id' => (string) $o['albumId'], 'title' => 'Sin XHR', 'place' => 'x', 'lat' => '1', 'lon' => '1', $o['token'] => '1']; $body = multipart($f, [$foto()], $ct);
+$ct = ''; $f = ['trip_year' => '2024', 'album_id' => (string) $o['albumId'], 'title' => 'Sin XHR', 'place' => 'x', 'lat' => '1', 'lon' => '1', $o['token'] => '1']; $body = multipart($f, [$foto()], $ct);
 afirma($ana->post('/index.php?option=com_mapaviajes&task=trip.submit&format=json', $body, ["Content-Type: $ct"])['code'] === 403, 'sin cabecera X-Requested-With (envio desde otra web): 403');
 afirma(in_array($ana->get('/index.php?option=com_mapaviajes&task=trip.submit&format=json')['code'], [405, 403], true), 'GET al envio: rechazado');
 afirma($ana->pide('PUT', '/index.php?option=com_mapaviajes&task=trip.submit&format=json', '')['code'] >= 400, 'PUT al envio: rechazado');
@@ -178,8 +180,12 @@ foreach ([['lat', '999'], ['lat', '-90.0001'], ['lon', '181'], ['lat', '1e3'], [
 	$r = enviar($ana, $o, [$k => $v], [$foto()]);
 	afirma($r['code'] === 422, "$k=[" . addcslashes($v, "\0..\37") . '] rechazado (' . $r['code'] . ')');
 }
+foreach (['', '1899', '0', (string) ((int) date('Y') + 1), '2024.5', '20 24', '02024', 'abcd', '<b>2024', '-2024', '1e3'] as $y) {
+	$r = enviar($ana, $o, ['trip_year' => $y], [$foto()]);
+	afirma($r['code'] === 422, 'ano del viaje [' . addcslashes($y, "\0..\37") . '] rechazado (' . $r['code'] . ')');
+}
 foreach (['999999', '0', '-1', '1 OR 1=1', '1;DROP TABLE jt_users', 'abc', ''] as $a) {
-	$r = enviar($ana, $o, ['album_id' => $a], [$foto()]);
+	$r = enviar($ana, $o, ['trip_year' => '2024', 'album_id' => $a], [$foto()]);
 	afirma($r['code'] === 422 && ($r['json']['error'] ?? '') === ($enviar0 ??= $r['json']['error']), "album_id=[$a] rechazado con el mismo mensaje");
 }
 $aid = (int) $db->uno('SELECT id FROM ' . $db->t('mapaviajes_albums') . ' LIMIT 1');
@@ -243,7 +249,7 @@ afirma(in_array($r['code'], [413, 422, 403], true) && $db->uno("SELECT COUNT(*) 
 seccion('Limite de frecuencia');
 $db->setParams(['trips_per_hour' => 3, 'trips_per_day' => 10]);
 $db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
-$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/*.webp") ?: [] as $f) { unlink($f); }
+$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: [] as $f) { unlink($f); }
 $codes = [];
 for ($i = 0; $i < 5; $i++) { $codes[] = enviar($ana, $o, ['title' => "Viaje $i"], [$foto(jpegBytes(900, 600))])['code']; }
 afirma($codes === [201, 201, 201, 429, 429], 'tres envios por hora y despues 429: ' . implode(',', $codes));
@@ -251,12 +257,12 @@ $r = enviar($beto, ($ob = $beto->opciones()), ['title' => 'Viaje de beto'], [$fo
 afirma($r['code'] === 201, 'el limite es por usuario: beto puede enviar');
 
 seccion('Carrera: peticiones en paralelo contra el limite');
-$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/*.webp") ?: [] as $f) { unlink($f); }
+$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: [] as $f) { unlink($f); }
 $db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
 $ob2 = $ana->opciones();
 $handles = []; $mh = curl_multi_init(); $jar = $ana->jar;
 for ($i = 0; $i < 8; $i++) {
-	$f = ['album_id' => (string) $ob2['albumId'], 'title' => "Carrera $i", 'place' => 'x', 'lat' => '1.5', 'lon' => '2.5', 'allow_comments' => '0', 'notify' => '0', 'website' => '', $ob2['token'] => '1'];
+	$f = ['trip_year' => '2024', 'album_id' => (string) $ob2['albumId'], 'title' => "Carrera $i", 'place' => 'x', 'lat' => '1.5', 'lon' => '2.5', 'allow_comments' => '0', 'notify' => '0', 'website' => '', $ob2['token'] => '1'];
 	$ct = ''; $body = multipart($f, [$foto(jpegBytes(900, 600))], $ct);
 	$ch = curl_init($base . '/index.php?option=com_mapaviajes&task=trip.submit&format=json');
 	curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEFILE => $jar, CURLOPT_HTTPHEADER => array_merge(XHR, ["Content-Type: $ct"]), CURLOPT_TIMEOUT => 120]);
@@ -264,12 +270,12 @@ for ($i = 0; $i < 8; $i++) {
 }
 do { curl_multi_exec($mh, $running); curl_multi_select($mh, 1.0); } while ($running > 0);
 $codes = array_map(fn ($h) => curl_getinfo($h, CURLINFO_RESPONSE_CODE), $handles); sort($codes);
-$stored = (int) $db->uno("SELECT COUNT(*) FROM $T"); $filesNow = count(glob("$storage/photos/*.webp") ?: []);
+$stored = (int) $db->uno("SELECT COUNT(*) FROM $T"); $filesNow = count(glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: []);
 afirma($stored === 3, "8 envios simultaneos con limite 3 por hora: se guardan exactamente 3 ($stored). Codigos: " . implode(',', $codes));
 afirma($filesNow === $stored, "y no sobran archivos ($filesNow archivos, $stored viajes)");
 
 seccion('Inundacion de peticiones rechazadas');
-$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/*.webp") ?: [] as $f) { unlink($f); }
+$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/{,*/}*.webp", GLOB_BRACE) ?: [] as $f) { unlink($f); }
 $db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
 $c429 = 0; $first429 = 0;
 for ($i = 1; $i <= 30; $i++) {

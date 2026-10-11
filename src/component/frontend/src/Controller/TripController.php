@@ -123,7 +123,7 @@ class TripController extends BaseController
 	{
 		$out = [];
 
-		foreach (['album_id', 'title', 'place', 'lat', 'lon', 'allow_comments', 'notify', 'website'] as $key)
+		foreach (['album_id', 'trip_year', 'title', 'place', 'lat', 'lon', 'allow_comments', 'notify', 'website'] as $key)
 		{
 			$out[$key] = $_POST[$key] ?? '';
 		}

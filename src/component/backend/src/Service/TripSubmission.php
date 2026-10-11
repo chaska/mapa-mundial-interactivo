@@ -91,6 +91,7 @@ final class TripSubmission
 		}
 
 		[$lat, $lon] = $this->coordinates($post['lat'] ?? null, $post['lon'] ?? null);
+		$year        = $this->year($post['trip_year'] ?? null);
 
 		if ($place === '')
 		{
@@ -185,10 +186,10 @@ final class TripSubmission
 		{
 			foreach ($temporaries as $i => $tmp)
 			{
-				$names[$i] = $storage->commit($tmp);
+				$names[$i] = $storage->commit($tmp, $userId, $year, $i + 1);
 			}
 
-			$tripId = $this->store($userId, $album, $title, $place, $lat, $lon, $post, $names, $meta, $captions, $this->publishesDirectly($user) ? 1 : 0);
+			$tripId = $this->store($userId, $album, $title, $place, $lat, $lon, $post, $names, $meta, $captions, $this->publishesDirectly($user) ? 1 : 0, $year);
 		}
 		catch (\Throwable $e)
 		{
@@ -217,6 +218,19 @@ final class TripSubmission
 		$this->notifyAdministrators($user, $album['title'], $title, \count($names), $published === 0);
 
 		return ['id' => $tripId, 'published' => $published];
+	}
+
+	/** The year the trip happened: a whole number from 1900 to this year, nothing else. */
+	private function year(mixed $raw): int
+	{
+		$s = \is_string($raw) ? trim($raw) : '';
+
+		if (preg_match('/^[0-9]{4}$/D', $s) !== 1 || (int) $s < 1900 || (int) $s > (int) Factory::getDate()->format('Y'))
+		{
+			throw new SubmissionException('year', 422);
+		}
+
+		return (int) $s;
 	}
 
 	/** Trips go live at once when moderation is off, and always for Super Users (they are the moderators). */
@@ -348,8 +362,9 @@ final class TripSubmission
 	 * @param   array<int, array{width: int, height: int, bytes: int}>  $meta
 	 * @param   array<int, string>                                  $captions
 	 * @param   int                                                 $published  1 live, 0 waiting for review
+	 * @param   int                                                 $year       year of the trip
 	 */
-	private function store(int $userId, array $album, string $title, string $place, float $lat, float $lon, array $post, array $names, array $meta, array $captions, int $published): int
+	private function store(int $userId, array $album, string $title, string $place, float $lat, float $lon, array $post, array $names, array $meta, array $captions, int $published, int $year): int
 	{
 		$db        = $this->db;
 		$now       = Factory::getDate()->toSql();
@@ -379,12 +394,13 @@ final class TripSubmission
 
 			$query = $db->getQuery(true)
 				->insert($db->quoteName('#__mapaviajes_trips'))
-				->columns($db->quoteName(['album_id', 'user_id', 'title', 'place', 'lat', 'lon', 'allow_comments', 'notify', 'published', 'photo_count', 'created']))
-				->values(':album, :user, :title, :place, :lat, :lon, :allow, :notify, :pub, :cnt, :created')
+				->columns($db->quoteName(['album_id', 'user_id', 'title', 'place', 'lat', 'lon', 'allow_comments', 'notify', 'published', 'photo_count', 'trip_year', 'created']))
+				->values(':album, :user, :title, :place, :lat, :lon, :allow, :notify, :pub, :cnt, :year, :created')
 				->bind(':album', $albumId, ParameterType::INTEGER)
 				->bind(':user', $userId, ParameterType::INTEGER)
 				->bind(':title', $title)
 				->bind(':place', $place)
+				->bind(':year', $year, ParameterType::INTEGER)
 				->bind(':lat', $latS)
 				->bind(':lon', $lonS)
 				->bind(':allow', $allow, ParameterType::INTEGER)

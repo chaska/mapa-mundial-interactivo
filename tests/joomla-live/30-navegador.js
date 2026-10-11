@@ -41,7 +41,7 @@ function jpeg(w, h) { // a real JPEG made by the browser itself would need a can
     // empty submit => friendly errors, nothing sent
     let sent = 0; page.on('request', (r) => { if (r.url().includes('trip.submit')) sent++; });
     await page.click('#mv-btnSend'); await page.waitForTimeout(300);
-    afirma(sent === 0 && (await page.locator('#mv-qerr').textContent()).length > 0 && (await page.locator('#mv-terr').textContent()).length > 0 && (await page.locator('#mv-perr').textContent()).length > 0, 'enviar vacio: tres errores claros y no se envia nada');
+    afirma(sent === 0 && (await page.locator('#mv-qerr').textContent()).length > 0 && (await page.locator('#mv-terr').textContent()).length > 0 && (await page.locator('#mv-perr').textContent()).length > 0 && (await page.locator('#mv-yerr').textContent()).length > 0, 'enviar vacio (incluido el ano): tres errores claros y no se envia nada');
     // search a place
     await page.fill("#mv-q", "ciudad del"); await page.waitForTimeout(900);
     afirma(await page.locator('#mv-list li[role=option]').count() >= 1, 'la busqueda de lugares sugiere "Ciudad del Cabo" (lista propia)');
@@ -51,6 +51,7 @@ function jpeg(w, h) { // a real JPEG made by the browser itself would need a can
     afirma(await page.locator('.mv-draft').count() === 1, 'chincheta provisional sobre el mapa');
     // hostile title: server and client must both refuse, nothing stored
     await page.fill('#mv-title', '<script>alert(1)</script>');
+    await page.selectOption('#mv-year', '2023');
     await page.setInputFiles('#mv-files', photos);
     await page.waitForTimeout(500);
     afirma(await page.locator('.mv-photo').count() === photos.length, photos.length + ' fotos en la lista con su pie');

@@ -314,7 +314,7 @@
 	/* ---------------------------------------------------------------- drawer: latest trips */
 	let dtab = 'new';
 	function tripRow(t, i) {
-		const meta = [photosLabel(t.ph.length), ago(t.ts)]; if (t.lk > 0) { meta.push(fmt(T('COM_MAPAVIAJES_JS_LIKES_N'), t.lk)); }
+		const meta = [photosLabel(t.ph.length), ago(t.ts)]; if (t.yr > 0) { meta.unshift(String(t.yr)); } if (t.lk > 0) { meta.push(fmt(T('COM_MAPAVIAJES_JS_LIKES_N'), t.lk)); }
 		return h('li', { class: 'mv-arow', style: 'animation-delay:' + Math.min(i, 10) * 35 + 'ms' },
 			h('a', { class: 'mv-arow-main', href: '#', onclick: (e) => { e.preventDefault(); openViewer(t); } },
 				t.ph.length ? h('img', { alt: '', src: photoSrc(t.ph[0].id), width: '64', height: '64' }) : h('span', { style: 'width:64px;height:64px' }),
@@ -551,7 +551,7 @@
 	function closePanel(reset) { if (!panel) { return; } panel.classList.remove('mv-open'); if (reset) { resetForm(); } if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); } placeDraft(); }
 	function resetForm() {
 		F.pt = null; F.titleTouched = false; for (const p of F.photos) { URL.revokeObjectURL(p.url); } F.photos = [];
-		$('form').reset(); $('q').value = ''; $('title').value = ''; $('where').hidden = true;
+		$('form').reset(); $('yerr').textContent = ''; $('year').removeAttribute('aria-invalid'); $('q').value = ''; $('title').value = ''; $('where').hidden = true;
 		for (const id of ['qerr', 'terr', 'perr', 'summary']) { $(id).textContent = ''; }
 		$('q').removeAttribute('aria-invalid'); $('title').removeAttribute('aria-invalid'); renderPhotos(); syncSub(); placeDraft();
 	}
@@ -595,6 +595,7 @@
 		});
 		$('list').addEventListener('pointerdown', (e) => { const li = e.target.closest('[data-i]'); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
 		document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.mv-combo')) { hideList(); } });
+		$('year').addEventListener('change', () => { $('year').removeAttribute('aria-invalid'); $('yerr').textContent = ''; });
 		$('title').addEventListener('input', () => { F.titleTouched = true; $('title').removeAttribute('aria-invalid'); $('terr').textContent = ''; });
 
 		/* photos */
@@ -662,6 +663,7 @@
 		function showErrors() {
 			const errs = [];
 			if (!F.pt) { $('qerr').textContent = T('COM_MAPAVIAJES_JS_E_PLACE'); $('q').setAttribute('aria-invalid', 'true'); errs.push($('q')); }
+			if (!$('year').value) { $('yerr').textContent = T('COM_MAPAVIAJES_JS_E_YEAR'); $('year').setAttribute('aria-invalid', 'true'); errs.push($('year')); }
 			if (!$('title').value.trim()) { $('terr').textContent = T('COM_MAPAVIAJES_JS_E_TITLE'); $('title').setAttribute('aria-invalid', 'true'); errs.push($('title')); }
 			if (!F.photos.length) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PHOTOS'); errs.push($('files')); }
 			$('summary').textContent = errs.length ? T('COM_MAPAVIAJES_JS_E_MISSING') : '';
@@ -675,7 +677,7 @@
 			let blobs;
 			try { blobs = await Promise.all(F.photos.map((p) => prepare(p.file))); } catch (_) { setBusy(false); $('perr').textContent = fmt(T('COM_MAPAVIAJES_JS_E_SIZE'), ''); return; }
 			const fd = new FormData();
-			fd.append(O.token, '1'); fd.append('album_id', String(O.albumId)); fd.append('title', $('title').value); fd.append('place', F.pt.label);
+			fd.append(O.token, '1'); fd.append('album_id', String(O.albumId)); fd.append('title', $('title').value); fd.append('trip_year', $('year').value); fd.append('place', F.pt.label);
 			fd.append('lat', F.pt.la.toFixed(6)); fd.append('lon', F.pt.lo.toFixed(6)); fd.append('website', $('website').value);
 			const r = document.querySelector('input[name="mv-comments"]:checked'), allow = r ? r.value === '1' : false;
 			fd.append('allow_comments', allow ? '1' : '0'); fd.append('notify', allow && $('sub') && $('sub').checked ? '1' : '0');
