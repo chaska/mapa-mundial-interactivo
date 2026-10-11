@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS "#__mapaviajes_reactions";
 DROP TABLE IF EXISTS "#__mapaviajes_events";
 DROP TABLE IF EXISTS "#__mapaviajes_photos";
 DROP TABLE IF EXISTS "#__mapaviajes_trips";

@@ -85,6 +85,35 @@ final class TripRepository
 			];
 		}
 
+		// Reactions: counts for everyone, and which ones are mine (never who else reacted).
+		$counts = [];
+		$qc = $this->db->getQuery(true)
+			->select([$this->db->quoteName('trip_id'), $this->db->quoteName('kind'), 'COUNT(*) AS ' . $this->db->quoteName('c')])
+			->from($this->db->quoteName('#__mapaviajes_reactions'))
+			->where($this->db->quoteName('active') . ' = 1')
+			->whereIn($this->db->quoteName('trip_id'), $ids)
+			->group($this->db->quoteName('trip_id') . ', ' . $this->db->quoteName('kind'));
+
+		foreach ($this->db->setQuery($qc)->loadAssocList() ?: [] as $r)
+		{
+			$counts[(int) $r['trip_id']][(string) $r['kind']] = (int) $r['c'];
+		}
+
+		$mine   = [];
+		$meBind2 = $uid;
+		$qm = $this->db->getQuery(true)
+			->select([$this->db->quoteName('trip_id'), $this->db->quoteName('kind')])
+			->from($this->db->quoteName('#__mapaviajes_reactions'))
+			->where($this->db->quoteName('user_id') . ' = :rme')
+			->where($this->db->quoteName('active') . ' = 1')
+			->whereIn($this->db->quoteName('trip_id'), $ids)
+			->bind(':rme', $meBind2, ParameterType::INTEGER);
+
+		foreach ($this->db->setQuery($qm)->loadAssocList() ?: [] as $r)
+		{
+			$mine[(int) $r['trip_id']][(string) $r['kind']] = true;
+		}
+
 		$out = [];
 
 		foreach ($trips as $t)
@@ -96,6 +125,8 @@ final class TripRepository
 				'by' => (string) ($t['author'] ?? ''), 'mine' => (int) $t['user_id'] === $uid,
 				'pending' => (int) $t['published'] === 0, 'cm' => (int) $t['allow_comments'] === 1,
 				'ts' => strtotime((string) $t['created'] . ' UTC') ?: 0,
+				'lk' => $counts[$id]['like'] ?? 0, 'fn' => $counts[$id]['fan'] ?? 0,
+				'ml' => !empty($mine[$id]['like']), 'mf' => !empty($mine[$id]['fan']),
 				'ph' => $photos[$id] ?? [],
 			];
 		}

@@ -312,19 +312,36 @@
 	function toast(message, ms = 4600) { const t = $('toast'); t.textContent = message; t.classList.add('mv-show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('mv-show'), ms); }
 
 	/* ---------------------------------------------------------------- drawer: latest trips */
+	let dtab = 'new';
+	function tripRow(t, i) {
+		const meta = [photosLabel(t.ph.length), ago(t.ts)]; if (t.lk > 0) { meta.push(fmt(T('COM_MAPAVIAJES_JS_LIKES_N'), t.lk)); }
+		return h('li', { class: 'mv-arow', style: 'animation-delay:' + Math.min(i, 10) * 35 + 'ms' },
+			h('a', { class: 'mv-arow-main', href: '#', onclick: (e) => { e.preventDefault(); openViewer(t); } },
+				t.ph.length ? h('img', { alt: '', src: photoSrc(t.ph[0].id), width: '64', height: '64' }) : h('span', { style: 'width:64px;height:64px' }),
+				h('span', { style: 'min-width:0' }, h('strong', { text: t.t }), h('small', { text: t.p + ' · ' + t.by }), h('small', { class: 'mv-m', text: meta.join(' · ') }))),
+			h('div', { class: 'mv-arow-act' }, h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_ON_MAP') + ': ' + t.t, onclick: () => {
+				if (innerWidth <= 720) { closeDrawer(); }
+				flyTo(viewFor(t.x, t.y, Math.max(KMIN * 16, V.k)), 900);
+				setTimeout(() => { const c = clusters().find((cc) => cc.items.includes(t)); if (c && V.k / KMIN < ZP) { openPop(c); } }, 950);
+			} }, h('span', { text: T('COM_MAPAVIAJES_JS_ON_MAP') }))));
+	}
 	function renderDrawer() {
-		const body = $('dBody');
+		const body = $('dBody'), favs = TRIPS.filter((t) => t.mf && !t.pending).sort((a, b) => b.ts - a.ts);
+		for (const tb of document.querySelectorAll('#mv-drawer [role=tab]')) { tb.setAttribute('aria-selected', String(tb.dataset.tab === dtab)); }
+		$('favN').textContent = favs.length ? String(favs.length) : ''; $('favN').hidden = !favs.length;
+		body.setAttribute('aria-labelledby', 'mv-tab-' + dtab);
+		if (dtab === 'fav') {
+			body.replaceChildren(favs.length ? h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_FAV_HELP') }) : null,
+				favs.length ? h('ul', { class: 'mv-list2' }, favs.map(tripRow))
+					: h('div', { class: 'mv-empty-fav' }, h('strong', { text: T('COM_MAPAVIAJES_JS_FAV_EMPTY') }), h('span', { text: T('COM_MAPAVIAJES_JS_FAV_EMPTY_HELP') })));
+			return;
+		}
 		const list = [...TRIPS].filter((t) => !t.pending).sort((a, b) => b.ts - a.ts).slice(0, 12);
-		body.replaceChildren(h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_LATEST_HELP') }),
-			h('ul', { class: 'mv-list2' }, list.map((t, i) => h('li', { class: 'mv-arow', style: 'animation-delay:' + Math.min(i, 10) * 35 + 'ms' },
-				h('a', { class: 'mv-arow-main', href: '#', onclick: (e) => { e.preventDefault(); openViewer(t); } },
-					t.ph.length ? h('img', { alt: '', src: photoSrc(t.ph[0].id), width: '64', height: '64' }) : h('span', { style: 'width:64px;height:64px' }),
-					h('span', { style: 'min-width:0' }, h('strong', { text: t.t }), h('small', { text: t.p + ' · ' + t.by }), h('small', { class: 'mv-m', text: photosLabel(t.ph.length) + ' · ' + ago(t.ts) }))),
-				h('div', { class: 'mv-arow-act' }, h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_ON_MAP') + ': ' + t.t, onclick: () => {
-					if (innerWidth <= 720) { closeDrawer(); }
-					flyTo(viewFor(t.x, t.y, Math.max(KMIN * 16, V.k)), 900);
-					setTimeout(() => { const c = clusters().find((cc) => cc.items.includes(t)); if (c && V.k / KMIN < ZP) { openPop(c); } }, 950);
-				} }, h('span', { text: T('COM_MAPAVIAJES_JS_ON_MAP') })))))));
+		body.replaceChildren(h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_LATEST_HELP') }), h('ul', { class: 'mv-list2' }, list.map(tripRow)));
+	}
+	for (const tb of document.querySelectorAll('#mv-drawer [role=tab]')) {
+		tb.addEventListener('click', () => { dtab = tb.dataset.tab; renderDrawer(); });
+		tb.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const o = document.querySelector('#mv-drawer [role=tab]:not([data-tab="' + tb.dataset.tab + '"])'); o.focus(); o.click(); } });
 	}
 	function openDrawer() { closePop(); if (panelOpen()) { closePanel(false); } renderDrawer(); $('drawer').classList.add('mv-open'); $('hint').classList.add('mv-off'); setTimeout(() => $('dTitle').focus({ preventScroll: true }), 300); }
 	function closeDrawer() { $('drawer').classList.remove('mv-open'); }
@@ -337,7 +354,7 @@
 		if (!t || !t.ph.length) { return; }
 		VWR.t = t; VWR.i = 0; VWR.opener = document.activeElement;
 		const v = $('viewer'); v.hidden = false; v.classList.remove('mv-bare'); v.classList.toggle('mv-single', t.ph.length < 2);
-		$('vT').textContent = t.t; showPhoto(0, 0); $('vClose').focus({ preventScroll: true });
+		$('vT').textContent = t.t; showPhoto(0, 0); syncReact(); $('vMsg').classList.remove('mv-show'); $('vMsg').textContent = ''; $('vClose').focus({ preventScroll: true });
 	}
 	function closeViewer() { $('viewer').hidden = true; if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (_) { /* ignore */ } } if (VWR.opener && VWR.opener.focus) { VWR.opener.focus({ preventScroll: true }); } }
 	function showPhoto(i, dir) {
@@ -350,6 +367,38 @@
 		$('vLive').textContent = n > 1 ? fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n) : '';
 		if (n > 1) { for (const d of [1, -1]) { new Image().src = photoSrc(VWR.t.ph[(VWR.i + d + n) % n].id); } }
 	}
+	/* ---- reactions: a heart with a random kind word underneath, and a star that says "I'm your fan!" ---- */
+	const LIKE_MSGS = Array.from({ length: 10 }, (_, i) => 'COM_MAPAVIAJES_JS_LIKE_' + (i + 1));
+	let lastMsg = -1, msgTimer = 0;
+	function randomLike() { let i; do { i = Math.floor(Math.random() * LIKE_MSGS.length); } while (i === lastMsg && LIKE_MSGS.length > 1); lastMsg = i; return T(LIKE_MSGS[i]); }
+	function showMsg(text) { const m = $('vMsg'); m.textContent = text; m.classList.remove('mv-show'); void m.offsetWidth; m.classList.add('mv-show'); clearTimeout(msgTimer); msgTimer = setTimeout(() => m.classList.remove('mv-show'), 2600); }
+	function syncReact() {
+		const t = VWR.t; if (!t) { return; }
+		const own = !!t.mine, rows = [['vLike', 'ml', 'lk', 'COM_MAPAVIAJES_JS_LIKE_LABEL', 'COM_MAPAVIAJES_JS_LIKE_UNDO'], ['vFan', 'mf', 'fn', 'COM_MAPAVIAJES_JS_FAN_LABEL', 'COM_MAPAVIAJES_JS_FAN_UNDO']];
+		for (const [id, mineKey, countKey, label, undo] of rows) {
+			const b = $(id), on = !!t[mineKey], n = t[countKey] || 0;
+			b.setAttribute('aria-pressed', String(on)); b.disabled = own || !!t.pending; $(id + 'N').textContent = n > 0 ? String(n) : '';
+			b.setAttribute('aria-label', own ? fmt(T('COM_MAPAVIAJES_JS_OWN_REACT'), t.lk || 0, t.fn || 0) : T(on ? undo : label) + (n > 0 ? ' (' + n + ')' : ''));
+		}
+	}
+	let reacting = false;
+	async function react(kind) {
+		const t = VWR.t; if (!t || t.mine || t.pending || reacting) { return; }
+		const mineKey = kind === 'fan' ? 'mf' : 'ml', countKey = kind === 'fan' ? 'fn' : 'lk', was = !!t[mineKey], wasN = t[countKey] || 0;
+		reacting = true; t[mineKey] = !was; t[countKey] = Math.max(0, wasN + (was ? -1 : 1)); syncReact();
+		const fd = new FormData(); fd.append(O.token, '1'); fd.append('trip_id', String(t.id)); fd.append('kind', kind);
+		try {
+			const res = await fetch(O.reactUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
+			let j = null; try { j = await res.json(); } catch (_) { /* not JSON */ }
+			if (!res.ok || !j || !j.ok) { throw new Error((j && j.error) || 'react'); }
+			t[mineKey] = !!j.active; t[countKey] = j.count; syncReact();
+			if (j.active) { showMsg(kind === 'fan' ? T('COM_MAPAVIAJES_JS_FAN_MSG') : randomLike()); }
+			if (drawerOpen()) { renderDrawer(); }
+		} catch (err) {
+			t[mineKey] = was; t[countKey] = wasN; syncReact(); toast(err && err.message && err.message !== 'react' ? err.message : T('COM_MAPAVIAJES_JS_REACT_ERR'));
+		} finally { reacting = false; }
+	}
+	$('vLike').onclick = (e) => { e.stopPropagation(); react('like'); }; $('vFan').onclick = (e) => { e.stopPropagation(); react('fan'); };
 	const vStep = (d) => { if (VWR.t && VWR.t.ph.length > 1) { showPhoto(VWR.i + d, d); } };
 	$('vPrev').onclick = (e) => { e.stopPropagation(); vStep(-1); }; $('vNext').onclick = (e) => { e.stopPropagation(); vStep(1); };
 	$('vClose').onclick = closeViewer;

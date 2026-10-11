@@ -111,7 +111,11 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 <aside class="mv-drawer" id="mv-drawer" aria-labelledby="mv-dTitle">
 	<div class="mv-d-head"><h2 id="mv-dTitle" tabindex="-1"><?php echo $t('COM_MAPAVIAJES_LATEST'); ?></h2>
 		<button class="mv-close" type="button" id="mv-dClose" aria-label="<?php echo $t('COM_MAPAVIAJES_CLOSE'); ?>"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-	<div class="mv-d-body" id="mv-dBody" tabindex="0"></div>
+	<div class="mv-tabs" role="tablist" aria-label="<?php echo $t('COM_MAPAVIAJES_LATEST'); ?>">
+		<button type="button" role="tab" id="mv-tab-new" aria-selected="true" aria-controls="mv-dBody" data-tab="new"><?php echo $t('COM_MAPAVIAJES_TAB_NEW'); ?></button>
+		<button type="button" role="tab" id="mv-tab-fav" aria-selected="false" aria-controls="mv-dBody" data-tab="fav"><?php echo $t('COM_MAPAVIAJES_TAB_FAV'); ?> <b id="mv-favN"></b></button>
+	</div>
+	<div class="mv-d-body" id="mv-dBody" role="tabpanel" tabindex="0"></div>
 </aside>
 
 <div class="mv-viewer" id="mv-viewer" role="dialog" aria-modal="true" aria-label="<?php echo $t('COM_MAPAVIAJES_VIEWER'); ?>" hidden>
@@ -120,9 +124,12 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 		<button class="mv-v-btn" type="button" id="mv-vClose" aria-label="<?php echo $t('COM_MAPAVIAJES_CLOSE'); ?>"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 		<div class="mv-v-title"><strong id="mv-vT"></strong><span id="mv-vS"></span></div>
 		<div class="mv-v-tools">
+			<button class="mv-v-btn" type="button" id="mv-vLike" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-9-9.5C2 7.3 4.3 5 7 5c1.9 0 3.4 1 5 3 1.6-2 3.1-3 5-3 2.7 0 5 2.3 4 5.5-1.5 4.9-9 9.5-9 9.5z"/></svg><i id="mv-vLikeN"></i></button>
+			<button class="mv-v-btn mv-v-fan" type="button" id="mv-vFan" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17.2 6.4 20.3l1.2-6.3L3 9.6l6.3-.8z"/></svg><i id="mv-vFanN"></i></button>
 			<button class="mv-v-btn mv-v-fs" type="button" id="mv-vFs" aria-label="<?php echo $t('COM_MAPAVIAJES_FULLSCREEN'); ?>"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 		</div>
 	</div>
+	<p class="mv-v-msg" id="mv-vMsg" aria-live="polite"></p>
 	<button class="mv-v-nav mv-prev" type="button" id="mv-vPrev" aria-label="<?php echo $t('COM_MAPAVIAJES_PREV'); ?>"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
 	<button class="mv-v-nav mv-next" type="button" id="mv-vNext" aria-label="<?php echo $t('COM_MAPAVIAJES_NEXT'); ?>"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
 	<p class="mv-v-cap" id="mv-vCap"></p>

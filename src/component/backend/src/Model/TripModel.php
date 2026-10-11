@@ -61,6 +61,8 @@ class TripModel extends AdminModel
 			{
 				$del = $pk;
 				$db->setQuery($db->getQuery(true)->delete($db->quoteName('#__mapaviajes_photos'))->where($db->quoteName('trip_id') . ' = :d')->bind(':d', $del, ParameterType::INTEGER))->execute();
+				$del2 = $pk;
+				$db->setQuery($db->getQuery(true)->delete($db->quoteName('#__mapaviajes_reactions'))->where($db->quoteName('trip_id') . ' = :d2')->bind(':d2', $del2, ParameterType::INTEGER))->execute();
 
 				foreach ($names as $name)
 				{

@@ -48,6 +48,7 @@ class HtmlView extends BaseHtmlView
 		'COM_MAPAVIAJES_JS_AGO_D', 'COM_MAPAVIAJES_JS_LATEST_HELP', 'COM_MAPAVIAJES_JS_ON_MAP', 'COM_MAPAVIAJES_JS_NOTIFY_OFF', 'COM_MAPAVIAJES_JS_FULLSCREEN',
 		'COM_MAPAVIAJES_JS_LOAD_ERROR', 'COM_MAPAVIAJES_JS_SESSION', 'COM_MAPAVIAJES_JS_LOGIN', 'COM_MAPAVIAJES_JS_OCEAN_PACIFIC', 'COM_MAPAVIAJES_JS_OCEAN_ATLANTIC',
 		'COM_MAPAVIAJES_JS_OCEAN_INDIAN', 'COM_MAPAVIAJES_JS_OCEAN_ARCTIC', 'COM_MAPAVIAJES_JS_OCEAN_SOUTHERN', 'COM_MAPAVIAJES_JS_NO_TRIPS', 'COM_MAPAVIAJES_JS_TITLE_AUTO',
+		'COM_MAPAVIAJES_JS_LIKE_1', 'COM_MAPAVIAJES_JS_LIKE_2', 'COM_MAPAVIAJES_JS_LIKE_3', 'COM_MAPAVIAJES_JS_LIKE_4', 'COM_MAPAVIAJES_JS_LIKE_5', 'COM_MAPAVIAJES_JS_LIKE_6', 'COM_MAPAVIAJES_JS_LIKE_7', 'COM_MAPAVIAJES_JS_LIKE_8', 'COM_MAPAVIAJES_JS_LIKE_9', 'COM_MAPAVIAJES_JS_LIKE_10', 'COM_MAPAVIAJES_JS_FAN_MSG', 'COM_MAPAVIAJES_JS_LIKE_LABEL', 'COM_MAPAVIAJES_JS_LIKE_UNDO', 'COM_MAPAVIAJES_JS_FAN_LABEL', 'COM_MAPAVIAJES_JS_FAN_UNDO', 'COM_MAPAVIAJES_JS_OWN_REACT', 'COM_MAPAVIAJES_JS_LIKES_N', 'COM_MAPAVIAJES_JS_TAB_NEW', 'COM_MAPAVIAJES_JS_TAB_FAV', 'COM_MAPAVIAJES_JS_FAV_EMPTY', 'COM_MAPAVIAJES_JS_FAV_EMPTY_HELP', 'COM_MAPAVIAJES_JS_FAV_HELP', 'COM_MAPAVIAJES_JS_REACT_ERR',
 	];
 
 	public function display($tpl = null): void
@@ -105,6 +106,7 @@ class HtmlView extends BaseHtmlView
 			'placesUrl'  => $base . 'data/places.json',
 			'dataUrl'    => Route::_('index.php?option=com_mapaviajes&task=trips.data&album=' . (int) ($this->album['id'] ?? 0), false),
 			'submitUrl'  => Route::_('index.php?option=com_mapaviajes&task=trip.submit&format=json', false),
+			'reactUrl'   => Route::_('index.php?option=com_mapaviajes&task=reaction.toggle&format=json', false),
 			'photoUrl'   => Route::_('index.php?option=com_mapaviajes&task=photo.view&id=', false),
 			'loginUrl'   => Route::_('index.php?option=com_users&view=login', false),
 			'token'      => Session::getFormToken(),

@@ -29,7 +29,7 @@ foreach ($it as $f) {
 	preg_match_all('/COM_MAPAVIAJES[A-Z0-9_]*/', (string) file_get_contents($p), $m);
 	foreach ($m[0] as $k) { $used[$side][$k] = $p; }
 }
-$dynamic = ['COM_MAPAVIAJES_ERR_', 'COM_MAPAVIAJES_TRIPS', 'COM_MAPAVIAJES_ALBUMS', 'COM_MAPAVIAJES_ALBUM', 'COM_MAPAVIAJES_JS_'];  // prefixes built at runtime
+$dynamic = ['COM_MAPAVIAJES_ERR_', 'COM_MAPAVIAJES_TRIPS', 'COM_MAPAVIAJES_ALBUMS', 'COM_MAPAVIAJES_ALBUM', 'COM_MAPAVIAJES_JS_', 'COM_MAPAVIAJES_JS_LIKE_'];  // prefixes built at runtime
 foreach (['site' => $site, 'admin' => $admin + $site] as $side => $have) {
 	foreach ($used[$side] as $k => $p) {
 		if (in_array($k, $dynamic, true) || isset($core[$k])) { continue; }

@@ -20,6 +20,7 @@
 		</field>
 		<field name="trips_per_hour" type="number" label="COM_MAPAVIAJES_CONFIG_PER_HOUR" description="COM_MAPAVIAJES_CONFIG_PER_HOUR_DESC" default="3" min="1" max="50" step="1" filter="integer" validate="number" />
 		<field name="trips_per_day" type="number" label="COM_MAPAVIAJES_CONFIG_PER_DAY" description="COM_MAPAVIAJES_CONFIG_PER_DAY_DESC" default="10" min="1" max="200" step="1" filter="integer" validate="number" />
+		<field name="reactions_per_day" type="number" label="COM_MAPAVIAJES_CONFIG_REACTIONS_DAY" description="COM_MAPAVIAJES_CONFIG_REACTIONS_DAY_DESC" default="300" min="10" max="5000" step="10" filter="integer" validate="number" />
 		<field name="comments_default" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_COMMENTS_DEFAULT" description="COM_MAPAVIAJES_CONFIG_COMMENTS_DEFAULT_DESC" default="1" filter="integer">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
