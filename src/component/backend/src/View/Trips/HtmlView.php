@@ -89,6 +89,11 @@ class HtmlView extends BaseHtmlView
 			}
 		}
 
+		if ((string) $this->state->get('filter.published') !== '-2' && $canDo->get('core.delete'))
+		{
+			$toolbar->confirmButton('purge', 'COM_MAPAVIAJES_BTN_PURGE', 'trips.purge')->message('COM_MAPAVIAJES_PURGE_CONFIRM')->icon('icon-times')->listCheck(true);
+		}
+
 		if ((string) $this->state->get('filter.published') === '-2' && $canDo->get('core.delete'))
 		{
 			$toolbar->delete('trips.delete', 'JTOOLBAR_DELETE_FROM_TRASH')->message('JGLOBAL_CONFIRM_DELETE')->listCheck(true);

@@ -205,7 +205,7 @@
 	}
 	function onPin(c) {
 		closePop();
-		if (c.items.length === 1) { return V.k / KMIN >= ZP ? openViewer(c.items[0]) : openPop(c); }
+		if (c.items.length === 1) { return openViewer(c.items[0]); } // one album: its card opens at once, at any zoom
 		if (V.k / KMIN >= ZP) { return openPop(c); }
 		if (V.k >= KMAX * .85) { return openPop(c); }
 		const xs = c.items.map((i) => i.x), ys = c.items.map((i) => i.y), b = visibleBox();

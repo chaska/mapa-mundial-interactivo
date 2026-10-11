@@ -78,6 +78,11 @@ $adm('trips.delete', [$ids[1]]); afirma($db->uno("SELECT COUNT(*) FROM $T WHERE 
 $adm('trips.trash', [$ids[1]]); afirma($estado($ids[1]) === -2, 'a la papelera');
 $adm('trips.delete', [$ids[1]]);
 afirma($db->uno("SELECT COUNT(*) FROM $T WHERE id = :i", [':i' => $ids[1]]) == 0 && $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $ids[1]]) == 0 && !is_file("$storage/photos/$f2"), 'eliminar de la papelera borra el viaje, sus filas de fotos Y el archivo del disco');
+$f0 = $db->uno("SELECT filename FROM $P WHERE trip_id = :t", [':t' => $ids[0]]);
+$adm('trips.purge', [$ids[0]], false); afirma($db->uno("SELECT COUNT(*) FROM $T WHERE id = :i", [':i' => $ids[0]]) == 1 && is_file("$storage/photos/$f0"), 'eliminar definitivamente SIN token CSRF: no borra nada');
+$adm('trips.purge', [$ids[0]]); clearstatcache();
+afirma($db->uno("SELECT COUNT(*) FROM $T WHERE id = :i", [':i' => $ids[0]]) == 0 && $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $ids[0]]) == 0 && !is_file("$storage/photos/$f0"), 'eliminar definitivamente (sin pasar por la papelera) borra el viaje, sus fotos Y el archivo del disco (' . $db->uno("SELECT COUNT(*) FROM $T WHERE id = :i", [':i' => $ids[0]]) . '/' . $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $ids[0]]) . '/' . (is_file("$storage/photos/$f0") ? 'archivo' : 'sin archivo') . ' f0=' . $f0 . ')');
+afirma($estado($ids[2]) === 0, 'y no toca a los demas');
 $sinPermiso = $db->uno('SELECT rules FROM ' . $db->t('assets') . " WHERE name = 'com_mapaviajes'");
 afirma($estado($ids[2]) === 0, 'tercer viaje intacto');
 

@@ -23,6 +23,10 @@ const overlap = (a, b) => !(a.x + a.width <= b.x + 1 || b.x + b.width <= a.x + 1
       }
       return want();
     };
+    // one album alone: tapping its pin opens the trip card straight away (no small card in between)
+    const single = page.locator('.mv-pin').filter({ hasNotText: /\d/ }).first();
+    if (await single.count()) { await single.click({ force: true }); await page.waitForTimeout(3500); afirma(await page.locator('#mv-fi:not([hidden])').count() === 1 && await page.locator('.mv-pop').count() === 0, 'tocar la chincheta de un album solo abre la ficha del viaje (no una tarjeta pequena)'); await page.keyboard.press('Escape'); await page.waitForTimeout(300); afirma(await page.locator('#mv-fi[hidden]').count() === 1, 'Escape cierra la ficha'); }
+    else { afirma(false, 'hay una chincheta de un album solo'); }
     // 4 albums in one place -> four polaroids that do not touch each other
     const win = await zoomTo('4', async () => (await page.locator('.mv-polaroid').count()) >= 4);
     await page.waitForTimeout(900);

@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.7.1 — 2026-10-18
+- **Tocar la chincheta de un álbum abre la ficha del viaje** a cualquier zoom (antes, lejos, salía una tarjeta pequeña con «Abrir álbum»). La tarjeta pequeña queda solo para los grupos de varios álbumes, que ofrece su lista.
+- **Eliminar definitivamente** (botón nuevo en la lista de viajes del administrador, con confirmación): borra de una vez los viajes marcados con sus fotos, reacciones y comentarios, sin pasar por la papelera. (Mandar a la papelera sigue conservando las fotos para poder recuperar el viaje; «Eliminar de la papelera» las borra.)
+
 ## 1.7.0 — 2026-10-18
 - **Ficha del viaje**: al tocar una chincheta, una polaroid, una etiqueta o una fila de la lista se abre una ficha con las fotos arriba (flechas, contador, miniaturas y deslizar), debajo el pie de la foto que se ve, la fila «Me gusta · Soy fan · Comentarios» y debajo los **comentarios** (Engage u otro sistema) dentro de la propia ficha, con un campo «Escribir un comentario…» fijo abajo que te lleva al formulario. Tocar la foto la abre a **pantalla completa** (como antes); al cerrarla se vuelve a la ficha. En el móvil la ficha ocupa el 100 % de la pantalla.
 - **Sin «tirar para actualizar»**: `overscroll-behavior: none` en la página y `contain` en los contenedores que se desplazan (ficha, listas, paneles), para que el gesto de estirar hacia abajo no llegue a la app.
