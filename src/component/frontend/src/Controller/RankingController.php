@@ -11,6 +11,7 @@ namespace Chaska\Component\Mapaviajes\Site\Controller;
 
 defined('_JEXEC') || die;
 
+use Chaska\Component\Mapaviajes\Administrator\Service\Notifier;
 use Chaska\Component\Mapaviajes\Administrator\Service\RankingService;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Joomla\CMS\Factory;
@@ -61,7 +62,11 @@ class RankingController extends BaseController
 		}
 
 		$svc  = $this->service();
-		$svc->closePending();
+		foreach ($svc->closePending() as $closedWeek)
+		{
+			(new Notifier(Factory::getContainer()->get(DatabaseInterface::class), $set))->podium($closedWeek, $svc->closedWeek($closedWeek) ?? []);
+		}
+
 		$real = $set->showRealNames();
 		$me   = (int) $user->id;
 		$week = RankingService::weekStart(time());

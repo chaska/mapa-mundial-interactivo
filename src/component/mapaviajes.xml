@@ -33,8 +33,11 @@
 	<administration>
 		<menu>COM_MAPAVIAJES</menu>
 		<submenu>
+			<menu link="option=com_mapaviajes&amp;view=cpanel">COM_MAPAVIAJES_MENU_PANEL</menu>
 			<menu link="option=com_mapaviajes&amp;view=trips">COM_MAPAVIAJES_MENU_TRIPS</menu>
 			<menu link="option=com_mapaviajes&amp;view=albums">COM_MAPAVIAJES_MENU_ALBUMS</menu>
+			<menu link="option=com_mapaviajes&amp;view=ranking">COM_MAPAVIAJES_MENU_RANKING</menu>
+			<menu link="option=com_mapaviajes&amp;view=raffle">COM_MAPAVIAJES_MENU_RAFFLE</menu>
 		</submenu>
 
 		<files folder="backend">

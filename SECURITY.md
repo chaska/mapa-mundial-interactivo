@@ -63,3 +63,11 @@ Pendiente de validar en tu despliegue: `pcre.jit` (mejor activado), registro abi
 3. PHP: `expose_php=Off`, `display_errors=Off`, `upload_max_filesize` y `post_max_size` coherentes con los ajustes (el navegador reduce cada foto antes de subirla).
 4. Desactivar *Web Services* / *API Authentication* si no usas la API.
 5. Revisar el registro de eventos y la papelera de vez en cuando.
+
+## Añadido en 1.3.0
+- **Panel de administración**: los interruptores guardan por una acción propia que exige POST, `X-Requested-With`, token CSRF y permiso de Opciones; solo acepta una lista cerrada de nombres y de valores (probado con `storage_path`, valores fuera de lista, listas y vacíos).
+- **Sorteo**: solo para quien puede cambiar estados (moderadores); filtros validados y descartados si no son fechas o números; descarga y sorteo exigen POST con token; el CSV neutraliza celdas que empiezan por `= + - @`, tabulador o retorno de carro y duplica comillas; el sorteo usa `random_int` sin repetir; el registro guarda solo recuentos, nunca nombres ni correos.
+- **Correos a personas**: texto plano, el nombre y el título se reducen a una línea (no pueden introducir cabeceras), un solo enlace a nuestro propio mapa, nunca el correo de otra persona, nada a cuentas bloqueadas, un fallo de correo no interrumpe la moderación.
+- **Ranking**: se calcula con consultas parametrizadas sobre datos ya moderados; las semanas cerradas no cambian; el cierre usa la clave de la fila de semana como cerrojo.
+- **Filtro por persona**: usa una clave opaca (HMAC con el secreto de Joomla), no el id de usuario.
+- **RGPD**: acceso y supresión mediante las herramientas de Privacidad de Joomla y borrado en cascada al eliminar la cuenta (archivos incluidos). Ver `docs/PRIVACIDAD.md`.

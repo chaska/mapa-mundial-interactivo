@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="user" method="upgrade">
+	<name>PLG_USER_MAPAVIAJES</name>
+	<author>ChasKa</author>
+	<creationDate>2026-10-14</creationDate>
+	<copyright>Copyright (c) 2026 ChasKa</copyright>
+	<license>GNU General Public License version 3, or later</license>
+	<version>1.3.0</version>
+	<description>PLG_USER_MAPAVIAJES_XML_DESC</description>
+	<namespace path="src">Chaska\Plugin\User\Mapaviajes</namespace>
+	<files>
+		<folder>services</folder>
+		<folder plugin="mapaviajes">src</folder>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/plg_user_mapaviajes.ini</language>
+		<language tag="en-GB">en-GB/plg_user_mapaviajes.sys.ini</language>
+		<language tag="es-ES">es-ES/plg_user_mapaviajes.ini</language>
+		<language tag="es-ES">es-ES/plg_user_mapaviajes.sys.ini</language>
+	</languages>
+</extension>

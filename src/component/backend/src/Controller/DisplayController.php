@@ -15,13 +15,13 @@ use Joomla\CMS\MVC\Controller\BaseController;
 
 class DisplayController extends BaseController
 {
-	protected $default_view = 'trips';
+	protected $default_view = 'cpanel';
 
 	public function display($cachable = false, $urlparams = [])
 	{
 		// Only our own views, and only the layouts they really have: nothing the URL can steer into a file include.
-		$view = (string) $this->input->get('view', 'trips', 'cmd');
-		$view = \in_array($view, ['trips', 'albums', 'album'], true) ? $view : 'trips';
+		$view = (string) $this->input->get('view', 'cpanel', 'cmd');
+		$view = \in_array($view, ['cpanel', 'trips', 'albums', 'album', 'ranking', 'raffle'], true) ? $view : 'cpanel';
 		$this->input->set('view', $view);
 		$layout = (string) $this->input->get('layout', 'default', 'cmd');
 		$this->input->set('layout', ($view === 'album' && $layout === 'edit') ? 'edit' : 'default');

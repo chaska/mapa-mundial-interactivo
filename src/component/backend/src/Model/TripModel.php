@@ -12,6 +12,7 @@ namespace Chaska\Component\Mapaviajes\Administrator\Model;
 defined('_JEXEC') || die;
 
 use Chaska\Component\Mapaviajes\Administrator\Service\CommentsBridge;
+use Chaska\Component\Mapaviajes\Administrator\Service\Notifier;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\Database\ParameterType;
@@ -26,6 +27,39 @@ class TripModel extends AdminModel
 	public function getForm($data = [], $loadData = true)
 	{
 		return false; // trips are moderated, not edited
+	}
+
+	/** Moderation: publish / unpublish / hide / spam / trash. The author hears about a decision (not about what they did themselves). */
+	public function publish(&$pks, $value = 1)
+	{
+		$pks    = array_values(array_filter(array_map('intval', (array) $pks)));
+		$value  = (int) $value;
+		$db     = $this->getDatabase();
+		$before = [];
+
+		foreach ($pks as $pk)
+		{
+			$id = $pk;
+			$before[$pk] = (int) $db->setQuery($db->getQuery(true)->select($db->quoteName('published'))->from($db->quoteName('#__mapaviajes_trips'))->where($db->quoteName('id') . ' = :id')->bind(':id', $id, ParameterType::INTEGER))->loadResult();
+		}
+
+		$result = parent::publish($pks, $value);
+
+		if ($result)
+		{
+			$me       = (int) $this->getCurrentUser()->id;
+			$notifier = new Notifier($db, new Settings());
+
+			foreach ($before as $pk => $old)
+			{
+				if ($old !== $value)
+				{
+					$notifier->tripDecision($pk, $value, $me);
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	/** Only a trashed trip can be deleted, and only by someone allowed to delete. */

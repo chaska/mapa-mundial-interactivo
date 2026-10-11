@@ -1,5 +1,15 @@
 # Registro de cambios
 
+## 1.3.0 — 2026-10-14
+- **Ranking semanal con podio de cómic**: botón «Podio» en el mapa; semana en curso, semana pasada y tabla general; estrellas 3/2/1; puntos de viajero 10/6/3 (1 del 4 al 10). Solo cuentan viajes publicados con fotos; reacciones y comentarios suman como mucho lo mismo que viajes y fotos; topes por semana; desempate determinista; semanas cerradas inmutables (cierre perezoso a los 2 días, sin dos cierres a la vez). Cada persona puede **no aparecer**. Pesos y topes en Opciones.
+- **Filtro por persona** en el mapa (desde el podio o la lista): «Viajes de …».
+- **Panel de administración** con tarjetas e interruptores que se guardan solos (lista blanca de ajustes, token, solo con permiso de Opciones), vista de **Ranking** y vista de **Sorteo**: participantes (viajes publicados con fotos, filtros por fechas, mínimo y mapa), descarga CSV protegida contra inyección de fórmulas, sorteo al azar sin repetir y registro sin datos personales.
+- **Correos a personas**: aviso al autor cuando se publica o no se publica su viaje (texto plano, un solo enlace, sin cabeceras inyectables, no a cuentas bloqueadas) y, si se enciende, felicitación al podio.
+- **Privacidad (RGPD)**: plugins `privacy` (acceso y supresión desde las herramientas de Joomla) y `user` (al borrar una cuenta se borran viajes, fotos con sus archivos, reacciones, ranking, ajustes y el hilo de comentarios). `docs/PRIVACIDAD.md`.
+- Paquete con cuatro piezas: componente + plugins `content`, `user` y `privacy`; los nuevos se activan al actualizar desde versiones anteriores.
+- Fuente Bangers (OFL) para el estilo cómic, alojada en el servidor.
+- Pruebas nuevas: 30 (ranking), 29 (podio en Chromium), 59 (panel, sorteo, correos), 17 (privacidad).
+
 ## 1.2.0 — 2026-10-13
 - **Comentarios por viaje** mediante otra extensión (Joomla no trae comentarios). Opciones → Sistema de comentarios: Ninguno / Akeeba Engage-Engage / Eventos de contenido de Joomla. Botón «Comentarios» en el visor que abre un panel del mismo dominio; enlace `…&trip=ID` que abre el mapa en ese viaje.
 - Cada viaje tiene su fila de activos `com_mapaviajes.trip.N` y su contexto `com_mapaviajes.trip` (no se hace pasar por artículo). Al borrar el viaje se borran su hilo y su activo.

@@ -59,7 +59,9 @@ function inspect(string $src, array &$fail): array
 }
 
 $files  = inspect($src, $fail);
-$pFiles = inspect($root . '/src/plugins/content/mapaviajes', $fail);
+$plugins = ['content', 'user', 'privacy'];
+$pFiles = [];
+foreach ($plugins as $g) { $pFiles[$g] = inspect($root . '/src/plugins/' . $g . '/mapaviajes', $fail); }
 $kFiles = inspect($root . '/src/package', $fail);
 
 if ($fail) { fwrite(STDERR, "BUILD REFUSED:\n - " . implode("\n - ", $fail) . "\n"); exit(1); }
@@ -80,10 +82,14 @@ function makeZip(string $zipPath, string $base, array $list, array $extra = []):
 }
 @mkdir($root . '/dist', 0775, true);
 $com = $root . '/dist/com_mapaviajes.zip';
-$plg = $root . '/dist/plg_content_mapaviajes.zip';
 $pkg = $root . "/dist/pkg_mapaviajes-$ver.zip";
 makeZip($com, $src, $files);
-makeZip($plg, $root . '/src/plugins/content/mapaviajes', $pFiles);
-makeZip($pkg, $root . '/src/package', $kFiles, ['com_mapaviajes.zip' => $com, 'plg_content_mapaviajes.zip' => $plg]);
+$inside = ['com_mapaviajes.zip' => $com];
+foreach ($plugins as $g) {
+	$zipPlg = $root . "/dist/plg_{$g}_mapaviajes.zip";
+	makeZip($zipPlg, $root . '/src/plugins/' . $g . '/mapaviajes', $pFiles[$g]);
+	$inside["plg_{$g}_mapaviajes.zip"] = $zipPlg;
+}
+makeZip($pkg, $root . '/src/package', $kFiles, $inside);
 file_put_contents($pkg . '.sha256', hash_file('sha256', $pkg) . '  ' . basename($pkg) . "\n");
-echo "OK  $pkg  (component " . count($files) . " files, plugin " . count($pFiles) . ", package " . count($kFiles) . ")\n" . hash_file('sha256', $pkg) . "\n";
+echo "OK  $pkg  (component " . count($files) . " files, plugins " . array_sum(array_map('count', $pFiles)) . ", package " . count($kFiles) . ")\n" . hash_file('sha256', $pkg) . "\n";

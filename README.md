@@ -24,3 +24,6 @@ Los bocetos de diseño están en `boceto/` (HTML autocontenido: `mapa.html` y `a
 
 ## Comentarios
 Cada viaje puede tener comentarios a través de otra extensión (Engage probado; eventos de contenido de Joomla para otras). Joomla no trae comentarios propios. Cómo funciona, qué cadenas usa cada sistema y qué está probado: [`docs/COMENTARIOS.md`](docs/COMENTARIOS.md).
+
+## Ranking, sorteo y privacidad
+Podio semanal en estilo cómic, panel de administración con interruptores que se guardan solos, listado de participantes para un sorteo y herramientas de acceso y borrado de datos (RGPD). Ver [`docs/PRIVACIDAD.md`](docs/PRIVACIDAD.md): qué hace el código, qué datos guarda y qué te toca a ti (política de privacidad, bases del sorteo).

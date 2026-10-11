@@ -12,6 +12,8 @@
 	<files>
 		<file type="component" id="com_mapaviajes">com_mapaviajes.zip</file>
 		<file type="plugin" id="mapaviajes" group="content">plg_content_mapaviajes.zip</file>
+		<file type="plugin" id="mapaviajes" group="user">plg_user_mapaviajes.zip</file>
+		<file type="plugin" id="mapaviajes" group="privacy">plg_privacy_mapaviajes.zip</file>
 	</files>
 	<languages folder="language">
 		<language tag="en-GB">en-GB/pkg_mapaviajes.sys.ini</language>

@@ -1,0 +1,27 @@
+/* Administrator: iOS-style tiles, panels and switches. Everything is prefixed mvA- so nothing leaks into Joomla's own admin. */
+.mvA-wrap{max-width:1100px;margin:0 auto;padding:6px 0 30px}
+.mvA-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:0 0 22px}
+.mvA-tile{position:relative;display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:18px;background:var(--template-bg-light,#f4f6fb);border:1px solid rgba(0,0,0,.08);color:inherit;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:transform .15s,box-shadow .15s}
+.mvA-tile:hover,.mvA-tile:focus-visible{transform:translateY(-2px);box-shadow:0 8px 20px -10px rgba(0,0,0,.35);color:inherit}
+.mvA-ico{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:12px;background:#a8321f;color:#fff;font-size:1.3rem}
+.mvA-txt{display:flex;flex-direction:column;min-width:0}.mvA-txt strong{font-size:1.05rem}.mvA-txt small{color:#6b7280;line-height:1.25}
+.mvA-n{margin-left:auto;font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums}
+.mvA-alert{border-color:#c2410c;background:#fff4e8}.mvA-alert .mvA-n{color:#c2410c}
+.mvA-panel{margin:0 0 22px;padding:20px 22px;border-radius:18px;background:var(--template-bg-light,#f4f6fb);border:1px solid rgba(0,0,0,.08)}
+.mvA-panel h2{margin:0 0 4px;font-size:1.2rem}.mvA-sub{margin:0 0 12px;color:#6b7280}
+.mvA-group{margin:0 0 14px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.08);overflow:hidden}
+.mvA-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0;padding:12px 16px;cursor:pointer}
+.mvA-row+.mvA-row{border-top:1px solid rgba(0,0,0,.07)}
+.mvA-lab{display:flex;flex-direction:column;min-width:0}.mvA-lab small{color:#6b7280;line-height:1.3}
+.mvA-sw{position:absolute;opacity:0;width:1px;height:1px}
+.mvA-track{flex:none;position:relative;width:51px;height:31px;border-radius:999px;background:#c8ccd4;transition:background .2s}
+.mvA-track::after{content:"";position:absolute;left:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:transform .2s}
+.mvA-sw:checked+.mvA-track{background:#34c759}.mvA-sw:checked+.mvA-track::after{transform:translateX(20px)}
+.mvA-sw:focus-visible+.mvA-track,.mvA-select:focus-visible{outline:3px solid #1f6f78;outline-offset:2px}
+.mvA-sw:disabled+.mvA-track{opacity:.5}
+.mvA-select{flex:none;min-width:220px;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.2);background:#fff}
+#mvA-status{margin-left:8px;font-weight:600;color:#17663f}#mvA-status.mvA-bad{color:#b0413e}
+.mvA-inline{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 14px}
+.mvA-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.mvA-filters label{display:flex;flex-direction:column;gap:4px;font-weight:600}
+.mvA-winners{border-color:#34c759;background:#effaf2}.mvA-winners li{margin:4px 0;font-size:1.1rem}
+@media (prefers-reduced-motion:reduce){.mvA-tile,.mvA-track,.mvA-track::after{transition:none}}
