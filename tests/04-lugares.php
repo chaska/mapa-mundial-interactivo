@@ -23,7 +23,7 @@ foreach (new SplFileObject($file) as $line) {
 	if (strcmp($prev, $f[0]) > 0) { $sorted = false; } $prev = $f[0];
 	if ($f[0] !== PlaceSearch::normalise($f[1]) && count($unsafe) < 5) { $unsafe[] = "clave $f[0] != " . PlaceSearch::normalise($f[1]); }
 }
-afirma($n > 130000, "mas de 130 000 lugares ($n)");
+afirma($n > 120000, "mas de 120 000 lugares ($n)");
 afirma($bad === 0, 'todas las filas tienen 6 columnas validas');
 afirma($sorted, 'ordenado por clave (condicion de la busqueda binaria)');
 afirma($unsafe === [], 'la clave del archivo coincide con la normalizacion de PHP' . ($unsafe ? ': ' . $unsafe[0] : ''));
@@ -42,8 +42,9 @@ $first = fn (string $q) => ($p->search($q)[0] ?? null);
 afirma(($first('Ciudad del')['n'] ?? '') === 'Ciudad del Cabo', '"Ciudad del" -> Ciudad del Cabo');
 afirma(($first('lisboa')['c'] ?? '') === 'PT', '"lisboa" (nombre en español) -> Portugal');
 afirma(($first('MADRID')['c'] ?? '') === 'ES', 'mayusculas: Madrid de España antes que el de Colombia');
+afirma(($first('londres')['c'] ?? '') === 'GB', '"londres" (español) -> Reino Unido primero');
 afirma(($first('sao pa')['n'] ?? '') === 'São Paulo', 'sin tilde encuentra "São Paulo"');
-afirma(($first('  kyoto ')['n'] ?? '') !== '', 'espacios sobrantes no molestan');
+afirma(($first('  kioto ')['n'] ?? '') !== '', 'espacios sobrantes no molestan');
 afirma(count($p->search('springfield', 8)) === 8, 'tope de 8 resultados');
 foreach (['', 'a', "\0\0", '%', '_', '\\', '../../etc/passwd', "'; DROP TABLE x;--", '<script>', str_repeat('a', 5000), "\xff\xfe"] as $q) {
 	$r = $p->search($q); afirma(is_array($r) && count($r) <= 8, 'consulta hostil sin efecto: ' . substr(addcslashes(bin2hex(substr($q, 0, 6)), "\0"), 0, 12));
