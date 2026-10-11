@@ -137,6 +137,42 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<div class="mv-d-body" id="mv-dBody" role="tabpanel" tabindex="0"></div>
 </aside>
 
+<section class="mv-fi" id="mv-fi" role="dialog" aria-modal="true" aria-labelledby="mv-fiT" hidden>
+	<div class="mv-fi-card">
+		<header class="mv-fi-head">
+			<div><h2 id="mv-fiT"></h2><p id="mv-fiS"></p><p class="mv-fi-pend" id="mv-fiPend" hidden><?php echo $t('COM_MAPAVIAJES_JS_PENDING'); ?></p></div>
+			<button class="mv-fi-x" type="button" id="mv-fiX" aria-label="<?php echo $t('COM_MAPAVIAJES_CLOSE'); ?>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+		</header>
+		<div class="mv-fi-body" id="mv-fiBody">
+			<div class="mv-fi-hero" id="mv-fiHero">
+				<button class="mv-fi-img" type="button" id="mv-fiImgBtn" aria-label="<?php echo $t('COM_MAPAVIAJES_FI_ENLARGE'); ?>"><img id="mv-fiImg" alt="" draggable="false"></button>
+				<span class="mv-fi-exp" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><b><?php echo $t('COM_MAPAVIAJES_FI_ENLARGE'); ?></b></span>
+				<button class="mv-fi-nav mv-l" type="button" id="mv-fiPrev" aria-label="<?php echo $t('COM_MAPAVIAJES_PREV'); ?>"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+				<button class="mv-fi-nav mv-r" type="button" id="mv-fiNext" aria-label="<?php echo $t('COM_MAPAVIAJES_NEXT'); ?>"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+				<span class="mv-fi-cnt" id="mv-fiCnt"></span>
+			</div>
+			<div class="mv-fi-th" id="mv-fiTh"></div>
+			<p class="mv-fi-cap" id="mv-fiCap"></p>
+			<p class="mv-sr" id="mv-fiLive" aria-live="polite"></p>
+			<div class="mv-fi-bar">
+				<button type="button" id="mv-fLike" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-9-9.5C2 7.3 4.3 5 7 5c1.9 0 3.4 1 5 3 1.6-2 3.1-3 5-3 2.7 0 5 2.3 4 5.5-1.5 4.9-9 9.5-9 9.5z"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_LIKE'); ?></span><i id="mv-fLikeN"></i></button>
+				<button type="button" id="mv-fFan" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17.2 6.4 20.3l1.2-6.3L3 9.6l6.3-.8z"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_FAN'); ?></span><i id="mv-fFanN"></i></button>
+				<?php if ($this->commentsOn) : ?><button type="button" id="mv-fCom" hidden><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span><?php echo $t('COM_MAPAVIAJES_JS_COMMENTS_BTN'); ?></span></button><?php endif; ?>
+			</div>
+			<p class="mv-v-msg mv-fi-msg" id="mv-fMsg" aria-live="polite"></p>
+			<?php if ($this->commentsOn) : ?>
+			<section class="mv-fi-cm" id="mv-fiCm" aria-labelledby="mv-fiCmT" hidden>
+				<h3 id="mv-fiCmT"><?php echo $t('COM_MAPAVIAJES_JS_COMMENTS_BTN'); ?></h3>
+				<iframe id="mv-fiFrame" title="<?php echo $t('COM_MAPAVIAJES_JS_COMMENTS_BTN'); ?>" referrerpolicy="same-origin" scrolling="no"></iframe>
+			</section>
+			<?php endif; ?>
+		</div>
+		<?php if ($this->commentsOn) : ?>
+		<footer class="mv-fi-foot" id="mv-fiWriteBar" hidden><button type="button" id="mv-fiWrite"><?php echo $t('COM_MAPAVIAJES_FI_WRITE'); ?></button></footer>
+		<?php endif; ?>
+	</div>
+</section>
+
 <div class="mv-viewer" id="mv-viewer" role="dialog" aria-modal="true" aria-label="<?php echo $t('COM_MAPAVIAJES_VIEWER'); ?>" hidden>
 	<div class="mv-v-stage" id="mv-vStage"><img id="mv-vImg" alt="" draggable="false"></div>
 	<div class="mv-v-top">

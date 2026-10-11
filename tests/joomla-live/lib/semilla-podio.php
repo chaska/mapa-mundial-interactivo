@@ -7,7 +7,7 @@ $prefix = getenv('MV_PREFIX') ?: 'jt_'; $db = new Bd($prefix);
 $T = $db->t('mapaviajes_trips'); $P = $db->t('mapaviajes_photos'); $U = $db->t('users');
 $db->setParams(['rank_enabled' => 1, 'review_first' => 1]);
 foreach (['mapaviajes_ranking', 'mapaviajes_weeks', 'mapaviajes_reactions', 'mapaviajes_prefs'] as $t) { $db->exec('DELETE FROM ' . $db->t($t)); }
-$db->exec("DELETE FROM $P WHERE trip_id IN (SELECT id FROM $T WHERE title LIKE 'PD %')"); $db->exec("DELETE FROM $T WHERE title LIKE 'PD %'"); $db->exec("DELETE FROM $U WHERE username LIKE 'pd_%'");
+$db->exec("DELETE FROM $P WHERE trip_id IN (SELECT id FROM $T WHERE title LIKE 'PD %' OR title LIKE 'SEED%')"); $db->exec("DELETE FROM $T WHERE title LIKE 'PD %' OR title LIKE 'SEED%'"); $db->exec("DELETE FROM $U WHERE username LIKE 'pd_%'");
 $album = (int) $db->uno('SELECT id FROM ' . $db->t('mapaviajes_albums') . ' ORDER BY id LIMIT 1');
 $uid = fn (string $n) => (int) $db->uno("SELECT id FROM $U WHERE username = :u", [':u' => $n]);
 foreach (['alba', 'bruno', 'carla'] as $n) { $db->exec("INSERT INTO $U (name, username, email, password, block, \"sendEmail\", \"registerDate\", params) VALUES (:n, :u, :e, 'x', 0, 0, now(), '{}')", [':n' => ucfirst($n) . ' Podio', ':u' => "pd_$n", ':e' => "pd_$n@example.test"]); }

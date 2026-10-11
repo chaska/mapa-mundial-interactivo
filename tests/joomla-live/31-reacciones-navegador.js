@@ -23,25 +23,25 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
     // a previous run of this test may have left beto's marks: start clean
     await page.locator('#mv-dBody .mv-arow-main', { hasText: 'Semilla para reacciones' }).first().click();
-    await page.waitForSelector('#mv-viewer:not([hidden])');
-    for (const [btn, key] of [['#mv-vLike', 'like'], ['#mv-vFan', 'fan']]) {
+    await page.waitForSelector('#mv-fi:not([hidden])');
+    for (const [btn, key] of [['#mv-fLike', 'like'], ['#mv-fFan', 'fan']]) {
       if (await page.getAttribute(btn, 'aria-pressed') === 'true') { await page.click(btn); await page.waitForTimeout(600); }
     }
-    afirma(await page.getAttribute('#mv-vLike', 'aria-pressed') === 'false', 'corazon apagado al empezar');
+    afirma(await page.getAttribute('#mv-fLike', 'aria-pressed') === 'false', 'corazon apagado al empezar');
     const likes = ['¡Me encanta!', '¡Me gusta!'];
     const seen = new Set();
-    await page.click('#mv-vLike'); await page.waitForTimeout(500);
-    afirma(await page.getAttribute('#mv-vLike', 'aria-pressed') === 'true', 'el corazon queda marcado');
-    const m1 = (await page.textContent('#mv-vMsg')).trim();
-    afirma(m1.length > 2 && await page.locator('#mv-vMsg.mv-show').count() === 1, 'sale un mensaje debajo: "' + m1 + '"');
+    await page.click('#mv-fLike'); await page.waitForTimeout(500);
+    afirma(await page.getAttribute('#mv-fLike', 'aria-pressed') === 'true', 'el corazon queda marcado');
+    const m1 = (await page.textContent('#mv-fMsg')).trim();
+    afirma(m1.length > 2 && await page.locator('#mv-fMsg.mv-show').count() === 1, 'sale un mensaje debajo: "' + m1 + '"');
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-reaccion-corazon.png` });
     seen.add(m1);
-    for (let i = 0; i < 14; i++) { await page.click('#mv-vLike'); await page.waitForTimeout(220); if (await page.getAttribute('#mv-vLike', 'aria-pressed') === 'true') { seen.add((await page.textContent('#mv-vMsg')).trim()); } }
+    for (let i = 0; i < 14; i++) { await page.click('#mv-fLike'); await page.waitForTimeout(220); if (await page.getAttribute('#mv-fLike', 'aria-pressed') === 'true') { seen.add((await page.textContent('#mv-fMsg')).trim()); } }
     afirma(seen.size >= 3, 'los mensajes cambian al azar (distintos vistos: ' + seen.size + ')');
-    if (await page.getAttribute('#mv-vLike', 'aria-pressed') !== 'true') { await page.click('#mv-vLike'); await page.waitForTimeout(500); }
-    await page.click('#mv-vFan'); await page.waitForTimeout(500);
-    afirma(await page.getAttribute('#mv-vFan', 'aria-pressed') === 'true', 'la estrella queda marcada');
-    afirma((await page.textContent('#mv-vMsg')).trim() .match(/^(¡Soy tu fan!|I.m your fan!)$/) !== null, 'la estrella dice "¡Soy tu fan!"');
+    if (await page.getAttribute('#mv-fLike', 'aria-pressed') !== 'true') { await page.click('#mv-fLike'); await page.waitForTimeout(500); }
+    await page.click('#mv-fFan'); await page.waitForTimeout(500);
+    afirma(await page.getAttribute('#mv-fFan', 'aria-pressed') === 'true', 'la estrella queda marcada');
+    afirma((await page.textContent('#mv-fMsg')).trim() .match(/^(¡Soy tu fan!|I.m your fan!)$/) !== null, 'la estrella dice "¡Soy tu fan!"');
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-reaccion-estrella.png` });
     // survives a reload (server-authoritative) and shows in the favourites tab
     await page.reload(); await page.waitForSelector('#mv-svg path.mv-sphere[d]');

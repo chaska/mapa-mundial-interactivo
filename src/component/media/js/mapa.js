@@ -392,23 +392,24 @@
 
 	/* ---------------------------------------------------------------- photo viewer */
 	const VWR = { t: null, i: 0, opener: null };
-	function openViewer(t) {
+	/* the full-screen photo viewer (opened from the trip card by tapping a photo) */
+	function openFull(t, idx) {
 		if (!t || !t.ph.length) { return; }
-		VWR.t = t; VWR.i = 0; VWR.opener = document.activeElement;
+		VWR.t = t; VWR.i = idx || 0; VWR.opener = document.activeElement;
 		const v = $('viewer'); v.hidden = false; v.classList.remove('mv-bare'); v.classList.toggle('mv-single', t.ph.length < 2);
-		$('vT').textContent = t.t; showPhoto(0, 0); syncReact(); syncComments(); $('vMsg').classList.remove('mv-show'); $('vMsg').textContent = ''; $('vClose').focus({ preventScroll: true });
+		$('vT').textContent = t.t; showPhoto(VWR.i, 0); syncReact(); syncComments(); $('vMsg').classList.remove('mv-show'); $('vMsg').textContent = ''; $('vClose').focus({ preventScroll: true });
 	}
 	/* comments: another extension renders them; we only show its page for this trip inside a panel (same origin) */
 	function syncComments() {
 		const b = $('vCom'); if (!b) { return; }
-		closeComments(); b.hidden = !(O.commentsOn && O.allowComments && VWR.t && VWR.t.cm && !VWR.t.pending);
+		closeComments(); b.hidden = true; // the comments live in the trip card now
 	}
 	function openComments() { const f = $('cmFrame'); if (!VWR.t || !f) { return; } f.src = O.commentsUrl + encodeURIComponent(String(VWR.t.id)); $('cm').hidden = false; $('cmClose').focus({ preventScroll: true }); }
 	function closeComments() { const c = $('cm'); if (!c || c.hidden) { return; } c.hidden = true; $('cmFrame').removeAttribute('src'); if (!$('vCom').hidden) { $('vCom').focus({ preventScroll: true }); } }
 	// Escape must work while the focus is inside the comments page too (same origin, so its document is ours to listen to)
 	if ($('cmFrame')) { $('cmFrame').addEventListener('load', () => { try { $('cmFrame').contentDocument.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeComments(); } }); } catch (_) { /* not ours */ } }); }
 	if ($('vCom')) { $('vCom').onclick = (e) => { e.stopPropagation(); $('cm').hidden ? openComments() : closeComments(); }; $('cmClose').onclick = (e) => { e.stopPropagation(); closeComments(); }; }
-	function closeViewer() { if ($('cm')) { $('cm').hidden = true; $('cmFrame').removeAttribute('src'); } $('viewer').hidden = true; if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (_) { /* ignore */ } } if (VWR.opener && VWR.opener.focus) { VWR.opener.focus({ preventScroll: true }); } }
+	function closeViewer() { if ($('cm')) { $('cm').hidden = true; $('cmFrame').removeAttribute('src'); } $('viewer').hidden = true; if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (_) { /* ignore */ } } if (!$('fi').hidden) { fiShow(VWR.i, 0); $('fiImgBtn').focus({ preventScroll: true }); } else if (VWR.opener && VWR.opener.focus) { VWR.opener.focus({ preventScroll: true }); } }
 	function showPhoto(i, dir) {
 		const n = VWR.t.ph.length; VWR.i = (i + n) % n; const p = VWR.t.ph[VWR.i], img = $('vImg');
 		img.style.transition = 'none'; img.style.opacity = dir ? 0 : 1; img.style.transform = dir ? 'translateX(' + dir * 48 + 'px)' : 'none';
@@ -418,6 +419,82 @@
 		$('vS').textContent = (n > 1 ? (VWR.i + 1) + ' / ' + n + ' · ' : '') + VWR.t.p;
 		$('vLive').textContent = n > 1 ? fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n) : '';
 		if (n > 1) { for (const d of [1, -1]) { new Image().src = photoSrc(VWR.t.ph[(VWR.i + d + n) % n].id); } }
+	}
+
+	/* ---------------------------------------------------------------- the trip card (opens from a pin, a polaroid, a tag or a list row):
+	   photos on top, the caption of the photo you see, then likes / favourite / comments. Tapping the photo opens it full screen. */
+	const fi = $('fi');
+	function fiShow(i, dir) {
+		const t = VWR.t, n = t.ph.length; VWR.i = (i + n) % n; const p = t.ph[VWR.i], img = $('fiImg');
+		img.style.transition = 'none'; img.style.opacity = dir ? 0 : 1; img.style.transform = dir ? 'translateX(' + dir * 40 + 'px)' : 'none';
+		img.src = photoSrc(p.id); img.alt = p.cap || fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n);
+		requestAnimationFrame(() => requestAnimationFrame(() => { img.style.transition = ''; img.style.opacity = 1; img.style.transform = 'none'; }));
+		$('fiCnt').textContent = (VWR.i + 1) + ' / ' + n; $('fiCnt').hidden = n < 2;
+		$('fiCap').textContent = p.cap || ''; $('fiCap').hidden = !p.cap;
+		for (const [k, b] of [...$('fiTh').children].entries()) { b.classList.toggle('mv-on', k === VWR.i); b.setAttribute('aria-current', String(k === VWR.i)); }
+		$('fiLive').textContent = n > 1 ? fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n) : '';
+		if (n > 1) { for (const d of [1, -1]) { new Image().src = photoSrc(t.ph[(VWR.i + d + n) % n].id); } }
+	}
+	function fiHeight() { const f = $('fiFrame'); try { const d = f.contentDocument; if (d && d.documentElement) { f.style.height = Math.max(160, d.documentElement.scrollHeight) + 'px'; } } catch (_) { /* not ours */ } }
+	function fiComments(on) {
+		const f = $('fiFrame'); if (!f) { return; }
+		$('fiCm').hidden = !on; $('fCom').hidden = !on; if ($('fiWriteBar')) { $('fiWriteBar').hidden = !on; }
+		if (!on) { f.removeAttribute('src'); return; }
+		f.style.height = '220px'; f.src = O.commentsUrl + encodeURIComponent(String(VWR.t.id));
+	}
+	function openViewer(t) {
+		if (!t || !t.ph.length) { return; }
+		closePop(); VWR.t = t; VWR.i = 0; VWR.opener = document.activeElement;
+		$('fiT').textContent = t.t;
+		$('fiS').textContent = [t.p, t.yr > 0 ? String(t.yr) : '', t.by ? fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) : ''].filter(Boolean).join(' · ');
+		$('fiPend').hidden = !t.pending;
+		const th = $('fiTh'); th.replaceChildren(...(t.ph.length > 1 ? t.ph.map((p, k) => h('button', { type: 'button', class: 'mv-th', 'aria-label': fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), k + 1, t.ph.length), onclick: () => fiShow(k, k > VWR.i ? 1 : -1) }, h('img', { alt: '', src: photoSrc(p.id) }))) : []));
+		for (const id of ['fiPrev', 'fiNext']) { $(id).hidden = t.ph.length < 2; }
+		fi.hidden = false; $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
+		fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending));
+		$('fiX').focus({ preventScroll: true });
+	}
+	function closeFi() {
+		if (fi.hidden) { return; }
+		fi.hidden = true; if ($('fiFrame')) { $('fiFrame').removeAttribute('src'); }
+		if (VWR.opener && VWR.opener.focus && document.contains(VWR.opener)) { VWR.opener.focus({ preventScroll: true }); }
+	}
+	if (fi) {
+		$('fiX').onclick = closeFi;
+		fi.addEventListener('pointerdown', (e) => { if (e.target === fi) { closeFi(); } });
+		$('fiImgBtn').onclick = () => openFull(VWR.t, VWR.i);
+		const step = (d) => { if (VWR.t && VWR.t.ph.length > 1) { fiShow(VWR.i + d, d); } };
+		$('fiPrev').onclick = (e) => { e.stopPropagation(); step(-1); }; $('fiNext').onclick = (e) => { e.stopPropagation(); step(1); };
+		$('fLike').onclick = (e) => { e.stopPropagation(); react('like'); }; $('fFan').onclick = (e) => { e.stopPropagation(); react('fan'); };
+		if ($('fCom')) {
+			$('fCom').onclick = () => { $('fiCm').scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' }); };
+			$('fiWrite').onclick = () => {
+				const f = $('fiFrame'); $('fiCm').scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' });
+				try { const ta = f.contentDocument.querySelector('textarea'); if (ta) { ta.scrollIntoView({ block: 'center' }); ta.focus(); } } catch (_) { /* not ours */ }
+			};
+			$('fiFrame').addEventListener('load', () => {
+				fiHeight();
+				try {
+					const d = $('fiFrame').contentDocument; if (!d || !d.body) { return; }
+					new ResizeObserver(fiHeight).observe(d.body);
+					d.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeFi(); } });
+				} catch (_) { /* not ours */ }
+			});
+		}
+		// swipe the photo sideways to change it (a plain tap opens it full screen)
+		(function () {
+			const hero = $('fiHero'); let x0 = null, y0 = 0, dx = 0, moved = false;
+			hero.addEventListener('pointerdown', (e) => { if (e.target.closest('.mv-fi-nav')) { return; } x0 = e.clientX; y0 = e.clientY; dx = 0; moved = false; });
+			hero.addEventListener('pointermove', (e) => { if (x0 === null) { return; } dx = e.clientX - x0; if (Math.abs(dx) > 8) { moved = true; } });
+			const end = () => { if (x0 === null) { return; } const was = moved; x0 = null; if (was && Math.abs(dx) > 50 && VWR.t.ph.length > 1) { step(dx < 0 ? 1 : -1); hero._swiped = true; setTimeout(() => { hero._swiped = false; }, 60); } };
+			hero.addEventListener('pointerup', end); hero.addEventListener('pointercancel', end);
+			$('fiImgBtn').addEventListener('click', (e) => { if (hero._swiped) { e.stopImmediatePropagation(); } }, true);
+		})();
+		document.addEventListener('keydown', (e) => {
+			if (fi.hidden || !$('viewer').hidden) { return; }
+			if (e.key === 'ArrowRight') { step(1); } else if (e.key === 'ArrowLeft') { step(-1); }
+			else if (e.key === 'Tab') { const f = [...fi.querySelectorAll('button:not([disabled]):not([hidden]), textarea, a[href]')].filter((x) => x.offsetParent !== null); if (!f.length) { return; } const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } }
+		});
 	}
 
 	/* ---- filter by PERSON (not by trip): the people button lists everyone who has published, a ticked box shows their albums,
@@ -521,14 +598,18 @@
 	const LIKE_MSGS = Array.from({ length: 10 }, (_, i) => 'COM_MAPAVIAJES_JS_LIKE_' + (i + 1));
 	let lastMsg = -1, msgTimer = 0;
 	function randomLike() { let i; do { i = Math.floor(Math.random() * LIKE_MSGS.length); } while (i === lastMsg && LIKE_MSGS.length > 1); lastMsg = i; return T(LIKE_MSGS[i]); }
-	function showMsg(text) { const m = $('vMsg'); m.textContent = text; m.classList.remove('mv-show'); void m.offsetWidth; m.classList.add('mv-show'); clearTimeout(msgTimer); msgTimer = setTimeout(() => m.classList.remove('mv-show'), 2600); }
+	function showMsg(text) { const ms = [$('vMsg'), $('fMsg')].filter(Boolean); for (const m of ms) { m.textContent = text; m.classList.remove('mv-show'); void m.offsetWidth; m.classList.add('mv-show'); } clearTimeout(msgTimer); msgTimer = setTimeout(() => { for (const m of ms) { m.classList.remove('mv-show'); } }, 2600); }
 	function syncReact() {
 		const t = VWR.t; if (!t) { return; }
-		const own = !!t.mine && !O.selfReact, rows = [['vLike', 'ml', 'lk', 'COM_MAPAVIAJES_JS_LIKE_LABEL', 'COM_MAPAVIAJES_JS_LIKE_UNDO'], ['vFan', 'mf', 'fn', 'COM_MAPAVIAJES_JS_FAN_LABEL', 'COM_MAPAVIAJES_JS_FAN_UNDO']];
-		for (const [id, mineKey, countKey, label, undo] of rows) {
-			const b = $(id), on = !!t[mineKey], n = t[countKey] || 0;
-			b.setAttribute('aria-pressed', String(on)); b.disabled = own || !!t.pending; $(id + 'N').textContent = n > 0 ? String(n) : '';
-			b.setAttribute('aria-label', own ? fmt(T('COM_MAPAVIAJES_JS_OWN_REACT'), t.lk || 0, t.fn || 0) : T(on ? undo : label) + (n > 0 ? ' (' + n + ')' : ''));
+		const own = !!t.mine && !O.selfReact;
+		for (const [pre, kinds] of [['v', ['Like', 'Fan']], ['f', ['Like', 'Fan']]]) {
+			for (const k of kinds) {
+				const fan = k === 'Fan', mineKey = fan ? 'mf' : 'ml', countKey = fan ? 'fn' : 'lk', label = fan ? 'COM_MAPAVIAJES_JS_FAN_LABEL' : 'COM_MAPAVIAJES_JS_LIKE_LABEL', undo = fan ? 'COM_MAPAVIAJES_JS_FAN_UNDO' : 'COM_MAPAVIAJES_JS_LIKE_UNDO';
+				const b = $(pre + k); if (!b) { continue; }
+				const on = !!t[mineKey], n = t[countKey] || 0;
+				b.setAttribute('aria-pressed', String(on)); b.disabled = own || !!t.pending; $(pre + k + 'N').textContent = n > 0 ? String(n) : '';
+				b.setAttribute('aria-label', own ? fmt(T('COM_MAPAVIAJES_JS_OWN_REACT'), t.lk || 0, t.fn || 0) : T(on ? undo : label) + (n > 0 ? ' (' + n + ')' : ''));
+			}
 		}
 	}
 	let reacting = false;
@@ -772,6 +853,7 @@
 	document.addEventListener('keydown', (e) => {
 		if (e.key !== 'Escape') { return; }
 		if (!$('viewer').hidden) { closeViewer(); return; }
+		if (!$('fi').hidden) { closeFi(); return; }
 		if (panel && !$('list').hidden) { $('list').hidden = true; return; }
 		if ($('popHost').firstChild) { closePop(); return; }
 		if (panelOpen()) { closePanel(false); return; }

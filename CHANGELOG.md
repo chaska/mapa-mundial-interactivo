@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## 1.7.0 — 2026-10-18
+- **Ficha del viaje**: al tocar una chincheta, una polaroid, una etiqueta o una fila de la lista se abre una ficha con las fotos arriba (flechas, contador, miniaturas y deslizar), debajo el pie de la foto que se ve, la fila «Me gusta · Soy fan · Comentarios» y debajo los **comentarios** (Engage u otro sistema) dentro de la propia ficha, con un campo «Escribir un comentario…» fijo abajo que te lleva al formulario. Tocar la foto la abre a **pantalla completa** (como antes); al cerrarla se vuelve a la ficha. En el móvil la ficha ocupa el 100 % de la pantalla.
+- **Sin «tirar para actualizar»**: `overscroll-behavior: none` en la página y `contain` en los contenedores que se desplazan (ficha, listas, paneles), para que el gesto de estirar hacia abajo no llegue a la app.
+- Pruebas actualizadas (`31`, `61`).
+
 ## 1.6.1 — 2026-10-17
 - **Móvil en horizontal**: los botones de arriba van en fila y los mandos (+, −, personas, mundo) pasan al borde derecho (a la izquierda se montaban en el logo); la brújula y la lista de personas se apartan para dejarles sitio. Probado a 667x375, 844x390 y 932x430.
 

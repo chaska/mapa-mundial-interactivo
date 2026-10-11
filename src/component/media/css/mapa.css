@@ -550,3 +550,56 @@ html,body{overscroll-behavior:none}
   .mv-ppl{left:auto;right:calc(max(16px,env(safe-area-inset-right)) + 64px);bottom:max(18px,env(safe-area-inset-bottom));width:min(300px,calc(100vw - 120px));max-height:calc(100dvh - 90px)}
   .mv-hint{max-width:calc(100vw - 260px)}
 }
+
+/* ===== the trip card: photos, caption, likes, comments (a modal on a computer, the whole screen on a phone) ===== */
+.mv-fi{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(25,12,5,.62);padding:20px;overscroll-behavior:none;touch-action:manipulation}
+.mv-fi[hidden]{display:none}
+.mv-fi-card{position:relative;display:flex;flex-direction:column;width:min(780px,100%);max-height:min(92dvh,860px);background:var(--panel);color:var(--ink);border:2px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;animation:mv-popin .3s var(--ease) both}
+.mv-fi-head{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 8px}
+.mv-fi-head h2{margin:0;font:700 clamp(1.1rem,1rem + .6vw,1.4rem)/1.15 Cinzel,"Bricolage Grotesque",serif;overflow-wrap:anywhere}
+.mv-fi-head p{margin:2px 0 0;font-size:.875rem;color:var(--ink-2)}
+.mv-fi-pend{color:#a8321f!important;font-weight:600}
+.mv-fi-x{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;border:0;background:#eadcc6;color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.mv-fi-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.mv-fi-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 16px 16px;scrollbar-width:thin}
+.mv-fi-hero{position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--ink);background:#150d07;height:clamp(220px,46dvh,440px);touch-action:pan-y}
+.mv-fi-img{display:block;width:100%;height:100%;padding:0;border:0;background:none;cursor:zoom-in}
+.mv-fi-img img{width:100%;height:100%;object-fit:contain;display:block;transition:opacity .2s,transform .25s var(--ease);user-select:none;-webkit-user-drag:none}
+.mv-fi-exp{position:absolute;right:10px;top:10px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.93);color:var(--ink);border-radius:10px;padding:6px 10px;font:600 .75rem var(--text);pointer-events:none}
+.mv-fi-exp svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.mv-fi-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.93);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.mv-fi-nav[hidden]{display:none}.mv-fi-nav.mv-l{left:10px}.mv-fi-nav.mv-r{right:10px}
+.mv-fi-nav svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.mv-fi-cnt{position:absolute;left:10px;bottom:10px;background:rgba(45,27,16,.86);color:#fff;border-radius:999px;padding:3px 10px;font:600 .75rem var(--text)}
+.mv-fi-th{display:flex;gap:8px;margin:8px 0 0;overflow-x:auto;overscroll-behavior-x:contain}
+.mv-fi-th:empty{display:none}
+.mv-fi-th .mv-th{flex:none;width:60px;height:44px;padding:0;border:2px solid transparent;border-radius:7px;overflow:hidden;background:#d8c9a6;cursor:pointer}
+.mv-fi-th .mv-th.mv-on{border-color:#a8321f}
+.mv-fi-th img{width:100%;height:100%;object-fit:cover;display:block}
+.mv-fi-cap{margin:10px 2px 6px;font:600 1.5rem/1.2 Caveat,cursive;color:#3a2412;overflow-wrap:anywhere}
+.mv-fi-cap[hidden]{display:none}
+.mv-fi-bar{display:flex;flex-wrap:wrap;gap:8px;border-top:1.5px dashed #c4a982;border-bottom:1.5px dashed #c4a982;padding:8px 0;margin:8px 0 6px}
+.mv-fi-bar button{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:0;border-radius:12px;background:#eadcc6;color:var(--ink);font:600 .875rem var(--text);cursor:pointer}
+.mv-fi-bar button[hidden]{display:none}
+.mv-fi-bar button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.mv-fi-bar button[aria-pressed=true]{background:#a8321f;color:#fff}.mv-fi-bar button[aria-pressed=true] svg{fill:currentColor}
+.mv-fi-bar button:disabled{opacity:.55;cursor:default}
+.mv-fi-bar i{font-style:normal;font-variant-numeric:tabular-nums}
+.mv-fi-msg{position:static;margin:0;min-height:0;color:#a8321f;font-weight:600;text-align:left;background:none;box-shadow:none;transform:none;opacity:1;padding:0}
+.mv-fi-msg:not(.mv-show){display:none}
+.mv-fi-cm h3{margin:8px 0 6px;font:700 1rem Cinzel,serif}
+.mv-fi-cm iframe{display:block;width:100%;height:220px;border:0;background:transparent;overflow:hidden}
+.mv-fi-foot{padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:2px solid var(--ink);background:var(--panel)}
+.mv-fi-foot button{display:block;width:100%;min-height:48px;text-align:left;padding:0 14px;border:1.5px solid #c4a982;border-radius:12px;background:#fff;color:#7a6650;font:400 1rem var(--text);cursor:text}
+.mv-fi-foot[hidden]{display:none}
+.mv-fi button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+/* phone: the card is the whole screen, and a swipe inside it never reaches the app's pull-to-refresh */
+@media (max-width:720px){
+  .mv-fi{padding:0;background:var(--panel)}
+  .mv-fi-card{width:100%;height:100%;max-height:none;border:0;border-radius:0;box-shadow:none;padding-top:env(safe-area-inset-top)}
+  .mv-fi-head{padding:12px 12px 6px 14px}
+  .mv-fi-body{padding:0 12px 14px}
+  .mv-fi-cap{font-size:1.35rem}
+  .mv-fi-hero{height:clamp(200px,36dvh,340px)}
+}
+@media (prefers-reduced-motion:reduce){.mv-fi-card,.mv-fi-img img{animation:none;transition:none}}

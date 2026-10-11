@@ -20,14 +20,13 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await Promise.all([page.waitForNavigation(), page.click('button[type=submit].btn-primary, .btn-primary[type=submit]')]);
     // deep link: ?trip=ID opens the viewer on that trip
     await page.goto(BASE + '/index.php?option=com_mapaviajes&trip=' + id);
-    await page.waitForSelector('#mv-viewer:not([hidden])', { timeout: 20000 });
-    afirma((await page.textContent('#mv-vT')).includes('Semilla'), 'el enlace con ?trip= abre el visor en ese viaje');
-    afirma(await page.locator('#mv-vCom:not([hidden])').count() === 1, 'aparece el boton de comentarios');
-    await page.click('#mv-vCom');
-    await page.waitForSelector('#mv-cm:not([hidden])');
-    const frame = page.frameLocator('#mv-cmFrame');
+    await page.waitForSelector('#mv-fi:not([hidden])', { timeout: 20000 });
+    afirma((await page.textContent('#mv-fiT')).includes('Semilla'), 'el enlace con ?trip= abre la ficha de ese viaje');
+    afirma(await page.locator('#mv-fCom:not([hidden])').count() === 1 && await page.locator('#mv-fiCm:not([hidden])').count() === 1, 'la ficha trae el boton de comentarios y la seccion de comentarios debajo de las fotos');
+    await page.click('#mv-fCom');
+    const frame = page.frameLocator('#mv-fiFrame');
     await frame.locator('#akengageCommentForm').waitFor({ timeout: 20000 });
-    afirma(true, 'el panel carga el hilo de Engage con su formulario');
+    afirma(true, 'la ficha carga el hilo de Engage con su formulario');
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-comentarios.png` });
     const text = 'Comentario de prueba ' + name + ' ' + Date.now();
     // Joomla's editor (TinyMCE) lives in a frame of its own inside the panel
@@ -36,11 +35,11 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await Promise.all([page.waitForNavigation({ waitUntil: 'load' }).catch(() => {}), frame.locator('#akengageCommentForm button[type=submit]').click()]);
     await page.waitForTimeout(2500);
     const f = page.frames().find((x) => x.url().includes('view=tripcomments'));
-    afirma(!!f, 'tras comentar, el panel vuelve a la pagina de comentarios del viaje (no a otra)');
+    afirma(!!f, 'tras comentar, la ficha sigue en la pagina de comentarios del viaje (no en otra)');
     const body = f ? await f.content() : '';
     afirma(body.includes(text) || /moderaci|moderation|pending|revisi/i.test(body), 'el comentario aparece (o queda pendiente de moderacion)');
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-    afirma(await page.locator('#mv-cm[hidden]').count() === 1 && await page.getAttribute('#mv-cmFrame', 'src') === null, 'Escape cierra el panel y vacia el marco');
+    afirma(await page.locator('#mv-fi[hidden]').count() === 1 && await page.getAttribute('#mv-fiFrame', 'src') === null, 'Escape cierra la ficha y vacia el marco');
     await ctx.close();
   }
   afirma(errors.length === 0, 'sin errores de JavaScript' + (errors.length ? ': ' + errors[0] : ''));
