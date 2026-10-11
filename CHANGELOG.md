@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.6.1 — 2026-10-17
+- **Móvil en horizontal**: los botones de arriba van en fila y los mandos (+, −, personas, mundo) pasan al borde derecho (a la izquierda se montaban en el logo); la brújula y la lista de personas se apartan para dejarles sitio. Probado a 667x375, 844x390 y 932x430.
+
 ## 1.6.0 — 2026-10-17
 - **El logo del mapa se guarda como PNG** (`logo_<16 hex>.png`, reescalado a ≤ 512 px y re-codificado: transparencia intacta) y **se estampa como marca de agua en cada foto nueva** de ese mapa: esquina al azar, caja de 128 px (menos en fotos pequeñas), 50 % de transparencia, con un margen. Si la foto se descarga de la web se sabe de dónde viene. Si el logo no se puede leer, la foto se guarda igual sin marca. Las fotos ya subidas no se tocan.
 - **Comentarios con Engage 3.4.4+**: la vista usa el contrato genérico (`onContentAfterDisplay` con el contexto `com_mapaviajes.trip`, un objeto que solo lleva el `asset_id` y un `Registry` vacío); desaparecen el despachador privado y la fila de artículo de relleno. El plugin de contenido responde a `onAkeebaEngageGetAssetMeta` (añade `comments_show`). Al borrar un viaje se llama a `Meta::deleteAssetData` de Engage. Para verlos: Opciones → Comentarios → proveedor **Engage** (por defecto es «ninguno»), Engage 3.4.4 o posterior, plugin «Content – Engage» activo y permiso «Comentario» para el grupo que comenta. Con Engage instalado, el proveedor «eventos» también hace que Engage responda al evento estándar de Joomla.
