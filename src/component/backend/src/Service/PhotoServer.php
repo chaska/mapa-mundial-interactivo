@@ -47,7 +47,7 @@ final class PhotoServer
 		$etag = '"' . substr($gate['filename'], 0, 32) . '"';
 
 		header('X-Content-Type-Options: nosniff');
-		header('Cache-Control: private, max-age=3600, must-revalidate');
+		header('Cache-Control: private, no-cache'); // revalidate every time: a hidden or trashed photo must stop showing at once
 		header('Vary: Cookie');
 		header('ETag: ' . $etag);
 		header('Content-Security-Policy: default-src \'none\'; sandbox');

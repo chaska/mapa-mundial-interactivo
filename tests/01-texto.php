@@ -48,7 +48,14 @@ foreach ([
 	'hxxp://malo', 'mailto:a@b.com', 'a@b.com', 'a [at] b.com', 'a(at)b', "malo\u{FF0E}com", "\u{FF48}\u{FF54}\u{FF54}\u{FF50}\u{FF1A}//x",
 	'bit.ly/abc', 't.me/canal', 'wa.me/34600000000', '192.168.1.1', 'tel:+34600000000', 'whatsapp://send', 'casa.es', 'mi-tienda.xyz', '//malo.com',
 	'ejemplo.shop', 'ejemplo.online', 'ejemplo.ru',
+	// found by the independent review: dots that NFKC leaves alone, TLDs not on any list, uppercase short TLDs, spelled-out dots
+	"evil\u{3002}com", "www\u{3002}evil", "evil\u{FF61}com", "evil\u{FE52}com", 'evil.ninja', 'evil.cyou', 'evil.work', 'evil.cam', 'evil.gg', 'evil.ac',
+	'evil dot ninja', 'evil punto xyz', 'EXAMPLE.ES', 'Evil.Es', 'mi.Banco', 'visita casa.Tienda',
 ] as $c) { rechaza($c, 'text_link'); }
+seccion('Una frase normal sigue pasando (punto seguido de espacio, decimales, abreviaturas)');
+acepta('Llegamos tarde. Nos fuimos pronto. Genial.', 'Llegamos tarde. Nos fuimos pronto. Genial.');
+acepta('Cuesta 3.50 euros y sale a las 9.15', 'Cuesta 3.50 euros y sale a las 9.15');
+acepta('Ver p. 12 y pág. 40, etc. Todo bien', 'Ver p. 12 y pág. 40, etc. Todo bien');
 
 seccion('Limites');
 rechaza(str_repeat('a', 81), 'text_too_long', 80);
@@ -56,6 +63,8 @@ acepta(str_repeat('a', 80), str_repeat('a', 80), 80);
 rechaza(str_repeat('palabra ', 257), 'text_too_many_words', 5000, 256, true);
 acepta(trim(str_repeat('palabra ', 256)), trim(str_repeat('palabra ', 256)), 5000, 256, true);
 rechaza(str_repeat('x', 100000), 'text_too_long', 80);
+rechaza(str_repeat('a', 2401), 'text_too_long', 2000, 256, true);   // límite + 400 en CARACTERES: ni llega a las expresiones regulares
+rechaza(str_repeat('é', 2401), 'text_too_long', 2000, 256, true);
 rechaza("\xC3\x28 invalido", 'text_encoding');
 rechaza("\xF0\x28\x8C\x28", 'text_encoding');
 
@@ -64,5 +73,8 @@ $t = microtime(true);
 try { TextSanitizer::clean(str_repeat('a.', 1200) . str_repeat('%25', 800), 2000, 256, true); } catch (SanitizeException $e) {}
 try { TextSanitizer::clean(str_repeat('(((', 600), 2000, 256, true); } catch (SanitizeException $e) {}
 afirma((microtime(true) - $t) < 1.0, 'entradas patologicas en menos de 1 s (' . round((microtime(true) - $t) * 1000) . ' ms)');
+$t = microtime(true);
+foreach ([str_repeat('a', 2400), str_repeat('1', 2400), str_repeat('ab.', 800), str_repeat('a@', 1200), str_repeat('a.', 1200)] as $big) { try { TextSanitizer::clean($big, 2000, 256, true); } catch (SanitizeException $e) {} }
+afirma((microtime(true) - $t) < 2.0, 'cinco textos de 2400 caracteres (limite 2000) sin pcre.jit en menos de 2 s: ' . round(microtime(true) - $t, 2) . ' s (ejecutar con php -d pcre.jit=0)');
 
 fin();

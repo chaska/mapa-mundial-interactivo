@@ -30,9 +30,25 @@ Principio: o es seguro o no está hecho. Cada afirmación de este documento est�
 | Núcleo desactualizado | El instalador se niega por debajo de 5.4.9 / 6.1.4 y el panel avisa si el núcleo queda atrás |
 
 ## Pruebas (resultados a 11/10/2026)
-- `tests/01-texto.php`: 81 correctas. `tests/02-imagen.php`: 68 correctas.
-- `tests/joomla-live/` contra Joomla 6.1.4 real (PostgreSQL): 131 + 44 correctas por HTTP, 32 en Chromium con iPhone táctil y escritorio.
+- `tests/01-texto.php`: 103 correctas (ejecutar también con `php -d pcre.jit=0`). `tests/02-imagen.php`: 68. `tests/03-idiomas.php`: 25.
+- `tests/joomla-live/` contra Joomla 6.1.4 real (PostgreSQL): 144 + 46 correctas por HTTP (incluye 8 envíos simultáneos contra el límite y una inundación de peticiones rechazadas), 32 en Chromium con iPhone táctil y escritorio.
 - Errores que las propias pruebas destaparon y se corrigieron: un controlador que no se ejecutaba, una comparación estricta rota porque `bind()` de Joomla convierte en texto la variable que recibe, un borrado que podía eliminar los archivos de un viaje que Joomla no había borrado, y un estilo global que dejaba el texto de los botones oscuro.
+
+## Revisión independiente (11/10/2026)
+Un revisor que no conocía mis conclusiones leyó todo el código buscando fallos reales. No encontró fallos críticos ni altos. Hallazgos y estado:
+
+| # | Gravedad | Hallazgo | Estado |
+|---|---|---|---|
+| 1 | Media | Enlaces que se colaban: `evil。com` (punto ideográfico), `evil.ninja`, `EXAMPLE.ES`, `evil dot ninja` | Corregido: puntos ideográficos plegados a `.`, y regla general: cualquier palabra pegada a un punto y otra palabra se rechaza (un punto seguido de espacio sigue valiendo). Con 20 casos nuevos |
+| 2 | Media | Expresiones regulares cuadráticas ejecutadas antes de comprobar la longitud: 18 s de CPU con 15 KB sin `pcre.jit` (reproducido) | Corregido: límite en caracteres antes de cualquier regex, patrones anclados, y un fallo de `preg_match` cuenta como rechazo. 0,01 s en el mismo caso |
+| 3 | Media | Límite de envíos esquivable con peticiones en paralelo y sin límite para los intentos fallidos | Corregido: cada petición cuenta como intento antes de trabajar (20 por hora), y el recuento definitivo se hace dentro de la transacción con la fila del usuario bloqueada. Probado: 8 simultáneos con límite 3 guardan exactamente 3 |
+| 4 | Baja | Un invitado podía ver el mapa con una tarea inexistente si el álbum era público (reproducido) | Corregido en la vista, no solo en el controlador |
+| 5 | Baja | Al eliminar un álbum quedaban huérfanos sus viajes y archivos | Corregido: un álbum con publicaciones no se puede eliminar |
+| 6 | Baja | Foto ocultada seguía viéndose hasta una hora desde la caché del navegador | Corregido: `Cache-Control: private, no-cache` y comprobación antes del 304 |
+
+Además: tope de 24 megapíxeles (antes 40) por la memoria nativa de las librerías de imagen, y el mapa muestra el alias de usuario salvo que actives «Mostrar el nombre real».
+
+Pendiente de validar en tu despliegue: `pcre.jit` (mejor activado), registro abierto sin verificación de correo (el límite es por cuenta: pide verificación o aprobación manual) y la ubicación de la carpeta de fotos.
 
 ## Límites (lo que NO está probado ni cubierto)
 - No se ha probado en MySQL/MariaDB (el SQL existe pero la prueba real fue en PostgreSQL), ni con Apache/LiteSpeed (las pruebas usan el servidor integrado de PHP, que ignora `.htaccess`). Comprueba que `/media/com_mapaviajes_private/…` devuelve 403 en tu servidor, o usa una carpeta fuera de la web.

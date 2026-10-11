@@ -54,6 +54,13 @@ class HtmlView extends BaseHtmlView
 	{
 		$app  = Factory::getApplication();
 		$user = $app->getIdentity();
+
+		// The login gate also lives here: Joomla falls back to display() for unknown tasks on any controller.
+		if ($user->guest)
+		{
+			throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+		}
+
 		$db   = Factory::getContainer()->get(DatabaseInterface::class);
 		$repo = new TripRepository($db);
 

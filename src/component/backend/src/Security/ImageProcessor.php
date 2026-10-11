@@ -45,7 +45,7 @@ final class ImageProcessor
 		int $longSide = 1000,
 		int $quality = 80,
 		bool $upscale = false,
-		int $maxPixels = 40000000,
+		int $maxPixels = 24000000,
 		int $maxDimension = 12000,
 		?callable $isUploaded = null
 	)

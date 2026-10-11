@@ -11,6 +11,7 @@ namespace Chaska\Component\Mapaviajes\Site\Controller;
 
 defined('_JEXEC') || die;
 
+use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Chaska\Component\Mapaviajes\Administrator\Service\TripRepository;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -39,6 +40,6 @@ class TripsController extends BaseController
 			$this->json(['ok' => false], 404);
 		}
 
-		$this->json(['ok' => true, 'trips' => $repo->forMap($user, $albumId)]);
+		$this->json(['ok' => true, 'trips' => $repo->forMap($user, $albumId, 3000, (new Settings())->showRealNames())]);
 	}
 }

@@ -49,6 +49,12 @@ final class TextSanitizer
 			throw new SanitizeException('text_encoding');
 		}
 
+		// Characters, not bytes, and BEFORE any regular expression: a long run must never reach the patterns.
+		if (mb_strlen($raw, 'UTF-8') > $maxChars + 400)
+		{
+			throw new SanitizeException('text_too_long');
+		}
+
 		// 2. Canonical form (also folds full-width and compatibility characters for the checks).
 		$text = class_exists(\Normalizer::class) ? (\Normalizer::normalize($raw, \Normalizer::FORM_C) ?: $raw) : $raw;
 
@@ -133,6 +139,9 @@ final class TextSanitizer
 			}
 		}
 
+		// Dots that look like a full stop but that NFKC leaves alone.
+		$probe = str_replace(["\u{3002}", "\u{FF61}", "\u{FE52}", "\u{2024}", "\u{FF0E}", "\u{2E}"], '.', $probe);
+
 		// Remove anything invisible that decoding may have revealed.
 		return preg_replace('/[^\P{C}\n]/u', '', $probe) ?? $probe;
 	}
@@ -154,7 +163,7 @@ final class TextSanitizer
 
 		foreach ($patterns as $pattern)
 		{
-			if (preg_match($pattern, $probe) === 1)
+			if (preg_match($pattern, $probe) !== 0)
 			{
 				return true;
 			}
@@ -173,14 +182,19 @@ final class TextSanitizer
 			'/\b(?:https?|hxxps?|ftps?|sftp|wss?|mailto|tel|sms|skype|whatsapp|tg|telegram|intent|market|view-source|magnet)\s*:/iu',
 			'/(?<![a-z0-9])(?:www|ftp|web)\s*' . $dot . '/iu',
 			// label.tld (strong TLDs, any case)
-			'/[a-z0-9\p{L}][a-z0-9\p{L}\-]*' . $dot . '(?:' . self::TLD_STRONG . ')(?![a-z0-9\p{L}])/iu',
+			'/(?<![\p{L}\d\-])[a-z0-9\p{L}][a-z0-9\p{L}\-]*' . $dot . '(?:' . self::TLD_STRONG . ')(?![a-z0-9\p{L}])/iu',
+			// "evil dot ninja", "evil punto xyz": the dot spelled out, followed by a word that ends the label
+			'/(?<![\p{L}\d\-])[a-z0-9\p{L}][a-z0-9\p{L}\-]*\s+(?:dot|punto)\s+\p{L}{2,}\b/iu',
 			// "example . com" with spaces around the dot, for the TLDs nobody writes by accident
 			'/[a-z0-9]\s+\.\s*(?:com|net|org|info|biz|xyz|top|club|online|site|shop|store|app|link|click)(?![a-z0-9])/iu',
 			'/[a-z0-9]\s*\.\s+(?:com|net|org|info|biz|xyz|top|club|online|site|shop|store|app|link|click)(?![a-z0-9])/iu',
+			// ANY word glued to a dot and another word ("evil.ninja", "EXAMPLE.ES"): a domain, whatever its ending.
+			// A full stop followed by a space is a sentence; a full stop with no space is refused.
+			'/(?<![\p{L}\d\-])[a-z0-9\p{L}][a-z0-9\p{L}\-]*\.\p{L}{2,}/iu',
 			// label.tld (short, ambiguous TLDs): only lowercase and glued, e.g. "casa.es"
 			'/(?<![A-Za-z0-9\p{L}])[a-z0-9\-]{3,}\.(?:' . self::TLD_SHORT . ')(?![A-Za-z0-9\p{L}])/u',
 			// e-mail addresses, including [at] / (at) tricks
-			'/[a-z0-9._%+\-]+\s*(?:@|\[at\]|\(at\)|\{at\})\s*[a-z0-9\-]+/iu',
+			'/(?<![a-z0-9._%+\-])[a-z0-9._%+\-]+\s*(?:@|\[at\]|\(at\)|\{at\})\s*[a-z0-9\-]+/iu',
 			// IPv4 / IPv6 literals
 			'/\b\d{1,3}(?:\.\d{1,3}){3}\b/u',
 			'/\b[0-9a-f]{0,4}(?::[0-9a-f]{0,4}){3,7}\b/iu',
@@ -192,7 +206,7 @@ final class TextSanitizer
 
 		foreach ($patterns as $pattern)
 		{
-			if (preg_match($pattern, $probe) === 1)
+			if (preg_match($pattern, $probe) !== 0)
 			{
 				return true;
 			}

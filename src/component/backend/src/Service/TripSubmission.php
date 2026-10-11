@@ -60,6 +60,9 @@ final class TripSubmission
 			throw new SubmissionException('login', 403);
 		}
 
+		// Every request that reaches this point costs CPU, so every request counts as an attempt BEFORE any work is done.
+		$this->reserveAttempt($userId);
+
 		// Honeypot: a human never fills this field.
 		if (($post['website'] ?? '') !== '')
 		{
@@ -216,26 +219,70 @@ final class TripSubmission
 		return ['id' => $tripId, 'published' => $published];
 	}
 
+	/** Rows of the given table kind for this user since a moment. */
+	private function countSince(string $table, string $userId_col, int $userId, string $since, ?string $event = null): int
+	{
+		$uid   = $userId;
+		$since = $since;
+		$query = $this->db->getQuery(true)
+			->select('COUNT(*)')
+			->from($this->db->quoteName($table))
+			->where($this->db->quoteName($userId_col) . ' = :u')
+			->where($this->db->quoteName('created') . ' >= :s')
+			->bind(':u', $uid, ParameterType::INTEGER)
+			->bind(':s', $since);
+
+		if ($event !== null)
+		{
+			$query->where($this->db->quoteName('event') . ' = :e')->bind(':e', $event);
+		}
+
+		return (int) $this->db->setQuery($query)->loadResult();
+	}
+
+	private function tripsOverLimit(int $userId): bool
+	{
+		return $this->countSince('#__mapaviajes_trips', 'user_id', $userId, Factory::getDate('-1 hour')->toSql()) >= $this->settings->perHour()
+			|| $this->countSince('#__mapaviajes_trips', 'user_id', $userId, Factory::getDate('-1 day')->toSql()) >= $this->settings->perDay();
+	}
+
 	private function assertRate(int $userId): void
 	{
-		$count = function (string $since) use ($userId): int {
-			$query = $this->db->getQuery(true)
-				->select('COUNT(*)')
-				->from($this->db->quoteName('#__mapaviajes_trips'))
-				->where($this->db->quoteName('user_id') . ' = :u')
-				->where($this->db->quoteName('created') . ' >= :s')
-				->bind(':u', $userId, ParameterType::INTEGER)
-				->bind(':s', $since);
-
-			return (int) $this->db->setQuery($query)->loadResult();
-		};
-
-		if ($count(Factory::getDate('-1 hour')->toSql()) >= $this->settings->perHour()
-			|| $count(Factory::getDate('-1 day')->toSql()) >= $this->settings->perDay())
+		if ($this->tripsOverLimit($userId))
 		{
-			EventLog::add($this->db, $userId, 'rate_limit');
 			throw new SubmissionException('rate', 429);
 		}
+	}
+
+	/**
+	 * Failed and abusive requests count too: a few retries after a mistake are fine, a flood is not. Over the limit the
+	 * request is refused WITHOUT writing anything, so the refusals cannot fill the table either.
+	 */
+	private function reserveAttempt(int $userId): void
+	{
+		$max = max(20, $this->settings->perHour() * 6);
+
+		if ($this->countSince('#__mapaviajes_events', 'user_id', $userId, Factory::getDate('-1 hour')->toSql(), 'attempt') >= $max)
+		{
+			throw new SubmissionException('rate', 429);
+		}
+
+		$now   = Factory::getDate()->toSql();
+		$uid   = $userId;
+		$kind  = 'attempt';
+		$empty = '';
+		$this->db->setQuery(
+			$this->db->getQuery(true)
+				->insert($this->db->quoteName('#__mapaviajes_events'))
+				->columns($this->db->quoteName(['user_id', 'event', 'detail', 'created']))
+				->values(':u, :e, :d, :c')
+				->bind(':u', $uid, ParameterType::INTEGER)
+				->bind(':e', $kind)
+				->bind(':d', $empty)
+				->bind(':c', $now)
+		)->execute();
+
+		EventLog::prune($this->db);
 	}
 
 	/** @return array{id: int, title: string, allow_comments: int} */
@@ -311,6 +358,19 @@ final class TripSubmission
 
 		try
 		{
+			// Serialise this user's submissions: parallel requests wait here one after another, and each one re-counts
+			// against the trips the previous ones really committed. Without the lock, N parallel requests all pass.
+			$lockId = $userId;
+			$db->setQuery(
+				$db->getQuery(true)->update($db->quoteName('#__users'))->set($db->quoteName('id') . ' = ' . $db->quoteName('id'))->where($db->quoteName('id') . ' = :lock')->bind(':lock', $lockId, ParameterType::INTEGER)
+			)->execute();
+
+			if ($this->tripsOverLimit($userId))
+			{
+				EventLog::add($db, $userId, 'rate_limit');
+				throw new SubmissionException('rate', 429);
+			}
+
 			$query = $db->getQuery(true)
 				->insert($db->quoteName('#__mapaviajes_trips'))
 				->columns($db->quoteName(['album_id', 'user_id', 'title', 'place', 'lat', 'lon', 'allow_comments', 'notify', 'published', 'photo_count', 'created']))

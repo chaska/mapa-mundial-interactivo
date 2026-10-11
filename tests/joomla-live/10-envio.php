@@ -100,6 +100,29 @@ $db->exec('UPDATE ' . $db->t('mapaviajes_albums') . ' SET published = 0');
 afirma($beto->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $id1)['code'] === 404, 'album despublicado: sus fotos dejan de servirse');
 $db->exec('UPDATE ' . $db->t('mapaviajes_albums') . ' SET published = 1');
 
+seccion('Puertas traseras del invitado, cache y nombres');
+$db->exec('UPDATE ' . $db->t('mapaviajes_albums') . ' SET access = 1');   // peor caso: album publico
+foreach (['task=trips.x&view=map', 'task=photo.zzz&view=map', 'task=trip.nada&view=map&layout=edit'] as $q) {
+	$r = $guest->get('/index.php?option=com_mapaviajes&' . $q);
+	afirma(!str_contains($r['body'], 'mv-root') && !str_contains($r['body'], 'mv-stage'), "invitado con [$q] y un album PUBLICO: no se dibuja el mapa ({$r['code']})");
+}
+$db->exec('UPDATE ' . $db->t('mapaviajes_albums') . ' SET access = 2');
+$r = $ana->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $id1);
+afirma(str_contains($r['headers']['cache-control'] ?? '', 'no-cache') && !str_contains($r['headers']['cache-control'] ?? '', 'max-age'), 'las fotos se revalidan siempre (Cache-Control: private, no-cache)');
+$etag = $r['headers']['etag'] ?? '';
+$r = $ana->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $id1, ['If-None-Match: ' . $etag]);
+afirma($r['code'] === 304, 'con ETag valido y permiso: 304');
+$db->exec("UPDATE $T SET published = 2 WHERE id = :i", [':i' => $trip['id']]);
+$r = $beto->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $id1, ['If-None-Match: ' . $etag]);
+afirma($r['code'] === 404, 'oculto por moderacion: ni el ETag antiguo da un 304 (404)');
+$db->exec("UPDATE $T SET published = 1 WHERE id = :i", [':i' => $trip['id']]);
+$d = json_decode($beto->get('/index.php?option=com_mapaviajes&task=trips.data&album=' . $o['albumId'])['body'], true);
+afirma($d['trips'][0]['by'] === 'ana', 'por defecto se muestra el ALIAS (username), no el nombre real: ' . ($d['trips'][0]['by'] ?? '?'));
+$db->setParams(['show_real_names' => 1]);
+$d = json_decode($beto->get('/index.php?option=com_mapaviajes&task=trips.data&album=' . $o['albumId'])['body'], true);
+afirma($d['trips'][0]['by'] === 'Ana', 'con el ajuste activado se muestra el nombre completo');
+$db->setParams(['show_real_names' => 0]);
+
 seccion('Ataques al envio: sesion y metodo');
 $base0 = $db->uno("SELECT COUNT(*) FROM $T"); $files0 = $archivos();
 $r = enviar($ana, $o, [], [$foto()], [], false);
@@ -193,6 +216,7 @@ $casos = [
 	['archivo vacio', $foto('', 'a.jpg'), 'image_unreadable'],
 	['bomba PNG 9000x9000 (pesa muy poco)', $foto(pngBytes(9000, 9000), 'b.png', 'image/png'), 'image_dimensions'],
 	['imagen minuscula 8x8', $foto(jpegBytes(8, 8)), 'image_dimensions'],
+	['foto de 25 megapixeles (el tope es 24)', $foto(pngBytes(5000, 5000), 'big.png', 'image/png'), 'image_dimensions'],
 	['tipo declarado application/x-php con un JPEG valido', $foto(jpegBytes(900, 700), 'a.php', 'application/x-php'), null],
 ];
 foreach ($casos as [$nombre, $f, $motivo]) {
@@ -218,6 +242,7 @@ afirma(in_array($r['code'], [413, 422, 403], true) && $db->uno("SELECT COUNT(*) 
 
 seccion('Limite de frecuencia');
 $db->setParams(['trips_per_hour' => 3, 'trips_per_day' => 10]);
+$db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
 $db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/*.webp") ?: [] as $f) { unlink($f); }
 $codes = [];
 for ($i = 0; $i < 5; $i++) { $codes[] = enviar($ana, $o, ['title' => "Viaje $i"], [$foto(jpegBytes(900, 600))])['code']; }
@@ -225,7 +250,39 @@ afirma($codes === [201, 201, 201, 429, 429], 'tres envios por hora y despues 429
 $r = enviar($beto, ($ob = $beto->opciones()), ['title' => 'Viaje de beto'], [$foto(jpegBytes(900, 600))]);
 afirma($r['code'] === 201, 'el limite es por usuario: beto puede enviar');
 
+seccion('Carrera: peticiones en paralelo contra el limite');
+$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/*.webp") ?: [] as $f) { unlink($f); }
+$db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
+$ob2 = $ana->opciones();
+$handles = []; $mh = curl_multi_init(); $jar = $ana->jar;
+for ($i = 0; $i < 8; $i++) {
+	$f = ['album_id' => (string) $ob2['albumId'], 'title' => "Carrera $i", 'place' => 'x', 'lat' => '1.5', 'lon' => '2.5', 'allow_comments' => '0', 'notify' => '0', 'website' => '', $ob2['token'] => '1'];
+	$ct = ''; $body = multipart($f, [$foto(jpegBytes(900, 600))], $ct);
+	$ch = curl_init($base . '/index.php?option=com_mapaviajes&task=trip.submit&format=json');
+	curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEFILE => $jar, CURLOPT_HTTPHEADER => array_merge(XHR, ["Content-Type: $ct"]), CURLOPT_TIMEOUT => 120]);
+	curl_multi_add_handle($mh, $ch); $handles[] = $ch;
+}
+do { curl_multi_exec($mh, $running); curl_multi_select($mh, 1.0); } while ($running > 0);
+$codes = array_map(fn ($h) => curl_getinfo($h, CURLINFO_RESPONSE_CODE), $handles); sort($codes);
+$stored = (int) $db->uno("SELECT COUNT(*) FROM $T"); $filesNow = count(glob("$storage/photos/*.webp") ?: []);
+afirma($stored === 3, "8 envios simultaneos con limite 3 por hora: se guardan exactamente 3 ($stored). Codigos: " . implode(',', $codes));
+afirma($filesNow === $stored, "y no sobran archivos ($filesNow archivos, $stored viajes)");
+
+seccion('Inundacion de peticiones rechazadas');
+$db->exec("DELETE FROM $P"); $db->exec("DELETE FROM $T"); foreach (glob("$storage/photos/*.webp") ?: [] as $f) { unlink($f); }
+$db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
+$c429 = 0; $first429 = 0;
+for ($i = 1; $i <= 30; $i++) {
+	$r = enviar($ana, $ob2, [], [$foto('<?php echo 1;?>' . str_repeat('A', 300), 'x.jpg')]);
+	if ($r['code'] === 429) { $c429++; $first429 = $first429 ?: $i; }
+}
+$rows = (int) $db->uno('SELECT COUNT(*) FROM ' . $db->t('mapaviajes_events'));
+afirma($first429 === 21 && $c429 === 10, "tras 20 intentos fallidos en una hora llega el 429 (primero en el intento $first429, $c429 bloqueados de 30)");
+afirma($rows <= 41, "y los bloqueados no escriben mas filas en el diario ($rows filas)");
+$db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
+
 seccion('Salida escapada aunque los datos fueran hostiles');
+$db->exec("INSERT INTO $T (album_id, user_id, title, place, lat, lon, allow_comments, notify, published, photo_count, created) VALUES (:a, :u, 'x', 'x', 1, 1, 0, 0, 1, 0, now())", [':a' => $aid, ':u' => (int) $db->uno('SELECT id FROM ' . $db->t('users') . " WHERE username = 'beto'")]);
 $db->exec("UPDATE $T SET title = :t, place = :p, published = 1 WHERE id = (SELECT MAX(id) FROM $T)", [':t' => '<img src=x onerror=alert(1)>', ':p' => '</script><script>alert(2)</script>']);
 $db->exec('UPDATE ' . $db->t('mapaviajes_albums') . " SET title = :t WHERE id = :i", [':t' => '</h1><script>alert(3)</script>', ':i' => $aid]);
 $db->exec('UPDATE ' . $db->t('users') . " SET name = :n WHERE username = 'ana'", [':n' => '"><script>alert(4)</script>']);

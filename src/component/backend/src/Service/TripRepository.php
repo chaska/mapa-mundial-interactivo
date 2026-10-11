@@ -41,7 +41,7 @@ final class TripRepository
 	 *
 	 * @return list<array<string, mixed>>
 	 */
-	public function forMap(User $user, int $albumId, int $limit = 3000): array
+	public function forMap(User $user, int $albumId, int $limit = 3000, bool $realNames = false): array
 	{
 		$uid   = (int) $user->id;
 		$meBind = $uid; // Joomla's bind() takes a reference and may turn it into a string: never reuse a bound variable
@@ -52,7 +52,7 @@ final class TripRepository
 				$this->db->quoteName('t.id'), $this->db->quoteName('t.title'), $this->db->quoteName('t.place'),
 				$this->db->quoteName('t.lat'), $this->db->quoteName('t.lon'), $this->db->quoteName('t.photo_count'),
 				$this->db->quoteName('t.allow_comments'), $this->db->quoteName('t.published'), $this->db->quoteName('t.created'),
-				$this->db->quoteName('t.user_id'), $this->db->quoteName('u.name', 'author'),
+				$this->db->quoteName('t.user_id'), $this->db->quoteName($realNames ? 'u.name' : 'u.username', 'author'),
 			])
 			->from($this->db->quoteName('#__mapaviajes_trips', 't'))
 			->join('LEFT', $this->db->quoteName('#__users', 'u') . ' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('t.user_id'))

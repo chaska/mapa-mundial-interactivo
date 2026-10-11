@@ -81,12 +81,23 @@ afirma($db->uno("SELECT COUNT(*) FROM $T WHERE id = :i", [':i' => $ids[1]]) == 0
 $sinPermiso = $db->uno('SELECT rules FROM ' . $db->t('assets') . " WHERE name = 'com_mapaviajes'");
 afirma($estado($ids[2]) === 0, 'tercer viaje intacto');
 
+seccion('Borrar un album con publicaciones dentro');
+$aid2 = (int) $db->uno('INSERT INTO ' . $db->t('mapaviajes_albums') . " (title, published, access, allow_comments, ordering, created, created_by) VALUES ('Album de prueba', -2, 2, 1, 9, now(), 0) RETURNING id");
+$db->exec("UPDATE $T SET album_id = :a WHERE id = :t", [':a' => $aid2, ':t' => $ids[2]]);
+$pa = $admin->get('/administrator/index.php?option=com_mapaviajes&view=albums&filter[published]=-2');
+preg_match('/name="([a-f0-9]{32})" value="1"/', $pa['body'], $mt);
+$admin->post('/administrator/index.php?option=com_mapaviajes&view=albums', http_build_query(['task' => 'albums.delete', 'cid' => [$aid2], 'boxchecked' => 1, $mt[1] => '1']));
+afirma((int) $db->uno('SELECT COUNT(*) FROM ' . $db->t('mapaviajes_albums') . ' WHERE id = :i', [':i' => $aid2]) === 1, 'un album papelera CON publicaciones no se elimina');
+$db->exec("DELETE FROM $P WHERE trip_id = :t", [':t' => $ids[2]]); $db->exec("DELETE FROM $T WHERE id = :t", [':t' => $ids[2]]);
+$admin->post('/administrator/index.php?option=com_mapaviajes&view=albums', http_build_query(['task' => 'albums.delete', 'cid' => [$aid2], 'boxchecked' => 1, $mt[1] => '1']));
+afirma((int) $db->uno('SELECT COUNT(*) FROM ' . $db->t('mapaviajes_albums') . ' WHERE id = :i', [':i' => $aid2]) === 0, 'y vacio, si se elimina');
+
 seccion('Ajustes (Opciones) con interruptores');
 $o2 = $admin->get('/administrator/index.php?option=com_config&view=component&component=com_mapaviajes');
 afirma($o2['code'] === 200 && str_contains($o2['body'], 'review_first') && str_contains($o2['body'], 'switcher'), 'las Opciones usan interruptores Si/No de Joomla');
-afirma(str_contains($o2['body'], 'storage_path') && str_contains($o2['body'], 'max_photos'), 'estan los ajustes de fotos y carpeta privada');
-$albums = $admin->get('/administrator/index.php?option=com_mapaviajes&view=albums');
-afirma($albums['code'] === 200 && str_contains($albums['body'], 'albumList'), 'lista de albumes del mapa');
+afirma(str_contains($o2['body'], 'storage_path') && str_contains($o2['body'], 'max_photos') && str_contains($o2['body'], 'show_real_names'), 'estan los ajustes de fotos, carpeta privada y nombre real');
+$albums = $admin->get('/administrator/index.php?option=com_mapaviajes&view=albums&filter[published]=&filter[search]=');
+afirma($albums['code'] === 200 && str_contains($albums['body'], 'albumList'), 'lista de albumes del mapa (' . $albums['code'] . ' ' . $albums['location'] . ' ' . substr(trim(preg_replace('/\\s+/', ' ', strip_tags(preg_replace('~<(script|style)[^>]*>.*?</\\1>~s', '', $albums['body'])))), 120, 160) . ')');
 $edit = $admin->get('/administrator/index.php?option=com_mapaviajes&task=album.add');
 afirma(in_array($edit['code'], [200, 303, 302], true), 'crear album: ' . $edit['code']);
 $db->setParams(['trips_per_hour' => 3, 'trips_per_day' => 10, 'notify_admin' => 1]);

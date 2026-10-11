@@ -38,7 +38,19 @@ final class EventLog
 				->bind(':c', $now);
 			$db->setQuery($query)->execute();
 
-			// Housekeeping: keep ninety days.
+			self::prune($db);
+		}
+		catch (\Throwable $e)
+		{
+			// The journal must never break the request.
+		}
+	}
+
+	/** Housekeeping: keep ninety days, checked now and then. */
+	public static function prune(DatabaseInterface $db): void
+	{
+		try
+		{
 			if (random_int(1, 40) === 1)
 			{
 				$limit = Factory::getDate('-90 days')->toSql();
@@ -47,7 +59,7 @@ final class EventLog
 		}
 		catch (\Throwable $e)
 		{
-			// The journal must never break the request.
+			// never breaks the request
 		}
 	}
 }
