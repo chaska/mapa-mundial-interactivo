@@ -25,7 +25,12 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     afirma(await page.locator('#mv-fCom:not([hidden])').count() === 1 && await page.locator('#mv-fiCm:not([hidden])').count() === 1, 'la ficha trae el boton de comentarios y la seccion de comentarios debajo de las fotos');
     await page.click('#mv-fCom');
     const frame = page.frameLocator('#mv-fiFrame');
-    await frame.locator('#akengageCommentForm').waitFor({ timeout: 20000 });
+    await frame.locator('#akengageCommentForm').waitFor({ state: 'attached', timeout: 20000 });
+    await page.waitForTimeout(800);
+    afirma(!(await frame.locator('#akengageCommentForm').isVisible()), 'el formulario de Engage NO se ve al abrir: se ven los comentarios');
+    afirma(await frame.locator('.akengage-title').first().isVisible(), 'y la cabecera del hilo (numero de comentarios) si');
+    await page.click('#mv-fiWrite'); await frame.locator('#akengageCommentForm').waitFor({ state: 'visible', timeout: 10000 });
+    afirma(true, 'al pulsar «Escribir un comentario…» aparece el formulario de Engage');
     afirma(true, 'la ficha carga el hilo de Engage con su formulario');
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-comentarios.png` });
     const text = 'Comentario de prueba ' + name + ' ' + Date.now();

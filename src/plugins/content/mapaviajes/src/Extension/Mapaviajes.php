@@ -65,7 +65,7 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 		$author   = $settings->showRealNames() ? (string) ($row['name'] ?? '') : (string) ($row['username'] ?? '');
 
 		$event->setArgument('result', array_merge($result, [[
-			'type'               => 'trip',
+			'type'               => 'mapaviajes', // Engage 0.8.3 wants it to match the component (com_mapaviajes), whatever the asset name continues with
 			'title'              => (string) $row['title'],
 			'category'           => (string) $row['album_title'],
 			'author_name'        => $author,

@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.7.2 — 2026-10-18
+- **Comentarios en la ficha**: se ven los comentarios del hilo y el formulario de Engage queda oculto hasta que se pulsa «Escribir un comentario…» (o «Responder» en un comentario). Tras comentar vuelve a verse el hilo con el formulario cerrado.
+- **Compatibilidad con Engage 0.8.3**: la ficha del plugin lleva `type = mapaviajes` (Engage 0.8.3 exige que el tipo case con el componente del activo `com_mapaviajes.…`); con 0.8.2 también vale. Probado contra el commit 32e0429 de Engage.
+
 ## 1.7.1 — 2026-10-18
 - **Tocar la chincheta de un álbum abre la ficha del viaje** a cualquier zoom (antes, lejos, salía una tarjeta pequeña con «Abrir álbum»). La tarjeta pequeña queda solo para los grupos de varios álbumes, que ofrece su lista.
 - **Eliminar definitivamente** (botón nuevo en la lista de viajes del administrador, con confirmación): borra de una vez los viajes marcados con sus fotos, reacciones y comentarios, sin pasar por la papelera. (Mandar a la papelera sigue conservando las fotos para poder recuperar el viaje; «Eliminar de la papelera» las borra.)

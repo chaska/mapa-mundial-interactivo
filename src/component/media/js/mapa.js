@@ -468,14 +468,31 @@
 		$('fLike').onclick = (e) => { e.stopPropagation(); react('like'); }; $('fFan').onclick = (e) => { e.stopPropagation(); react('fan'); };
 		if ($('fCom')) {
 			$('fCom').onclick = () => { $('fiCm').scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' }); };
-			$('fiWrite').onclick = () => {
-				const f = $('fiFrame'); $('fiCm').scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' });
-				try { const ta = f.contentDocument.querySelector('textarea'); if (ta) { ta.scrollIntoView({ block: 'center' }); ta.focus(); } } catch (_) { /* not ours */ }
+			// The thread shows the comments; Engage's form stays out of sight (it is still there, laid out, so its editor starts properly)
+			// until the person asks to write one - with this button, or with a "reply" inside the thread.
+			const revealForm = () => {
+				const f = $('fiFrame'); let d = null; try { d = f.contentDocument; } catch (_) { return; }
+				if (!d || !d.documentElement) { return; }
+				d.documentElement.classList.remove('mv-form-hidden');
+				try { d.defaultView.dispatchEvent(new Event('resize')); } catch (_) { /* ignore */ }
+				setTimeout(() => {
+					fiHeight(); const form = d.querySelector('#akengage-comments-section > form'); if (form) { const r = form.getBoundingClientRect(), fr = f.getBoundingClientRect(); $('fiBody').scrollTo({ top: Math.max(0, $('fiBody').scrollTop + fr.top + r.top - 70), behavior: reduced() ? 'auto' : 'smooth' }); }
+					const ed = d.querySelector('.tox-edit-area__iframe'); try { if (ed && ed.contentDocument && ed.contentDocument.body) { ed.contentDocument.body.focus(); } else { const ta = d.querySelector('textarea'); if (ta) { ta.focus({ preventScroll: true }); } } } catch (_) { /* not ours */ }
+				}, 120);
 			};
+			$('fiWrite').onclick = revealForm;
 			$('fiFrame').addEventListener('load', () => {
 				fiHeight();
 				try {
 					const d = $('fiFrame').contentDocument; if (!d || !d.body) { return; }
+					if (!d.getElementById('mv-fi-style')) {
+						const st = d.createElement('style'); st.id = 'mv-fi-style';
+						st.textContent = '.mv-form-hidden #akengage-comments-section > form{position:absolute!important;left:-99999px!important;top:0;width:min(100%,720px)!important;visibility:hidden!important}';
+						d.head.appendChild(st);
+					}
+					if (d.getElementById('akengage-comments-section')) { d.documentElement.classList.add('mv-form-hidden'); }
+					const w = d.getElementById('akengage-comment-inreplyto-wrapper');
+					if (w) { new MutationObserver(() => { if (!w.classList.contains('d-none')) { d.documentElement.classList.remove('mv-form-hidden'); fiHeight(); } }).observe(w, { attributes: true, attributeFilter: ['class'] }); }
 					new ResizeObserver(fiHeight).observe(d.body);
 					d.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeFi(); } });
 				} catch (_) { /* not ours */ }
