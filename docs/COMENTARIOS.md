@@ -27,12 +27,12 @@ En un viaje **no hay artículo ni texto donde poner esas cadenas**, y es a prop�
 - El visor tiene un botón «Comentarios» que abre un panel con la página `index.php?option=com_mapaviajes&view=tripcomments&tmpl=component&id=<viaje>` (el mismo dominio, sin servicios externos). Solo usuarios registrados, solo viajes publicados de álbumes que el usuario puede ver. El enlace `…&album=A&trip=ID` abre el mapa directamente en ese viaje (lo usan los correos de Engage).
 - **Opciones → Sistema de comentarios** (`comments_provider`):
   - **Ninguno** (por defecto).
-  - **Akeeba Engage / Engage** — probado contra Engage 3.4.3 (ver abajo).
+  - **Akeeba Engage / Engage** — necesita **Engage 3.4.5 o posterior** (la 3.4.3 publicada no trae comentarios para otros componentes y tiene un fallo de lectura de comentarios; la 3.4.4 nunca se publicó).
   - **Eventos de contenido de Joomla** — lanza la secuencia estándar con contexto `com_mapaviajes.trip` y un objeto con `id`, `asset_id`, `title`, `created_by`, `access`… Sirve a cualquier extensión que acepte otros contextos o que se configure para ellos.
 
 ### Engage
 Dos piezas, ambas en el paquete `pkg_mapaviajes`:
-- Con Engage 3.4.4 o posterior (contrato genérico de otros componentes): la vista lanza `onContentAfterDisplay` con el contexto `com_mapaviajes.trip`, un objeto que solo lleva el `asset_id` y un `Registry` vacío; Engage pregunta a nuestro plugin de contenido (`onAkeebaEngageGetAssetMeta`) qué es el elemento, quién puede verlo y si los comentarios están abiertos, y pinta el hilo. Requisitos: proveedor «Engage» en Opciones, plugin «Content – Engage» activo y permiso «Comentario» para quien comenta.
+- Con Engage 3.4.5 o posterior (contrato genérico de otros componentes): la vista lanza `onContentAfterDisplay` con el contexto `com_mapaviajes.trip`, un objeto que solo lleva el `asset_id` y un `Registry` vacío; Engage pregunta a nuestro plugin de contenido (`onAkeebaEngageGetAssetMeta`) qué es el elemento, quién puede verlo y si los comentarios están abiertos, y pinta el hilo. Requisitos: proveedor «Engage» en Opciones, plugin «Content – Engage» activo y permiso «Comentario» para quien comenta.
 - `plg_content_mapaviajes` responde a `onAkeebaEngageGetAssetMeta` y `onAkeebaEngageGetAssetIDsByTitle` para los activos de los viajes: título, mapa, autor (alias salvo que actives los nombres reales), enlace, si está publicado, nivel de acceso y si los comentarios están abiertos. **No entrega el correo del autor.** Sin Engage instalado no hace nada.
 - Con Engage hay que dejar que los usuarios registrados comenten: **Engage → Opciones → Permisos → Registrado → Crear**.
 - Los avisos, la moderación, el antispam y las suscripciones los gestiona Engage; el enlace de vuelta del formulario se conserva porque usamos el parámetro `id`, que la lista blanca de Engage respeta.

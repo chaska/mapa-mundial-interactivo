@@ -170,7 +170,7 @@ final class CommentsBridge
 			return '';
 		}
 
-		// The generic contract of Engage 3.4.4+: the view fires onContentAfterDisplay for the element (context + an object that only
+		// The generic contract of Engage 3.4.5+ (3.4.4 was never published): the view fires onContentAfterDisplay for the element (context + an object that only
 		// carries the asset id + an empty Registry); Engage then asks OUR content plugin (onAkeebaEngageGetAssetMeta) what the element is,
 		// who may see it and whether comments are open, and prints the thread. Nothing else of the trip is handed over.
 		try
