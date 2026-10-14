@@ -1,5 +1,12 @@
 # Registro de cambios
 
+## 1.9.0 — 2026-10-14 (estilos de mapa)
+- **Seis estilos de mapa**: Pergamino viajero (el de siempre, sigue por defecto), Océano de noche, Atlas moderno, Mapa político, Acuarela y Plano técnico. El administrador elige el de todos desde el Panel o desde Opciones → Mapa.
+- **Que cada persona elija su mapa** (interruptor en el Panel, apagado por defecto): el mapa muestra un botón de paleta junto a los mandos; la elección se guarda solo en el navegador de cada persona (nada en el servidor) y un valor extraño guardado allí se ignora.
+- **Añadir un estilo = copiar un archivo CSS** a `media/com_mapaviajes/css/maps/<nombre>.css` (nombre en minúsculas, cifras y `_`). La primera línea dice cómo aparece en la lista: `/* mapa: Mi estilo; agua: #aabbcc; tierra: #ddeeff */`. Ver `docs/ESTILOS-MAPA.md`.
+- Solo se carga el CSS del estilo elegido (o los de todos si se deja elegir). Los nombres de estilo se validan (patrón estricto y archivo existente); cualquier otro valor se rechaza con 400.
+- Prueba nueva `tests/joomla-live/100-estilos-mapa.js` (14 comprobaciones).
+
 ## 1.8.7 — 2026-10-14 (revisión de seguridad)
 Revisión de seguridad con tres revisores independientes (frontend, servicios, administración/plugins/JS) y repaso contra los avisos de Joomla 5/6. Sin fallos críticos ni altos. Corregido:
 - **Las fotos ya no revelan su nombre interno ni el id del autor**: la cabecera `ETag` llevaba el nombre del archivo (con el número de usuario); ahora es un hash con la clave secreta del sitio.

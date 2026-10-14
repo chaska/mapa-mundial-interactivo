@@ -27,10 +27,17 @@ final class AdminSettings
 		'rank_enabled'      => ['0', '1'],
 		'notify_podium'     => ['0', '1'],
 		'comments_provider' => ['none', 'engage', 'events'],
+		'map_user_choice'   => ['0', '1'],
+		'map_style'         => [], // any look that exists in media/com_mapaviajes/css/maps (see MapStyles)
 	];
 
 	public static function accepts(string $name, string $value): bool
 	{
+		if ($name === 'map_style')
+		{
+			return MapStyles::valid($value);
+		}
+
 		return isset(self::FIELDS[$name]) && \in_array($value, self::FIELDS[$name], true);
 	}
 

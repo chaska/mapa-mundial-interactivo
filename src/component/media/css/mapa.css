@@ -608,3 +608,9 @@ html,body{overscroll-behavior:none}
 /* the Send / Cancel buttons are the end of the form itself (not pinned to the bottom): with the keyboard open the fields get all the room */
 .mv-panel-body .mv-panel-foot{padding:14px 0 calc(22px + env(safe-area-inset-bottom));border-top:1px solid #e4d3ba;margin-top:8px;background:none;border-radius:0}
 @media (max-width:720px){.mv-panel-body .mv-panel-foot{padding:12px 0 calc(24px + env(safe-area-inset-bottom))}}
+
+/* map look picker (reuses the people panel) */
+.mv-maps{bottom:max(18px,env(safe-area-inset-bottom))}
+.mv-map-row{display:flex;align-items:center;gap:12px}
+.mv-map-row input{flex:none}
+.mv-map-sw{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid rgba(0,0,0,.18);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}

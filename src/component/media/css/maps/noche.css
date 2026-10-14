@@ -1,0 +1,18 @@
+/* mapa: Océano de noche; agua: #0a1d36; tierra: #17365a */
+.mv-root[data-map="noche"]{--panel:#12233a;--field:#0d1b2f;--sand:#18304d;--line:#27466b;--ink:#e8f1fb;--ink-2:#9fb7d1;--coral-dark:#e8573d;--coral-darker:#c9432b;color-scheme:dark}
+[data-map="noche"] .mv-stage{background:radial-gradient(110% 90% at 30% 15%,#10294a 0%,#08162b 55%,#040b17 100%)}
+[data-map="noche"] .mv-stage::after{inset:9px;border:1px solid rgba(110,190,255,.28);border-radius:14px;box-shadow:inset 0 0 60px rgba(40,120,200,.12)}
+[data-map="noche"] .mv-grain{display:none}
+[data-map="noche"] .mv-sphere{fill:#0a1d36;stroke:rgba(110,190,255,.35);stroke-width:1.2}
+[data-map="noche"] .mv-grat{stroke:rgba(120,190,255,.11)}
+[data-map="noche"] .mv-r1 path{stroke:#2a8fd0;stroke-width:22;opacity:.07}
+[data-map="noche"] .mv-r2 path{stroke:#2a8fd0;stroke-width:10;opacity:.09}
+[data-map="noche"] .mv-r3 path{stroke:#2a8fd0;stroke-width:3;opacity:.2}
+[data-map="noche"] .mv-land path{fill:#17365a;stroke:#4fc3e6;stroke-width:.7}
+[data-map="noche"] .mv-land path:hover{fill:#21507f}
+[data-map="noche"] .mv-olabs text{fill:rgba(150,205,255,.5)}
+[data-map="noche"] .mv-compass{opacity:.55;filter:hue-rotate(160deg) brightness(1.4) saturate(.6)}
+[data-map="noche"] .mv-brand h1{font-family:var(--display);color:#eef6ff;text-shadow:0 0 18px rgba(80,170,255,.45)}
+[data-map="noche"] .mv-brand p,[data-map="noche"] .mv-me{color:#9fb7d1}
+[data-map="noche"] .mv-zoom button,[data-map="noche"] .mv-btn-soft,[data-map="noche"] .mv-albumpick{background:#14294a;color:#e8f1fb}
+[data-map="noche"] .mv-zoom button:hover{background:#1d3a66}

@@ -1,0 +1,14 @@
+/* mapa: Atlas moderno; agua: #cfe2ee; tierra: #faf7f0 */
+.mv-root[data-map="atlas"]{--panel:#fbfcfd;--field:#fff;--sand:#e9eff3;--line:#d5dee5;--ink:#1c2b36;--ink-2:#5a6b78;--coral-dark:#d9482b}
+[data-map="atlas"] .mv-stage{background:#dfeaf1}
+[data-map="atlas"] .mv-stage::after,[data-map="atlas"] .mv-grain,[data-map="atlas"] .mv-compass{display:none}
+[data-map="atlas"] .mv-sphere{fill:#cfe2ee;stroke:#b3c9d8;stroke-width:1}
+[data-map="atlas"] .mv-grat{stroke:rgba(255,255,255,.75)}
+[data-map="atlas"] .mv-rip path{stroke:none}
+[data-map="atlas"] .mv-land path{fill:#faf7f0;stroke:#b8c6cf;stroke-width:.6}
+[data-map="atlas"] .mv-land path:hover{fill:#fff}
+[data-map="atlas"] .mv-olabs text{fill:rgba(60,100,125,.45)}
+[data-map="atlas"] .mv-brand h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;color:#1c2b36;text-shadow:none}
+[data-map="atlas"] .mv-brand p{color:#5a6b78;text-shadow:none}[data-map="atlas"] .mv-me{color:#1c2b36}
+[data-map="atlas"] .mv-zoom button,[data-map="atlas"] .mv-btn-soft,[data-map="atlas"] .mv-albumpick{background:#fff;color:#1c2b36}
+[data-map="atlas"] .mv-zoom button:hover{background:#eef3f6}

@@ -39,6 +39,17 @@ final class Settings
 	public function perDay(): int         { return $this->int('trips_per_day', 10, 1, 200); }
 	public function reviewFirst(): bool   { return (int) $this->params->get('review_first', 1) === 1; }
 	public function commentsDefault(): bool { return (int) $this->params->get('comments_default', 1) === 1; }
+	/** The look of the map (a name from MapStyles; anything unknown falls back to the built-in parchment). */
+	public function mapStyle(): string
+	{
+		$v = (string) $this->params->get('map_style', MapStyles::DEFAULT);
+
+		return MapStyles::valid($v) ? $v : MapStyles::DEFAULT;
+	}
+
+	/** May every person pick their own map look (kept in their own browser)? */
+	public function mapUserChoice(): bool { return (int) $this->params->get('map_user_choice', 0) === 1; }
+
 	/** Which comment system the trip viewer uses: none, engage (Akeeba Engage / Engage) or events (any extension that listens to Joomla's content events). */
 	public function commentsProvider(): string
 	{

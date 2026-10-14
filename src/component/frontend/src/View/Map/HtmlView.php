@@ -34,6 +34,11 @@ class HtmlView extends BaseHtmlView
 	protected bool $commentsOn = false;
 	protected bool $rankOn = false;
 	protected bool $selfReact = false;
+	protected string $mapStyle = 'pergamino';
+	protected bool $mapChoice = false;
+
+	/** @var array<string, array{label: string, water: string, land: string}> */
+	protected array $mapStyles = [];
 	protected int $maxPhotos = 5;
 	protected int $maxWords = 256;
 	protected string $userName = '';
@@ -96,6 +101,9 @@ class HtmlView extends BaseHtmlView
 		$this->commentsOn = $settings->commentsProvider() !== 'none' && $this->album !== null && (int) $this->album['allow_comments'] === 1;
 		$this->rankOn = $settings->rankEnabled();
 		$this->selfReact = $settings->canSelfReact($user);
+		$this->mapStyle  = $settings->mapStyle();
+		$this->mapChoice = $settings->mapUserChoice();
+		$this->mapStyles = \Chaska\Component\Mapaviajes\Administrator\Service\MapStyles::all();
 		$this->canSubmit = $this->album !== null && $user->authorise('mapaviajes.submit', 'com_mapaviajes') && ImageProcessor::isSupported();
 
 		// Nothing here may be cached by the site, a proxy or the browser history: it is personal.
@@ -125,6 +133,9 @@ class HtmlView extends BaseHtmlView
 			'openTrip'   => (int) preg_replace('/\D/', '', substr((string) ($_GET['trip'] ?? ''), 0, 9)),
 			'rankOn'     => $this->rankOn,
 			'selfReact'  => $this->selfReact,
+			'mapStyle'   => $this->mapStyle,
+			'mapChoice'  => $this->mapChoice,
+			'mapStyles'  => $this->mapChoice ? array_map(static fn (string $id, array $s): array => ['id' => $id, 'label' => $s['label'], 'water' => $s['water'], 'land' => $s['land']], array_keys($this->mapStyles), array_values($this->mapStyles)) : [],
 			'isAdmin'    => $user->authorise('core.admin'),
 			'rankUrl'    => Route::_('index.php?option=com_mapaviajes&task=ranking.data&format=json', false),
 			'reactUrl'   => Route::_('index.php?option=com_mapaviajes&task=reaction.toggle&format=json', false),
@@ -147,6 +158,15 @@ class HtmlView extends BaseHtmlView
 		$wa->registerAndUseStyle('com_mapaviajes.fonts', 'com_mapaviajes/fonts.css')
 			->registerAndUseStyle('com_mapaviajes.map', 'com_mapaviajes/mapa.css', [], [], ['com_mapaviajes.fonts'])
 			->registerAndUseScript('com_mapaviajes.map', 'com_mapaviajes/mapa.js', [], ['defer' => true], ['core']);
+
+		// Only the looks that can be shown: the chosen one, or all of them when each person may pick (each file is a few kilobytes)
+		foreach (array_keys($this->mapStyles) as $id)
+		{
+			if ($id !== 'pergamino' && ($this->mapChoice || $id === $this->mapStyle))
+			{
+				$wa->registerAndUseStyle('com_mapaviajes.mapa.' . $id, 'com_mapaviajes/maps/' . $id . '.css', [], [], ['com_mapaviajes.map']);
+			}
+		}
 
 		parent::display($tpl);
 	}

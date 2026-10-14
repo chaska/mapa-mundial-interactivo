@@ -1,0 +1,22 @@
+/* mapa: Acuarela; agua: #bfe0e4; tierra: #f1d6c3 */
+.mv-root[data-map="acuarela"]{--panel:#fbf7ee;--field:#fff;--sand:#efe6d3;--line:#e2d6bf;--ink:#3a2e3d;--ink-2:#7a6b7d;--coral-dark:#c95a4a}
+[data-map="acuarela"] .mv-stage{background:#f4ecdc}
+[data-map="acuarela"] .mv-stage::after{inset:10px;border:1px solid rgba(110,80,70,.28);border-radius:6px}
+[data-map="acuarela"] .mv-grain{display:block;opacity:.35;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .42  0 0 0 0 .35  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+[data-map="acuarela"] .mv-sphere{fill:#bfe0e4;stroke:rgba(90,150,160,.5);stroke-width:1.2}
+[data-map="acuarela"] .mv-grat{stroke:rgba(255,255,255,.4)}
+[data-map="acuarela"] .mv-r1 path{stroke:#8cc3cd;stroke-width:26;opacity:.28}
+[data-map="acuarela"] .mv-r2 path{stroke:#8cc3cd;stroke-width:12;opacity:.3}
+[data-map="acuarela"] .mv-r3 path{stroke:#7ab5c0;stroke-width:3;opacity:.45}
+[data-map="acuarela"] .mv-land path{fill:#f1d6c3;fill-opacity:.95;stroke:rgba(120,85,70,.38);stroke-width:.7}
+[data-map="acuarela"] .mv-land path:nth-child(4n+1){fill:#f1d6c3}
+[data-map="acuarela"] .mv-land path:nth-child(4n+2){fill:#dbe6c5}
+[data-map="acuarela"] .mv-land path:nth-child(4n+3){fill:#f4e3b6}
+[data-map="acuarela"] .mv-land path:nth-child(4n){fill:#e0d0e6}
+[data-map="acuarela"] .mv-land path:hover{fill-opacity:1;filter:brightness(1.05)}
+[data-map="acuarela"] .mv-olabs text{fill:rgba(60,120,135,.6);font-family:Caveat,cursive;font-weight:600;letter-spacing:.2em}
+[data-map="acuarela"] .mv-compass{opacity:.7;filter:hue-rotate(-20deg) saturate(.6)}
+[data-map="acuarela"] .mv-brand h1{font-family:Caveat,cursive;font-weight:600;letter-spacing:0;font-size:clamp(1.8rem,1.3rem + 2vw,2.8rem);line-height:.95;color:#3a2e3d;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+[data-map="acuarela"] .mv-brand p,[data-map="acuarela"] .mv-me{color:#5e4f63;text-shadow:none}
+[data-map="acuarela"] .mv-zoom button,[data-map="acuarela"] .mv-btn-soft,[data-map="acuarela"] .mv-albumpick{background:#fbf7ee;color:#3a2e3d}
+[data-map="acuarela"] .mv-zoom button:hover{background:#efe6d3}

@@ -1,0 +1,22 @@
+/* mapa: Mapa político; agua: #a9d6e5; tierra: #f4b9a8 */
+.mv-root[data-map="politico"]{--panel:#fffdf8;--field:#fff;--sand:#f3e7d3;--line:#ead9c2;--ink:#2a2230;--ink-2:#6b5f72}
+[data-map="politico"] .mv-stage{background:#a9d6e5}
+[data-map="politico"] .mv-stage::after{inset:8px;border:3px solid #fff;border-radius:16px}
+[data-map="politico"] .mv-grain,[data-map="politico"] .mv-compass{display:none}
+[data-map="politico"] .mv-sphere{fill:#a9d6e5;stroke:#fff;stroke-width:1.5}
+[data-map="politico"] .mv-grat{stroke:rgba(255,255,255,.35)}
+[data-map="politico"] .mv-r1 path{stroke:#fff;stroke-width:14;opacity:.12}
+[data-map="politico"] .mv-r2 path{stroke:#fff;stroke-width:6;opacity:.18}
+[data-map="politico"] .mv-r3 path{stroke:#fff;stroke-width:2;opacity:.5}
+[data-map="politico"] .mv-land path{stroke:#fff;stroke-width:.9;fill:#f6d58e}
+[data-map="politico"] .mv-land path:nth-child(5n+1){fill:#f4b9a8}
+[data-map="politico"] .mv-land path:nth-child(5n+2){fill:#f6d58e}
+[data-map="politico"] .mv-land path:nth-child(5n+3){fill:#b9dfa6}
+[data-map="politico"] .mv-land path:nth-child(5n+4){fill:#d3bfe8}
+[data-map="politico"] .mv-land path:nth-child(5n){fill:#f2e3a0}
+[data-map="politico"] .mv-land path:hover{filter:brightness(1.07)}
+[data-map="politico"] .mv-olabs text{fill:rgba(255,255,255,.85)}
+[data-map="politico"] .mv-brand h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;color:#2a2230;text-shadow:0 2px 0 rgba(255,255,255,.8)}
+[data-map="politico"] .mv-brand p{color:#3f3548;text-shadow:0 1px 0 rgba(255,255,255,.7)}[data-map="politico"] .mv-me{color:#2a2230}
+[data-map="politico"] .mv-zoom button,[data-map="politico"] .mv-btn-soft,[data-map="politico"] .mv-albumpick{background:#fffdf8;color:#2a2230}
+[data-map="politico"] .mv-zoom button:hover{background:#f3e7d3}

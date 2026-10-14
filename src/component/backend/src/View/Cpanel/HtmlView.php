@@ -57,6 +57,8 @@ class HtmlView extends BaseHtmlView
 			'rank_enabled'      => (string) (int) $s->rankEnabled(),
 			'notify_podium'     => (string) (int) $s->notifyPodium(),
 			'comments_provider' => $s->commentsProvider(),
+			'map_user_choice'   => (string) (int) $s->mapUserChoice(),
+			'map_style'         => $s->mapStyle(),
 		];
 		$canDo            = ContentHelper::getActions('com_mapaviajes');
 		$this->canOptions = $canDo->get('core.options') || $canDo->get('core.admin');

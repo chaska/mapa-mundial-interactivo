@@ -19,7 +19,7 @@ use Joomla\CMS\Uri\Uri;
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 ?>
-<div class="mv-root" id="mv-root">
+<div class="mv-root" id="mv-root" data-map="<?php echo $e($this->mapStyle); ?>">
 <?php if ($this->album === null) : ?>
 	<main class="mv-empty" style="padding:48px 24px;max-width:560px;margin:0 auto;font:16px/1.5 system-ui,sans-serif">
 		<h1><?php echo $t('COM_MAPAVIAJES'); ?></h1>
@@ -102,6 +102,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<button type="button" id="mv-zin" aria-label="<?php echo $t('COM_MAPAVIAJES_ZOOM_IN'); ?>"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 	<button type="button" id="mv-zout" aria-label="<?php echo $t('COM_MAPAVIAJES_ZOOM_OUT'); ?>"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
 	<button type="button" id="mv-zppl" aria-controls="mv-ppl" aria-expanded="false" aria-label="<?php echo $t('COM_MAPAVIAJES_PEOPLE_BTN'); ?>" title="<?php echo $t('COM_MAPAVIAJES_PEOPLE_BTN'); ?>"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.8c2 .7 3.3 2.4 3.3 5.2"/></svg></button>
+	<?php if ($this->mapChoice) : ?><button type="button" id="mv-zmap" aria-controls="mv-maps" aria-expanded="false" aria-label="<?php echo $t('COM_MAPAVIAJES_MAPSTYLE_BTN'); ?>" title="<?php echo $t('COM_MAPAVIAJES_MAPSTYLE_BTN'); ?>"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.400 0 2-.9 2-1.800 0-1.300-1-1.500-1-2.700 0-1 .8-1.700 1.900-1.700H17a4 4 0 0 0 4-4c0-4-4-7.800-9-7.800z"/><circle cx="7.500" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.500" r="1"/></svg></button><?php endif; ?>
 	<button type="button" id="mv-zhome" aria-label="<?php echo $t('COM_MAPAVIAJES_ZOOM_HOME'); ?>"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17"/></svg></button>
 </div>
 
@@ -112,6 +113,15 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<div class="mv-ppl-act"><button type="button" id="mv-pplAll"><?php echo $t('COM_MAPAVIAJES_PEOPLE_ALL'); ?></button><button type="button" id="mv-pplNone"><?php echo $t('COM_MAPAVIAJES_PEOPLE_NONE'); ?></button></div>
 	<ul class="mv-ppl-list" id="mv-pplList"></ul>
 </aside>
+
+<?php if ($this->mapChoice) : ?>
+<aside class="mv-ppl mv-maps" id="mv-maps" hidden aria-labelledby="mv-mapsT">
+	<div class="mv-ppl-head"><h2 id="mv-mapsT"><?php echo $t('COM_MAPAVIAJES_MAPSTYLE_TITLE'); ?></h2>
+		<button type="button" id="mv-mapsX" aria-label="<?php echo $t('COM_MAPAVIAJES_JS_CLOSE'); ?>"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+	<p class="mv-ppl-help"><?php echo $t('COM_MAPAVIAJES_MAPSTYLE_HELP'); ?></p>
+	<ul class="mv-ppl-list" id="mv-mapsList"></ul>
+</aside>
+<?php endif; ?>
 
 <svg class="mv-compass" viewBox="-60 -60 120 120" aria-hidden="true">
 	<g fill="none" stroke="#6e4522" stroke-linecap="round"><circle r="52" stroke-width="1.4"/><circle r="47" stroke-width=".7"/><circle r="30" stroke-width=".7" stroke-dasharray="1.5 3"/></g>

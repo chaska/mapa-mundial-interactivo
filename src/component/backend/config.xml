@@ -13,6 +13,14 @@
 		<field name="storage_path" type="text" label="COM_MAPAVIAJES_CONFIG_STORAGE" description="COM_MAPAVIAJES_CONFIG_STORAGE_DESC" default="" filter="string" size="60" />
 	</fieldset>
 
+	<fieldset name="map" label="COM_MAPAVIAJES_CONFIG_MAP" description="COM_MAPAVIAJES_CONFIG_MAP_DESC">
+		<field name="map_style" type="Mapstyle" addfieldprefix="Chaska\Component\Mapaviajes\Administrator\Field" label="COM_MAPAVIAJES_CONFIG_MAP_STYLE" description="COM_MAPAVIAJES_CONFIG_MAP_STYLE_DESC" default="pergamino" filter="word" />
+		<field name="map_user_choice" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_MAP_CHOICE" description="COM_MAPAVIAJES_CONFIG_MAP_CHOICE_DESC" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+	</fieldset>
+
 	<fieldset name="moderation" label="COM_MAPAVIAJES_CONFIG_MODERATION" description="COM_MAPAVIAJES_CONFIG_MODERATION_DESC">
 		<field name="review_first" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_REVIEW_FIRST" description="COM_MAPAVIAJES_CONFIG_REVIEW_FIRST_DESC" default="1" filter="integer">
 			<option value="0">JNO</option>

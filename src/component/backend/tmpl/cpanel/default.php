@@ -53,6 +53,16 @@ $sw = function (string $name, string $label, string $desc) use ($e) {
 			<?php echo $sw('notify_author', Text::_('COM_MAPAVIAJES_CONFIG_NOTIFY_AUTHOR'), Text::_('COM_MAPAVIAJES_CP_AUTHOR_MAIL_HINT')); ?>
 		</div>
 		<div class="mvA-group">
+			<label class="mvA-row"><span class="mvA-lab"><strong><?php echo $e(Text::_('COM_MAPAVIAJES_CONFIG_MAP_STYLE')); ?></strong>
+				<small><?php echo $e(Text::_('COM_MAPAVIAJES_CP_MAP_STYLE_HINT')); ?></small></span>
+				<select class="mvA-select" data-name="map_style"<?php echo $this->canOptions ? '' : ' disabled'; ?>>
+					<?php foreach (\Chaska\Component\Mapaviajes\Administrator\Service\MapStyles::all() as $v => $style) : ?>
+						<option value="<?php echo $e($v); ?>"<?php echo $this->values['map_style'] === $v ? ' selected' : ''; ?>><?php echo $e($style['label']); ?></option>
+					<?php endforeach; ?>
+				</select></label>
+			<?php echo $sw('map_user_choice', Text::_('COM_MAPAVIAJES_CONFIG_MAP_CHOICE'), Text::_('COM_MAPAVIAJES_CP_MAP_CHOICE_HINT')); ?>
+		</div>
+		<div class="mvA-group">
 			<label class="mvA-row"><span class="mvA-lab"><strong><?php echo $e(Text::_('COM_MAPAVIAJES_CONFIG_COMMENTS_PROVIDER')); ?></strong>
 				<small><?php echo $e(Text::_($this->engage ? 'COM_MAPAVIAJES_CP_PROVIDER_ENGAGE_ON' : 'COM_MAPAVIAJES_CP_PROVIDER_ENGAGE_OFF')); ?></small></span>
 				<select class="mvA-select" data-name="comments_provider"<?php echo $this->canOptions ? '' : ' disabled'; ?>>

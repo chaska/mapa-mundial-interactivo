@@ -1,0 +1,15 @@
+/* mapa: Plano técnico; agua: #134676; tierra: #2f6396 */
+.mv-root[data-map="plano"]{--panel:#12395f;--field:#0e2f50;--sand:#184a78;--line:#2d6aa0;--ink:#eaf4ff;--ink-2:#a9c8e6;--coral-dark:#f2644a;--coral-darker:#d44d35;color-scheme:dark}
+[data-map="plano"] .mv-stage{background:#0f3a63}
+[data-map="plano"] .mv-stage::after{inset:9px;border:1px dashed rgba(255,255,255,.5);border-radius:2px}
+[data-map="plano"] .mv-grain,[data-map="plano"] .mv-rip{display:none}
+[data-map="plano"] .mv-sphere{fill:#134676;stroke:rgba(255,255,255,.55);stroke-width:1.2}
+[data-map="plano"] .mv-grat{stroke:rgba(255,255,255,.22);stroke-dasharray:2 5}
+[data-map="plano"] .mv-land path{fill:rgba(255,255,255,.07);stroke:#d4e8ff;stroke-width:.8}
+[data-map="plano"] .mv-land path:hover{fill:rgba(255,255,255,.22)}
+[data-map="plano"] .mv-olabs text{fill:rgba(255,255,255,.6)}
+[data-map="plano"] .mv-compass{opacity:.8;filter:grayscale(1) invert(1) brightness(1.1)}
+[data-map="plano"] .mv-brand h1{font-family:var(--text);font-weight:600;text-transform:uppercase;letter-spacing:.14em;font-size:clamp(1.1rem,.9rem + 1vw,1.7rem);color:#eaf4ff;text-shadow:none}
+[data-map="plano"] .mv-brand p,[data-map="plano"] .mv-me{color:#a9c8e6;text-shadow:none}
+[data-map="plano"] .mv-zoom button,[data-map="plano"] .mv-btn-soft,[data-map="plano"] .mv-albumpick{background:#184a78;color:#eaf4ff}
+[data-map="plano"] .mv-zoom button:hover{background:#215d94}

@@ -575,6 +575,36 @@
 		$('pplNone').onclick = () => { HIDE = new Set(peopleList().map((p) => p.u)); refilter(); };
 	}
 
+	/* ---- map look: the administrator picks the default; when allowed, each person picks their own (kept only in this browser) ---- */
+	const MAPS = Array.isArray(O.mapStyles) ? O.mapStyles : [];
+	const mapIds = new Set(MAPS.map((m) => m.id));
+	const root = $('root');
+	function applyMap(id) { if (root && mapIds.has(id)) { root.setAttribute('data-map', id); } }
+	function savedMap() { try { return window.localStorage.getItem('mvMapStyle') || ''; } catch (_) { return ''; } }
+	function rememberMap(id) { try { window.localStorage.setItem('mvMapStyle', id); } catch (_) { /* private mode: it just will not be remembered */ } }
+	if (O.mapChoice && $('zmap') && MAPS.length) {
+		const hex = (c) => (/^#[0-9a-f]{6}$/i.test(c) ? c : '#cccccc');
+		const mine = savedMap();
+		if (mapIds.has(mine)) { applyMap(mine); }
+		const closeMaps = () => { $('maps').hidden = true; $('zmap').setAttribute('aria-expanded', 'false'); };
+		const renderMaps = () => {
+			const cur = root.getAttribute('data-map');
+			$('mapsList').replaceChildren(...MAPS.map((m) => {
+				const rb = h('input', { type: 'radio', name: 'mv-mapstyle', value: m.id }); rb.checked = m.id === cur;
+				rb.addEventListener('change', () => { applyMap(m.id); rememberMap(m.id); });
+				const sw = h('span', { class: 'mv-map-sw', 'aria-hidden': 'true' }); sw.style.background = 'linear-gradient(135deg,' + hex(m.water) + ' 50%,' + hex(m.land) + ' 50%)';
+				return h('li', {}, h('label', { class: 'mv-ppl-row mv-map-row' }, rb, sw, h('span', { class: 'mv-ppl-n', text: m.label })));
+			}));
+		};
+		$('zmap').onclick = () => {
+			if (!$('maps').hidden) { closeMaps(); return; }
+			closePop(); closePeople(); renderMaps(); $('maps').hidden = false; $('zmap').setAttribute('aria-expanded', 'true');
+			const f = $('mapsList').querySelector('input:checked') || $('mapsList').querySelector('input'); if (f) { f.focus({ preventScroll: true }); }
+		};
+		$('mapsX').onclick = () => { closeMaps(); $('zmap').focus({ preventScroll: true }); };
+		if ($('zppl')) { $('zppl').addEventListener('click', closeMaps); }
+	}
+
 	/* ---- the weekly podium (comic style): data comes from our own server, names are escaped by textContent ---- */
 	if ($('pod')) {
 		const COLORS = ['#a8321f', '#1f6f78', '#7a5a1f', '#5b3f8a', '#2f6b3b', '#a05a1a'];
