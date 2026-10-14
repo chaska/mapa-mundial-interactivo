@@ -23,8 +23,8 @@ afirma($admin->login('admin', getenv('MV_ADMIN') ?: 'cambia-esta-clave-de-prueba
 
 seccion('Panel de control');
 $p = $admin->get('/administrator/index.php?option=com_mapaviajes');
-afirma($p['code'] === 200 && str_contains($p['body'], 'mvA-tiles') && str_contains($p['body'], 'mvA-sw') && str_contains($p['body'], 'data-name="review_first"'), 'el panel es la pagina de entrada, con tarjetas e interruptores');
-afirma(preg_match('~mvA-n">(\d+)</b>~', $p['body']) === 1, 'las tarjetas traen numeros');
+afirma($p['code'] === 200 && str_contains($p['body'], 'mvA-kpi') && str_contains($p['body'], 'mvA-sw') && str_contains($p['body'], 'data-name="review_first"'), 'el panel es la pagina de entrada, con tarjetas e interruptores');
+afirma(preg_match('~mvA-n">(\d+)</span>~', $p['body']) === 1, 'las tarjetas traen numeros');
 afirma(!str_contains($ana->get('/administrator/index.php?option=com_mapaviajes')['body'], 'mvA-tiles'), 'una usuaria registrada no ve el panel');
 preg_match('/"com_mapaviajes.admin":\{[^}]*"token":"([a-f0-9]{32})"/', $p['body'], $m); $tok = $m[1] ?? '';
 afirma($tok !== '', 'el panel lleva el token CSRF para guardar');

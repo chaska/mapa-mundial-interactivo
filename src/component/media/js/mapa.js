@@ -575,6 +575,16 @@
 		$('pplNone').onclick = () => { HIDE = new Set(peopleList().map((p) => p.u)); refilter(); };
 	}
 
+	/* ---- header menu (three bars): opens a list with the secondary buttons ---- */
+	if ($('btnMenu') && $('menu')) {
+		const menu = $('menu'), mb = $('btnMenu');
+		const closeMenu = (back) => { if (!menu.hidden) { menu.hidden = true; mb.setAttribute('aria-expanded', 'false'); if (back) { mb.focus({ preventScroll: true }); } } };
+		mb.onclick = (ev) => { ev.stopPropagation(); if (!menu.hidden) { closeMenu(false); return; } menu.hidden = false; mb.setAttribute('aria-expanded', 'true'); const f = menu.querySelector('button, a, select'); if (f) { f.focus({ preventScroll: true }); } };
+		menu.addEventListener('click', (ev) => { if (ev.target instanceof Element && ev.target.closest('button, a')) { closeMenu(false); } });
+		document.addEventListener('click', (ev) => { if (!menu.hidden && ev.target instanceof Node && !menu.contains(ev.target) && !mb.contains(ev.target)) { closeMenu(false); } });
+		document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !menu.hidden) { closeMenu(true); } });
+	}
+
 	/* ---- map look: the administrator picks the default; when allowed, each person picks their own (kept only in this browser) ---- */
 	const MAPS = Array.isArray(O.mapStyles) ? O.mapStyles : [];
 	const mapIds = new Set(MAPS.map((m) => m.id));
@@ -614,7 +624,7 @@
 		const who = (r) => h('button', { type: 'button', class: 'mv-pname', title: T('COM_MAPAVIAJES_JS_POD_FILTER'), onclick: () => { closePod(); setAuthor(r.u, r.n); } }, h('span', { text: r.n }));
 		const avatar = (r) => h('span', { class: 'mv-pav', style: 'background:' + colorOf(r.u), 'aria-hidden': 'true', text: (r.n || '?').charAt(0).toUpperCase() });
 		function slot(r, place, kind) {
-			if (!r) { return h('div', { class: 'mv-pslot mv-p' + place + ' mv-empty' }, h('div', { class: 'mv-pstars' }), h('span', { class: 'mv-pav mv-pnone', 'aria-hidden': 'true', text: '?' }), h('p', { class: 'mv-pwho mv-pdim', text: '—' }), h('div', { class: 'mv-pblock' }, h('span', { text: String(place) }))); }
+			if (!r) { return h('div', { class: 'mv-pslot mv-p' + place + ' mv-pnoone' }, h('div', { class: 'mv-pstars' }), h('span', { class: 'mv-pav mv-pnone', 'aria-hidden': 'true', text: '?' }), h('p', { class: 'mv-pwho mv-pdim', text: '—' }), h('div', { class: 'mv-pblock' }, h('span', { text: String(place) }))); }
 			const stars = h('div', { class: 'mv-pstars', 'aria-hidden': 'true' }, [0, 1, 2].slice(0, 4 - place).map((i) => star(true, i)));
 			return h('div', { class: 'mv-pslot mv-p' + place + (r.me ? ' mv-me' : '') }, stars, avatar(r), h('div', { class: 'mv-pwho' }, who(r)),
 				h('p', { class: 'mv-ppts' }, String(r.s), h('small', { text: T('COM_MAPAVIAJES_JS_POD_PTS') })), h('div', { class: 'mv-pblock' }, h('span', { text: String(place) })));

@@ -19,10 +19,11 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await Promise.all([page.waitForNavigation(), page.click('button[type=submit].btn-primary, .btn-primary[type=submit]')]);
     await page.goto(BASE + '/index.php?option=com_mapaviajes');
     await page.waitForSelector('#mv-svg path.mv-sphere[d]', { timeout: 20000 });
-    await page.click('#mv-btnPod'); await page.waitForSelector('#mv-pod:not([hidden]) .mv-ptitle', { timeout: 15000 });
+    await page.click('#mv-btnMenu'); await page.click('#mv-btnPod'); await page.waitForSelector('#mv-pod:not([hidden]) .mv-ptitle', { timeout: 15000 });
     afirma(/podio de la semana|week's podium/i.test(await page.textContent('.mv-ptitle')), 'el podio de esta semana se abre');
     afirma(await page.locator('.mv-pslot').count() === 3, 'tres puestos');
-    afirma(await page.locator('.mv-pslot.mv-p1 .mv-pstar').count() === 3 && await page.locator('.mv-pslot.mv-p2 .mv-pstar').count() === 2 && await page.locator('.mv-pslot.mv-p3.mv-empty').count() === 1, 'esta semana solo hay dos personas: 3 y 2 estrellas, y el tercer puesto vacio');
+    afirma(await page.locator('.mv-pslot.mv-p1 .mv-pstar').count() === 3 && await page.locator('.mv-pslot.mv-p2 .mv-pstar').count() === 2 && await page.locator('.mv-pslot.mv-p3.mv-pnoone').count() === 1, 'esta semana solo hay dos personas: 3 y 2 estrellas, y el tercer puesto vacio');
+    afirma(await page.evaluate(() => [...document.querySelectorAll('.mv-pslot')].every((sl) => Math.abs(sl.querySelector('.mv-pblock').getBoundingClientRect().bottom - sl.getBoundingClientRect().bottom) < 1)), 'los tres escalones apoyan en el suelo (ninguno flota, tambien el puesto vacio)');
     afirma(/Nº|nº|number/.test(await page.textContent('.mv-pmine')) || /Todavía|No points/.test(await page.textContent('.mv-pmine')), 'dice en que puesto vas');
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-podio-semana.png` });
     await page.click('#mv-pod [data-v=last]'); await page.waitForTimeout(300);
@@ -40,7 +41,7 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await page.locator('.mv-pslot .mv-pname', { hasText: 'pd_alba' }).click(); await page.waitForTimeout(900);
     afirma(await page.locator('#mv-pod[hidden]').count() === 1 && await page.locator('#mv-chip:not([hidden])').count() === 1, 'pulsar un nombre cierra el podio y pone el filtro «Viajes de …»');
     afirma(/pd_alba/.test(await page.textContent('#mv-chip')), 'el filtro dice de quien son');
-    await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
+    await page.click('#mv-btnMenu'); await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
     const rows = await page.locator('#mv-dBody .mv-arow-main small:nth-of-type(1)').allTextContents();
     afirma(rows.length > 0 && rows.every((r) => r.includes('pd_alba')), 'el cajon solo lista viajes de esa persona (' + rows.length + ')');
     await page.click('#mv-dClose'); await page.click('#mv-chipX'); await page.waitForTimeout(400);

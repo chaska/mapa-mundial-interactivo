@@ -60,7 +60,7 @@ const sphere = (page) => page.evaluate(() => { const b = document.getElementById
   for (const [w, h] of [[667, 375], [844, 390], [932, 430]]) {
     const l = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true }); const lp = await l.newPage(); await login(lp);
     await lp.goto(BASE + '/index.php?option=com_mapaviajes'); await lp.waitForSelector('#mv-svg path.mv-sphere[d]'); await lp.waitForTimeout(600);
-    const r = await lp.evaluate(() => { const q = (s) => { const e = document.querySelector(s); const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom }; }; return { z: q('.mv-zoom'), brand: q('.mv-brand'), tops: [...document.querySelectorAll('.mv-actions .mv-btn')].map((e) => Math.round(e.getBoundingClientRect().top)), vw: innerWidth }; });
+    const r = await lp.evaluate(() => { const q = (s) => { const e = document.querySelector(s); const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom }; }; return { z: q('.mv-zoom'), brand: q('.mv-brand'), tops: [...document.querySelectorAll('.mv-actions .mv-btn')].filter((e) => e.getBoundingClientRect().width > 0).map((e) => Math.round(e.getBoundingClientRect().top)), vw: innerWidth }; });
     const hit = !(r.z.r <= r.brand.x || r.brand.r <= r.z.x || r.z.b <= r.brand.y || r.brand.b <= r.z.y);
     afirma(r.z.x > r.vw / 2 && !hit, `horizontal ${w}x${h}: los mandos van al borde derecho y no se montan en el logo`);
     afirma(new Set(r.tops).size === 1, `horizontal ${w}x${h}: los iconos de arriba van en fila`);

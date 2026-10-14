@@ -30,6 +30,9 @@ class HtmlView extends BaseHtmlView
 	/** @var string[] */
 	protected array $warnings = [];
 
+	/** @var array<int, int> trips per state (0 pending, 1 published, 2 hidden, -2 trashed) */
+	protected array $counts = [];
+
 	public function display($tpl = null): void
 	{
 		$model = $this->getModel();
@@ -40,6 +43,13 @@ class HtmlView extends BaseHtmlView
 		$this->state         = $model->getState();
 		$this->filterForm    = $model->getFilterForm();
 		$this->activeFilters = $model->getActiveFilters();
+
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+
+		foreach ($db->setQuery('SELECT ' . $db->quoteName('published') . ' AS s, COUNT(*) AS n FROM ' . $db->quoteName('#__mapaviajes_trips') . ' GROUP BY ' . $db->quoteName('published'))->loadAssocList() ?: [] as $row)
+		{
+			$this->counts[(int) $row['s']] = (int) $row['n'];
+		}
 
 		if (version_compare(JVERSION, '6.0.0', '>=') ? version_compare(JVERSION, '6.1.4', '<') : version_compare(JVERSION, '5.4.9', '<'))
 		{

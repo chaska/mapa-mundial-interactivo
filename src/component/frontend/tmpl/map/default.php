@@ -69,6 +69,17 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 		</div>
 	</div>
 	<div class="mv-actions">
+		<div class="mv-me" title="<?php echo $t('COM_MAPAVIAJES_SIGNED_IN'); ?>"><i><?php echo $e(mb_strtoupper(mb_substr($this->userName, 0, 1)) ?: '·'); ?></i><span><?php echo $e($this->userName); ?></span></div>
+		<?php if ($this->canSubmit) : ?>
+			<button class="mv-btn mv-btn-primary mv-btn-add" id="mv-btnAdd" type="button" aria-controls="mv-panel">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+				<span class="mv-long"><?php echo $t('COM_MAPAVIAJES_ADD'); ?></span><span class="mv-short"><?php echo $t('COM_MAPAVIAJES_ADD_SHORT'); ?></span>
+			</button>
+		<?php endif; ?>
+		<button class="mv-btn mv-btn-soft mv-menubtn" id="mv-btnMenu" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="mv-menu" aria-label="<?php echo $t('COM_MAPAVIAJES_MENU'); ?>">
+			<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+		</button>
+		<div class="mv-menu" id="mv-menu" hidden>
 		<?php if (\count($this->albums) > 1) : ?>
 			<label class="mv-sr" for="mv-albumpick"><?php echo $t('COM_MAPAVIAJES_PICK_ALBUM'); ?></label>
 			<select class="mv-albumpick" id="mv-albumpick">
@@ -77,7 +88,6 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<?php endforeach; ?>
 			</select>
 		<?php endif; ?>
-		<div class="mv-me" title="<?php echo $t('COM_MAPAVIAJES_SIGNED_IN'); ?>"><i><?php echo $e(mb_strtoupper(mb_substr($this->userName, 0, 1)) ?: '·'); ?></i><span><?php echo $e($this->userName); ?></span></div>
 		<?php if ($this->rankOn) : ?>
 		<button class="mv-btn mv-btn-soft" id="mv-btnPod" type="button" aria-controls="mv-pod" aria-label="<?php echo $t('COM_MAPAVIAJES_PODIUM'); ?>">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></svg><span><?php echo $t('COM_MAPAVIAJES_PODIUM'); ?></span>
@@ -86,15 +96,10 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 		<button class="mv-btn mv-btn-soft" id="mv-btnDisc" type="button" aria-controls="mv-drawer" aria-label="<?php echo $t('COM_MAPAVIAJES_DISCOVER'); ?>">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span><?php echo $t('COM_MAPAVIAJES_DISCOVER'); ?></span>
 		</button>
-		<?php if ($this->canSubmit) : ?>
-			<button class="mv-btn mv-btn-primary mv-btn-add" id="mv-btnAdd" type="button" aria-controls="mv-panel">
-				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-				<span class="mv-long"><?php echo $t('COM_MAPAVIAJES_ADD'); ?></span><span class="mv-short"><?php echo $t('COM_MAPAVIAJES_ADD_SHORT'); ?></span>
-			</button>
-		<?php endif; ?>
 		<a class="mv-btn mv-btn-soft mv-exit" href="<?php echo $e(Uri::root(true) ?: '/'); ?>" aria-label="<?php echo $t('COM_MAPAVIAJES_BACK_TO_SITE'); ?>">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span><?php echo $t('COM_MAPAVIAJES_BACK_TO_SITE'); ?></span>
 		</a>
+		</div>
 	</div>
 </header>
 

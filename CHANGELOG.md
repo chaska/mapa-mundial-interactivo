@@ -1,5 +1,13 @@
 # Registro de cambios
 
+## 1.10.0 — 2026-10-14 (administrador con diseño propio, menú del mapa, podio)
+- **El administrador ya no parece Joomla**: todas las pantallas del componente (Panel, Viajes, Álbumes, Edición, Ranking, Sorteo y Opciones) se muestran sin el menú ni la barra de Joomla, con menú lateral propio (con «Volver a Joomla» y «Ver el mapa»), tarjetas, «chips», botones redondos y modo oscuro automático. Se ve igual en el móvil (el menú pasa a una franja superior).
+- **Viajes en tarjetas** con foto grande, filtros por estado con su recuento, acciones por tarjeta (Publicar, Ocultar, Papelera, Restaurar) y barra flotante para lo seleccionado (Publicar, Ocultar, Spam, Papelera, Borrar con fotos, Eliminar definitivamente) con ventana de confirmación propia (sin avisos del navegador).
+- **Opciones en pantalla propia** (fotos, mapa, moderación, ranking, privacidad, correos), con los mismos límites y validaciones que antes; los permisos de grupos siguen en la pantalla de permisos de Joomla (botón «Permisos»).
+- **Mapa: botones en un menú** (tres rayitas): Podio, Descubrir, Volver al sitio y el selector de álbum van en un desplegable; «Añadir mi viaje» y tu nombre siguen a la vista.
+- **Podio: los escalones vacíos ya no flotan** (la clase `mv-empty`, pensada para «sin resultados», les añadía 28 px de relleno inferior; ahora el puesto vacío usa `mv-pnoone`).
+- Pruebas nuevas: `101-admin-navegador.js` (22 comprobaciones) y una comprobación de que los tres escalones del podio apoyan en el suelo.
+
 ## 1.9.0 — 2026-10-14 (estilos de mapa)
 - **Seis estilos de mapa**: Pergamino viajero (el de siempre, sigue por defecto), Océano de noche, Atlas moderno, Mapa político, Acuarela y Plano técnico. El administrador elige el de todos desde el Panel o desde Opciones → Mapa.
 - **Que cada persona elija su mapa** (interruptor en el Panel, apagado por defecto): el mapa muestra un botón de paleta junto a los mandos; la elección se guarda solo en el navegador de cada persona (nada en el servidor) y un valor extraño guardado allí se ignora.

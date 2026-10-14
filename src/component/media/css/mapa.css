@@ -434,7 +434,7 @@ html.mv-lock,body.mv-body{overflow:hidden;height:100%}
 .mv-p1 .mv-pblock{background:linear-gradient(180deg,#f7cd5b,var(--gold) 60%,var(--gold-d));height:clamp(130px,26vw,200px)}
 .mv-p2 .mv-pblock{background:linear-gradient(180deg,#e6dfd2,var(--silver) 60%,var(--silver-d));height:clamp(98px,20vw,150px);animation-delay:.1s}
 .mv-p3 .mv-pblock{background:linear-gradient(180deg,#e0a066,var(--bronze) 60%,var(--bronze-d));height:clamp(74px,15vw,112px);animation-delay:.2s}
-.mv-empty .mv-pblock{filter:grayscale(1);opacity:.45}
+.mv-pnoone .mv-pblock{filter:grayscale(1);opacity:.45}
 @keyframes mv-rise{from{transform:scaleY(.05);opacity:.4}to{transform:none;opacity:1}}
 .mv-pfloor{height:12px;border:4px solid var(--cin);background:var(--cin);max-width:730px;margin:0 auto;border-radius:3px}
 .mv-pslot.mv-me .mv-pav{outline:4px solid var(--gold);outline-offset:2px}
@@ -614,3 +614,16 @@ html,body{overscroll-behavior:none}
 .mv-map-row{display:flex;align-items:center;gap:12px}
 .mv-map-row input{flex:none}
 .mv-map-sw{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid rgba(0,0,0,.18);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+
+/* header menu (the three bars): the soft buttons live in a drop-down so they do not crowd the map */
+.mv-actions{position:relative}
+.mv-menubtn{padding:0;min-width:48px}
+.mv-menu{position:absolute;right:0;top:calc(100% + 10px);z-index:40;min-width:240px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 40px -12px rgba(40,22,8,.55);animation:mv-menu-in .16s var(--ease) both}
+.mv-menu[hidden]{display:none}
+.mv-menu .mv-btn{justify-content:flex-start;width:100%;min-height:46px;box-shadow:none}
+.mv-menu .mv-btn span{display:inline!important}
+.mv-menu .mv-albumpick{max-width:none;width:100%}
+@keyframes mv-menu-in{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mv-menu{animation:none}}
+.mv-has-logo .mv-actions .mv-menu .mv-btn{width:100%;min-width:0;padding:0 14px;justify-content:flex-start}
+.mv-has-logo .mv-actions .mv-menu .mv-albumpick{display:block}

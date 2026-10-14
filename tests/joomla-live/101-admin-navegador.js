@@ -1,0 +1,70 @@
+// Real browser test of the administrator redesign: panel, trips as cards (chips, per-card actions, floating bar on a selection), albums, ranking, raffle.
+const { chromium } = require('playwright');
+const BASE = process.env.MV_BASE || 'http://127.0.0.1:8081';
+let ok = 0, fail = 0;
+const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, console.log('  FALLA ' + m)); };
+(async () => {
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }).catch(() => chromium.launch());
+  const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
+  const g = await ctx.request.get(BASE + '/administrator/index.php'); const t = (await g.text()).match(/name="([a-f0-9]{32})" value="1"/)[1];
+  await ctx.request.post(BASE + '/administrator/index.php', { form: { username: 'admin', passwd: process.env.MV_ADMIN || 'cambia-esta-clave-de-prueba', option: 'com_login', task: 'login', return: 'aW5kZXgucGhw', [t]: '1' }, maxRedirects: 0 }).catch(() => {});
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  const open = async (q) => { await p.goto(BASE + '/administrator/index.php?option=com_mapaviajes' + q, { waitUntil: 'domcontentloaded' }); await p.waitForSelector('.mvA-app', { timeout: 20000 }); await p.waitForTimeout(400); };
+  const chipN = (label) => p.evaluate((l) => { const c = [...document.querySelectorAll('.mvA-chip')].find((x) => x.textContent.trim().startsWith(l)); return c ? +c.querySelector('b').textContent : -1; }, label);
+
+  await open('');
+  afirma((await p.locator('.mvA-kpi').count()) === 5 && (await p.locator('.mvA-side a').count()) >= 7, 'panel: 5 tarjetas de datos y menu lateral propio');
+  afirma((await p.locator('.mvA-sw').count()) >= 8 && (await p.locator('select[data-name="map_style"]').count()) === 1, 'panel: interruptores y selector de estilo del mapa');
+  afirma((await p.locator('.mvA-head .mvA-btn.p').count()) === 1, 'panel: boton «Nuevo album»');
+
+  await open('&view=trips&filter[published]=');
+  const total = await p.locator('article.mvA-trip').count();
+  afirma(total > 3, 'viajes: se pintan como tarjetas (' + total + ')');
+  afirma((await p.locator('.mvA-chip').count()) === 5 && (await p.locator('.mvA-chip.on').count()) === 1, 'viajes: 5 filtros en «chips», uno activo');
+  const publ0 = await chipN('Published'), hid0 = await chipN('Hidden');
+  afirma(!(await p.locator('#mvA-bulk.on').count()), 'viajes: la barra flotante no se ve sin seleccion');
+  await p.locator('.mvA-pick').nth(0).click(); await p.locator('.mvA-pick').nth(1).click(); await p.waitForTimeout(200);
+  afirma((await p.locator('#mvA-bulk.on').count()) === 1 && (await p.textContent('#mvA-bulkN')) === '2', 'viajes: al marcar 2 aparece la barra con «2»');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-bulk="trips.archive"]').click()]); await p.waitForSelector('.mvA-app');
+  afirma((await chipN('Hidden')) === hid0 + 2 && (await chipN('Published')) === publ0 - 2, 'viajes: «Ocultar» de la barra oculta los 2 (Ocultos ' + (hid0 + 2) + ')');
+  await open('&view=trips&filter[published]=2');
+  afirma((await p.locator('article.mvA-trip').count()) === hid0 + 2, 'viajes: el chip «Hidden» lista los ocultos');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-task="trips.publish"]').first().click()]); await p.waitForSelector('.mvA-app');
+  await open('&view=trips&filter[published]=2'); const left = await p.locator('article.mvA-trip').count();
+  afirma(left === hid0 + 1, 'viajes: «Publicar» de una tarjeta publica ese viaje (quedan ' + left + ' ocultos)');
+  if (left > hid0) { await p.locator('.mvA-pick').nth(0).click(); await Promise.all([p.waitForNavigation(), p.locator('[data-mv-bulk="trips.publish"]').click()]); await p.waitForSelector('.mvA-app'); }
+  // trash and restore from a card
+  await open('&view=trips&filter[published]=');
+  const before = await chipN('Trashed');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-task="trips.trash"]').first().click()]); await p.waitForSelector('.mvA-app');
+  afirma((await chipN('Trashed')) === before + 1, 'viajes: la papelera de una tarjeta la manda a «Trashed»');
+  await open('&view=trips&filter[published]=-2');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-task="trips.unpublish"]').first().click()]); await p.waitForSelector('.mvA-app');
+  afirma((await chipN('Trashed')) === before, 'viajes: «Restaurar» la saca de la papelera');
+  await open('&view=trips&filter[published]=0'); if (await p.locator('[data-mv-task="trips.publish"]').count()) { await Promise.all([p.waitForNavigation(), p.locator('[data-mv-task="trips.publish"]').first().click()]); }
+
+  await open('&view=albums');
+  afirma((await p.locator('article.mvA-album').count()) >= 1, 'albumes: tarjetas');
+  await open('&task=album.edit&id=1');
+  afirma((await p.locator('#jform_title').count()) === 1 && (await p.locator('input[name="logo_upload"]').count()) === 1, 'edicion de album: formulario completo con subida de logo');
+  await open('&view=albums');
+  await open('&view=settings');
+  afirma((await p.locator('.mvA-side .on').count()) === 1 && (await p.locator('input[name="jform[max_photos]"]').count()) === 1, 'opciones: pantalla propia con el menu lateral y los campos');
+  // out-of-range values are refused with a message (the test site keeps the abuse brakes at 1000 on purpose, which the form rejects)
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-submit="settings.save"]').click()]); await p.waitForSelector('.mvA-app');
+  afirma(/Invalid|inv/i.test(await p.locator('#system-message-container').innerText()), 'opciones: un valor fuera de rango se rechaza con un aviso');
+  const prevPhotos = await p.inputValue('input[name="jform[max_photos]"]');
+  await p.fill('input[name="jform[trips_per_hour]"]', '50'); await p.fill('input[name="jform[trips_per_day]"]', '200'); await p.fill('input[name="jform[max_photos]"]', '4');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-submit="settings.save"]').click()]); await p.waitForSelector('.mvA-app');
+  afirma((await p.inputValue('input[name="jform[max_photos]"]')) === '4' && (await p.inputValue('input[name="jform[trips_per_hour]"]')) === '50', 'opciones: los cambios válidos se guardan desde la pantalla propia');
+  afirma((await p.locator('select[name="jform[map_style]"] option').count()) >= 6, 'opciones: el selector de estilos lista los mapas');
+  if (process.env.MV_PSQL) { require('child_process').execSync(process.env.MV_PSQL + ' -c "UPDATE jt_extensions SET params = (params::jsonb || \'{\\"trips_per_hour\\":1000,\\"trips_per_day\\":1000,\\"max_photos\\":' + prevPhotos + '}\'::jsonb)::text WHERE element = \'com_mapaviajes\' AND type = \'component\'"'); }
+  afirma(!(await p.locator('.sidebar-wrapper, #header, .header').count()), 'sin el menu ni la barra de Joomla (la pantalla es de la app)');
+  await open('&view=ranking');
+  afirma((await p.locator('.mvA-table').count()) >= 1, 'ranking: tablas con el diseño nuevo');
+  await open('&view=raffle');
+  afirma((await p.locator('.mvA-card').count()) >= 2 && (await p.locator('form[action*="raffle.draw"] button').count()) === 1, 'sorteo: filtros y boton de sorteo');
+  afirma(errs.length === 0, 'sin errores de JavaScript en las pantallas ' + JSON.stringify(errs.slice(0, 2)));
+  await browser.close();
+  console.log(`\n${ok} correctas, ${fail} fallos`); process.exit(fail ? 1 : 0);
+})();

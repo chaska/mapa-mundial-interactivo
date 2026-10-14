@@ -20,7 +20,7 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await Promise.all([page.waitForNavigation(), page.click('button[type=submit].btn-primary, .btn-primary[type=submit]')]);
     await page.goto(BASE + '/index.php?option=com_mapaviajes');
     await page.waitForSelector('#mv-svg path.mv-sphere[d]', { timeout: 15000 });
-    await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
+    await page.click('#mv-btnMenu'); await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
     // a previous run of this test may have left beto's marks: start clean
     await page.locator('#mv-dBody .mv-arow-main', { hasText: 'Semilla para reacciones' }).first().click();
     await page.waitForSelector('#mv-fi:not([hidden])');
@@ -45,7 +45,7 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-reaccion-estrella.png` });
     // survives a reload (server-authoritative) and shows in the favourites tab
     await page.reload(); await page.waitForSelector('#mv-svg path.mv-sphere[d]');
-    await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
+    await page.click('#mv-btnMenu'); await page.click('#mv-btnDisc'); await page.waitForSelector('#mv-dBody .mv-arow-main');
     await page.click('#mv-tab-fav'); await page.waitForTimeout(300);
     afirma(await page.locator('#mv-dBody .mv-arow-main', { hasText: 'Semilla para reacciones' }).count() === 1, 'pestaña Favoritos lista el viaje tras recargar');
     afirma((await page.textContent('#mv-favN')).trim() === '1', 'el contador de favoritos marca 1');
