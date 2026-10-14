@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.11.1 — 2026-10-14
+- **Corregido: ningún enlace del administrador funcionaba** (todos volvían al Panel). Los enlaces y las acciones de los formularios se escapaban DOS veces (`&amp;amp;`), de modo que el navegador perdía el parámetro `view` y `task`. Arreglados el menú lateral, las tarjetas y accesos del Panel, los filtros de Viajes, los botones de Ranking y Sorteo y la pantalla de Opciones. La prueba del administrador ahora **hace clic de verdad** en cada enlace y vigila que ningún enlace ni formulario lleve «amp;».
+
 ## 1.11.0 — 2026-10-14 (borrar viajes, mapas oscuros, estilos del administrador siempre al día)
 - **Cada persona puede eliminar sus viajes** (también los pendientes) desde la ficha del viaje: botón «Eliminar viaje» → ventana de confirmación propia → se borran el viaje, sus fotos (filas y archivos), sus «me gusta» y su hilo de comentarios. **Los administradores** (permiso «Eliminar» del componente) pueden eliminar cualquiera desde el mapa, además de «Borrar con fotos» y «Eliminar definitivamente» en el administrador. Nadie puede borrar el viaje de otro (mismo 404 que un viaje inexistente); POST + cabecera AJAX + token; queda anotado el código del borrado (propio / por administrador), nunca el contenido.
 - **Mapas oscuros** («Océano de noche» y «Plano técnico»): los botones de la ficha (me gusta, soy fan, comentarios, cerrar, flechas) vuelven a leerse: antes llevaban letra clara sobre fondo claro. Ahora los paneles conservan el papel claro con su letra oscura y solo el mapa, la cabecera y los mandos van en oscuro. Prueba nueva de contraste en los seis estilos.

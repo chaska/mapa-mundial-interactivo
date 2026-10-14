@@ -16,7 +16,7 @@ use Joomla\CMS\Router\Route;
 /** @var \Chaska\Component\Mapaviajes\Administrator\View\Cpanel\HtmlView $this */
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $kpi = function (string $link, string $icon, string $label, string $hint, int $n, string $tone = '', bool $alert = false, string $go = '') use ($e) {
-	return '<a class="mvA-card mvA-kpi' . ($alert ? ' alert' : '') . '" href="' . $e(Route::_($link)) . '"><span class="mvA-ico ' . $e($tone) . ' icon-' . $e($icon) . '" aria-hidden="true"></span>'
+	return '<a class="mvA-card mvA-kpi' . ($alert ? ' alert' : '') . '" href="' . $e(Route::_($link, false)) . '"><span class="mvA-ico ' . $e($tone) . ' icon-' . $e($icon) . '" aria-hidden="true"></span>'
 		. '<span class="mvA-n">' . $n . '</span><span class="mvA-l"><strong>' . $e($label) . '</strong>' . $e($hint) . '</span>' . ($go !== '' ? '<span class="go">' . $e($go) . ' →</span>' : '') . '</a>';
 };
 $sw = function (string $name, string $label, string $desc) use ($e) {
@@ -28,7 +28,7 @@ $mapUrl = \Joomla\CMS\Uri\Uri::root() . 'index.php?option=com_mapaviajes';
 ?>
 <?php echo AdminShell::open('cpanel', Text::_('COM_MAPAVIAJES'), Text::_('COM_MAPAVIAJES_CP_SUB'), [
 	'<a class="mvA-btn g" href="' . $e($mapUrl) . '" target="_blank" rel="noopener"><span class="icon-eye" aria-hidden="true"></span>' . $e(Text::_('COM_MAPAVIAJES_CP_VIEW_MAP')) . '</a>',
-	'<a class="mvA-btn p" href="' . $e(Route::_('index.php?option=com_mapaviajes&task=album.add')) . '"><span class="icon-plus" aria-hidden="true"></span>' . $e(Text::_('COM_MAPAVIAJES_CP_NEW_ALBUM')) . '</a>',
+	'<a class="mvA-btn p" href="' . $e(Route::_('index.php?option=com_mapaviajes&task=album.add', false)) . '"><span class="icon-plus" aria-hidden="true"></span>' . $e(Text::_('COM_MAPAVIAJES_CP_NEW_ALBUM')) . '</a>',
 ]); ?>
 
 	<section class="mvA-grid mvA-g4" style="margin-bottom:16px" aria-label="<?php echo $e(Text::_('COM_MAPAVIAJES_CP_DOORS')); ?>">
@@ -82,11 +82,11 @@ $mapUrl = \Joomla\CMS\Uri\Uri::root() . 'index.php?option=com_mapaviajes';
 				<h2><?php echo $e(Text::_('COM_MAPAVIAJES_CP_ACCESS')); ?></h2>
 				<p class="mvA-sub"><?php echo $e(Text::_('COM_MAPAVIAJES_CP_ACCESS_SUB')); ?></p>
 				<div class="mvA-links">
-					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=trips')); ?>"><span class="icon-image" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_TRIPS_TITLE')); ?></a>
-					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=albums')); ?>"><span class="icon-globe" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_MENU_ALBUMS')); ?></a>
-					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=ranking')); ?>"><span class="icon-star" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_MENU_RANKING')); ?></a>
-					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=raffle')); ?>"><span class="icon-users" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_MENU_RAFFLE')); ?></a>
-					<?php if ($this->canOptions) : ?><a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_config&view=component&component=com_mapaviajes')); ?>"><span class="icon-cog" aria-hidden="true"></span><?php echo $e(Text::_('JOPTIONS')); ?></a><?php endif; ?>
+					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=trips', false)); ?>"><span class="icon-image" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_TRIPS_TITLE')); ?></a>
+					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=albums', false)); ?>"><span class="icon-globe" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_MENU_ALBUMS')); ?></a>
+					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=ranking', false)); ?>"><span class="icon-star" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_MENU_RANKING')); ?></a>
+					<a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=raffle', false)); ?>"><span class="icon-users" aria-hidden="true"></span><?php echo $e(Text::_('COM_MAPAVIAJES_MENU_RAFFLE')); ?></a>
+					<?php if ($this->canOptions) : ?><a class="mvA-btn" href="<?php echo $e(Route::_('index.php?option=com_config&view=component&component=com_mapaviajes', false)); ?>"><span class="icon-cog" aria-hidden="true"></span><?php echo $e(Text::_('JOPTIONS')); ?></a><?php endif; ?>
 				</div>
 			</section>
 			<section class="mvA-card mvA-note">

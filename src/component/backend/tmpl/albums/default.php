@@ -21,7 +21,7 @@ $this->getDocument()->getWebAssetManager()->useScript('table.columns')->useScrip
 $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 ?>
 <form action="<?php echo Route::_('index.php?option=com_mapaviajes&view=albums'); ?>" method="post" name="adminForm" id="adminForm">
-	<?php echo AdminShell::open('albums', Text::_('COM_MAPAVIAJES_ALBUMS_TITLE'), Text::_('COM_MAPAVIAJES_ALBUMS_SUB'), ['<a class="mvA-btn p" href="' . $e(Route::_('index.php?option=com_mapaviajes&task=album.add')) . '"><span class="icon-plus" aria-hidden="true"></span>' . $e(Text::_('COM_MAPAVIAJES_CP_NEW_ALBUM')) . '</a>']); ?>
+	<?php echo AdminShell::open('albums', Text::_('COM_MAPAVIAJES_ALBUMS_TITLE'), Text::_('COM_MAPAVIAJES_ALBUMS_SUB'), ['<a class="mvA-btn p" href="' . $e(Route::_('index.php?option=com_mapaviajes&task=album.add', false)) . '"><span class="icon-plus" aria-hidden="true"></span>' . $e(Text::_('COM_MAPAVIAJES_CP_NEW_ALBUM')) . '</a>']); ?>
 		<?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
 		<?php if (empty($this->items)) : ?>
 			<div class="mvA-card mvA-empty"><?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?></div>

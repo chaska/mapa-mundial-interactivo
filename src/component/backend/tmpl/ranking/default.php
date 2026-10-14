@@ -21,7 +21,7 @@ $who = static fn (array $r): string => $r['name'] !== '' && $r['name'] !== null 
 ?>
 <?php echo AdminShell::open('ranking', Text::_('COM_MAPAVIAJES_MENU_RANKING'), Text::_('COM_MAPAVIAJES_RANKING_SUB')); ?>
 	<?php if (!$this->enabled) : ?><div class="alert alert-warning"><?php echo $e(Text::_('COM_MAPAVIAJES_RANKING_OFF')); ?></div><?php endif; ?>
-	<form action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=ranking.close')); ?>" method="post" class="mvA-inline">
+	<form action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=ranking.close', false)); ?>" method="post" class="mvA-inline">
 		<button class="mvA-btn p" type="submit"><?php echo $e(Text::_('COM_MAPAVIAJES_RANKING_CLOSE')); ?></button>
 		<small><?php echo $e(Text::_('COM_MAPAVIAJES_RANKING_CLOSE_HINT')); ?></small>
 		<?php echo HTMLHelper::_('form.token'); ?>
@@ -40,7 +40,7 @@ $who = static fn (array $r): string => $r['name'] !== '' && $r['name'] !== null 
 		<?php if ($this->weeks === []) : ?>
 			<p><?php echo $e(Text::_('COM_MAPAVIAJES_RANKING_NONE')); ?></p>
 		<?php else : ?>
-			<form method="get" action="<?php echo $e(Route::_('index.php')); ?>" class="mvA-inline">
+			<form method="get" action="<?php echo $e(Route::_('index.php', false)); ?>" class="mvA-inline">
 				<input type="hidden" name="option" value="com_mapaviajes"><input type="hidden" name="view" value="ranking">
 				<label for="mvA-week"><?php echo $e(Text::_('COM_MAPAVIAJES_RANKING_PICK')); ?></label>
 				<select id="mvA-week" name="week" class="form-select w-auto" onchange="this.form.submit()">

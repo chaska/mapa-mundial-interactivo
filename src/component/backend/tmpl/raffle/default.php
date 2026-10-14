@@ -23,7 +23,7 @@ $hidden = fn () => '<input type="hidden" name="from" value="' . $e($this->f['fro
 
 	<section class="mvA-card">
 		<h2><?php echo $e(Text::_('COM_MAPAVIAJES_RAFFLE_FILTERS')); ?></h2>
-		<form method="get" action="<?php echo $e(Route::_('index.php')); ?>" class="mvA-filters">
+		<form method="get" action="<?php echo $e(Route::_('index.php', false)); ?>" class="mvA-filters">
 			<input type="hidden" name="option" value="com_mapaviajes"><input type="hidden" name="view" value="raffle">
 			<label><?php echo $e(Text::_('COM_MAPAVIAJES_RAFFLE_FROM')); ?><input type="date" name="from" value="<?php echo $e($this->f['from']); ?>" class="form-control"></label>
 			<label><?php echo $e(Text::_('COM_MAPAVIAJES_RAFFLE_TO')); ?><input type="date" name="to" value="<?php echo $e($this->f['to']); ?>" class="form-control"></label>
@@ -46,9 +46,9 @@ $hidden = fn () => '<input type="hidden" name="from" value="' . $e($this->f['fro
 	<section class="mvA-card">
 		<h2><?php echo $e(sprintf(Text::_('COM_MAPAVIAJES_RAFFLE_LIST'), \count($this->people))); ?></h2>
 		<div class="mvA-inline">
-			<form method="post" action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=raffle.csv')); ?>"><?php echo $hidden(); ?>
+			<form method="post" action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=raffle.csv', false)); ?>"><?php echo $hidden(); ?>
 				<button class="mvA-btn" type="submit"<?php echo $this->people === [] ? ' disabled' : ''; ?>><?php echo $e(Text::_('COM_MAPAVIAJES_RAFFLE_CSV')); ?></button></form>
-			<form method="post" action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=raffle.draw')); ?>" class="mvA-inline"><?php echo $hidden(); ?>
+			<form method="post" action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=raffle.draw', false)); ?>" class="mvA-inline"><?php echo $hidden(); ?>
 				<label><?php echo $e(Text::_('COM_MAPAVIAJES_RAFFLE_WINNERS_N')); ?> <input type="number" name="winners" min="1" max="50" value="1" class="form-control w-auto d-inline-block"></label>
 				<button class="mvA-btn p" type="submit"<?php echo $this->people === [] ? ' disabled' : ''; ?>><?php echo $e(Text::_('COM_MAPAVIAJES_RAFFLE_DRAW')); ?></button></form>
 		</div>

@@ -50,7 +50,7 @@ $ok = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.500 4.500 4.50
 		<?php endforeach; ?>
 		<nav class="mvA-chips" aria-label="<?php echo $e(Text::_('JSTATUS')); ?>">
 			<?php foreach ($chips as [$val, $label, $n]) : ?>
-				<a class="mvA-chip<?php echo $cur === $val ? ' on' : ''; ?>" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=trips&filter[published]=' . $val)); ?>"<?php echo $cur === $val ? ' aria-current="true"' : ''; ?>><?php echo Text::_($label); ?><b><?php echo (int) $n; ?></b></a>
+				<a class="mvA-chip<?php echo $cur === $val ? ' on' : ''; ?>" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=trips&filter[published]=' . $val, false)); ?>"<?php echo $cur === $val ? ' aria-current="true"' : ''; ?>><?php echo Text::_($label); ?><b><?php echo (int) $n; ?></b></a>
 			<?php endforeach; ?>
 		</nav>
 		<?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>

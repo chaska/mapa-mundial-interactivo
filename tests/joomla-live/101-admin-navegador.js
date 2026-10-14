@@ -13,11 +13,32 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
   const chipN = (label) => p.evaluate((l) => { const c = [...document.querySelectorAll('.mvA-chip')].find((x) => x.textContent.trim().startsWith(l)); return c ? +c.querySelector('b').textContent : -1; }, label);
 
   await open('');
+  // every link and form action of every screen is a clean URL (a doubly escaped "&amp;" sent every click back to the dashboard)
+  const dirty = [];
+  for (const q of ['', '&view=trips&filter[published]=', '&view=albums', '&view=ranking', '&view=raffle', '&view=settings']) {
+    await open(q);
+    dirty.push(...(await p.$$eval('.mvA-app a[href], .mvA-app form[action]', (e) => e.map((x) => x.getAttribute('href') || x.getAttribute('action')).filter((u) => /amp;/.test(u)))));
+  }
+  afirma(dirty.length === 0, 'ningun enlace ni formulario lleva «&amp;» doble: ' + JSON.stringify(dirty.slice(0, 2)));
+  await open('');
+  for (const [i, view] of [[1, 'trips'], [2, 'albums'], [3, 'ranking'], [4, 'raffle'], [5, 'settings'], [0, 'cpanel']]) {
+    await Promise.all([p.waitForNavigation(), p.locator('.mvA-nav').first().locator('a').nth(i).click()]); await p.waitForSelector('.mvA-app');
+    afirma((view === 'cpanel' ? !/view=/.test(p.url()) || /view=cpanel/.test(p.url()) : p.url().includes('view=' + view)) && (await p.locator('.mvA-side a.on').count()) === 1 && !/amp;/.test(p.url()), 'el menu lateral lleva a «' + view + '» al hacer clic');
+  }
+  await Promise.all([p.waitForNavigation(), p.locator('.mvA-head .mvA-btn.p').click()]); await p.waitForSelector('.mvA-app');
+  afirma(await p.locator('#jform_title').count() === 1, '«Nuevo album» abre el formulario de album');
+  await open('');
+  await Promise.all([p.waitForNavigation(), p.locator('.mvA-kpi').nth(1).click()]); await p.waitForSelector('.mvA-app');
+  afirma(p.url().includes('view=trips'), 'las tarjetas del panel llevan a su lista');
+  await open('');
+  await Promise.all([p.waitForNavigation(), p.locator('.mvA-links a').first().click()]); await p.waitForSelector('.mvA-app');
+  afirma(p.url().includes('view=trips'), 'los accesos del panel derecho funcionan');
+  await open('');
   afirma((await p.locator('.mvA-kpi').count()) === 5 && (await p.locator('.mvA-side a').count()) >= 7, 'panel: 5 tarjetas de datos y menu lateral propio');
   afirma((await p.locator('.mvA-sw').count()) >= 8 && (await p.locator('select[data-name="map_style"]').count()) === 1, 'panel: interruptores y selector de estilo del mapa');
   afirma((await p.locator('.mvA-head .mvA-btn.p').count()) === 1, 'panel: boton «Nuevo album»');
 
-  await open('&view=trips&filter[published]=');
+  await open('&view=trips&filter[published]=1');
   const total = await p.locator('article.mvA-trip').count();
   afirma(total > 3, 'viajes: se pintan como tarjetas (' + total + ')');
   afirma((await p.locator('.mvA-chip').count()) === 5 && (await p.locator('.mvA-chip.on').count()) === 1, 'viajes: 5 filtros en «chips», uno activo');

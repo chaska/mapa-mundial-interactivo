@@ -18,9 +18,9 @@ use Joomla\CMS\Router\Route;
 $this->getDocument()->getWebAssetManager()->useScript('keepalive')->useScript('form.validate')->useStyle('com_mapaviajes.admin')->useScript('com_mapaviajes.admin');
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 ?>
-<form action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=settings.save')); ?>" method="post" name="adminForm" id="settings-form" class="form-validate">
+<form action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=settings.save', false)); ?>" method="post" name="adminForm" id="settings-form" class="form-validate">
 <?php echo AdminShell::open('settings', Text::_('JOPTIONS'), Text::_('COM_MAPAVIAJES_SETTINGS_SUB'), [
-	'<a class="mvA-btn g" href="' . $e(Route::_('index.php?option=com_config&view=component&component=com_mapaviajes')) . '"><span class="icon-lock" aria-hidden="true"></span>' . $e(Text::_('COM_MAPAVIAJES_SETTINGS_PERMS')) . '</a>',
+	'<a class="mvA-btn g" href="' . $e(Route::_('index.php?option=com_config&view=component&component=com_mapaviajes', false)) . '"><span class="icon-lock" aria-hidden="true"></span>' . $e(Text::_('COM_MAPAVIAJES_SETTINGS_PERMS')) . '</a>',
 	'<button type="button" class="mvA-btn p" data-mv-form="settings-form" data-mv-submit="settings.save"><span class="icon-check" aria-hidden="true"></span>' . Text::_('JSAVE') . '</button>',
 ]); ?>
 	<div class="mvA-grid mvA-g2">

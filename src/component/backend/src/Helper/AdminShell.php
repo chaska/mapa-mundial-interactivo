@@ -41,12 +41,12 @@ final class AdminShell
 		}
 
 		$html  = '<div class="mvA-app mvA-wrap"><nav class="mvA-side" aria-label="' . $e(Text::_('COM_MAPAVIAJES')) . '">';
-		$html .= '<a class="mvA-brand" href="' . $e(Route::_('index.php?option=com_mapaviajes')) . '"><span class="mvA-mark" aria-hidden="true"><span class="icon-globe"></span></span><span class="mvA-brandt">' . $e(Text::_('COM_MAPAVIAJES')) . '</span></a>';
+		$html .= '<a class="mvA-brand" href="' . $e(Route::_('index.php?option=com_mapaviajes', false)) . '"><span class="mvA-mark" aria-hidden="true"><span class="icon-globe"></span></span><span class="mvA-brandt">' . $e(Text::_('COM_MAPAVIAJES')) . '</span></a>';
 		$html .= '<ul class="mvA-nav">';
 
 		foreach ($nav as $key => [$label, $icon, $url])
 		{
-			$html .= '<li><a href="' . $e(Route::_($url)) . '"' . ($key === $active ? ' class="on" aria-current="page"' : '') . '><span class="' . $e($icon) . '" aria-hidden="true"></span><span class="mvA-navt">' . $e(Text::_($label)) . '</span></a></li>';
+			$html .= '<li><a href="' . $e(Route::_($url, false)) . '"' . ($key === $active ? ' class="on" aria-current="page"' : '') . '><span class="' . $e($icon) . '" aria-hidden="true"></span><span class="mvA-navt">' . $e(Text::_($label)) . '</span></a></li>';
 		}
 
 		$html .= '</ul><ul class="mvA-nav mvA-nav-end">';
