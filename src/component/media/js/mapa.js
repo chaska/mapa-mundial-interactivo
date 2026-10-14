@@ -52,6 +52,9 @@
 	let TRIPS = [], ALL = [];
 	const stage = $('stage'), svg = $('svg'), worldG = $('world'), pinsEl = $('pins');
 	const V = { k: 1, tx: 0, ty: 0 };
+	/* Dragging moves the map and the pins layer with ONE compositor transform each (same frame, no repaint of the vector map per move);
+	   the real view V is updated once, when the finger is lifted. PAD is the extra map drawn around the screen so no edge shows meanwhile. */
+	const PAD = 160; let dragX = 0, dragY = 0;
 	let VW = innerWidth, VH = innerHeight, KMIN = 1, KMAX = 40;
 	const FIXED_PX = 46, COUNTRY_ZOOM = 2.4, ZP = 6;
 	const pinEls = new Map(), polEls = new Map();
@@ -74,15 +77,26 @@
 		v.ty = mh <= VH ? (VH - mh) / 2 : Math.min(m, Math.max(VH - mh - m, v.ty));
 		return v;
 	}
+	function foldDrag() {
+		if (!dragX && !dragY) { return; }
+		V.tx += dragX; V.ty += dragY; dragX = 0; dragY = 0; svg.style.transform = ''; pinsEl.style.transform = '';
+	}
+	function dragBy(dx, dy) {
+		const t = clamp({ k: V.k, tx: V.tx + dragX + dx, ty: V.ty + dragY + dy });
+		dragX = t.tx - V.tx; dragY = t.ty - V.ty;
+		const s = 'translate(' + dragX + 'px,' + dragY + 'px)';
+		svg.style.transform = s; pinsEl.style.transform = s;
+	}
 	function apply() {
+		foldDrag();
 		svg.classList.toggle('mv-far', V.k / KMIN < 3.2);
-		worldG.setAttribute('transform', 'translate(' + V.tx + ' ' + V.ty + ') scale(' + V.k + ')');
+		worldG.setAttribute('transform', 'translate(' + (V.tx + PAD) + ' ' + (V.ty + PAD) + ') scale(' + V.k + ')');
 		render();
 	}
-	function zoomAt(f, sx, sy) { const nk = Math.max(KMIN, Math.min(KMAX, V.k * f)); f = nk / V.k; V.tx = sx - (sx - V.tx) * f; V.ty = sy - (sy - V.ty) * f; V.k = nk; clamp(V); apply(); }
+	function zoomAt(f, sx, sy) { foldDrag(); const nk = Math.max(KMIN, Math.min(KMAX, V.k * f)); f = nk / V.k; V.tx = sx - (sx - V.tx) * f; V.ty = sy - (sy - V.ty) * f; V.k = nk; clamp(V); apply(); }
 	function viewFor(cx, cy, k) { const b = visibleBox(); return { k, tx: b.x + b.w / 2 - cx * k, ty: b.y + b.h / 2 - cy * k }; }
 	function flyTo(t, ms = 750) {
-		clamp(t); cancelAnimationFrame(anim);
+		foldDrag(); clamp(t); cancelAnimationFrame(anim);
 		if (reduced()) { Object.assign(V, t); apply(); return; }
 		const s = { ...V }, t0 = performance.now();
 		const step = (now) => {
@@ -196,7 +210,7 @@
 			el.setAttribute('aria-label', n === 1 ? c.items[0].t + ' ' + fmt(T('COM_MAPAVIAJES_JS_BY'), c.items[0].by) : fmt(T('COM_MAPAVIAJES_JS_ALBUMS_N'), n));
 			el.style.transform = 'translate(' + (c.sx + c.ox - c.w / 2).toFixed(1) + 'px,' + (c.sy + c.oy - c.h).toFixed(1) + 'px)';
 			el.style.zIndex = String(1000 + Math.round(c.sy) + (n > 1 ? n : 0));
-			el.hidden = c.sx < -80 || c.sx > VW + 80 || c.sy < -20 || c.sy > VH + 120;
+			el.hidden = c.sx < -600 || c.sx > VW + 600 || c.sy < -600 || c.sy > VH + 600; // generous: pins keep moving with the layer while a drag is in progress
 		});
 		for (const [k, el] of pinEls) { if (!keep.has(k)) { el.remove(); pinEls.delete(k); } }
 		syncPolaroids(cs); placeDraft();
@@ -237,7 +251,7 @@
 		if (on) {
 			for (const c of cs) {
 				const n = c.items.length;
-				if (c.sx < -300 || c.sx > VW + 300 || c.sy < -200 || c.sy > VH + 400) { continue; }
+				if (c.sx < -900 || c.sx > VW + 900 || c.sy < -900 || c.sy > VH + 900) { continue; }
 				if (n === 1) {
 					const t = c.items[0]; if (!t.ph.length) { continue; }
 					const ang = (t.id % 2 ? -1 : 1) * (2.5 + ((t.id * 37) % 10) * .55), ax = (small ? 120 : 158) * (ang > 0 ? .1 : .9);
@@ -313,18 +327,19 @@
 	}
 
 	/* ---------------------------------------------------------------- pointer / keyboard on the map */
+	const commitDrag = () => { if (dragX || dragY) { apply(); } };
 	const ptrs = new Map(); let moved = 0, downTarget = null, pinch = 0;
 	stage.addEventListener('pointerdown', (e) => {
 		if (e.target.closest('.mv-pin,.mv-polaroid')) { return; }
 		stage.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
 		if (ptrs.size === 1) { moved = 0; downTarget = e.target; }
 		if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
-		cancelAnimationFrame(anim);
+		cancelAnimationFrame(anim); if (ptrs.size > 1) { commitDrag(); }
 	});
 	stage.addEventListener('pointermove', (e) => {
 		const p = ptrs.get(e.pointerId); if (!p) { return; }
 		const dx = e.clientX - p.x, dy = e.clientY - p.y;
-		if (ptrs.size === 1) { moved += Math.abs(dx) + Math.abs(dy); if (moved > 8) { stage.classList.add('mv-drag'); V.tx += dx; V.ty += dy; clamp(V); apply(); } } else if (ptrs.size === 2) {
+		if (ptrs.size === 1) { moved += Math.abs(dx) + Math.abs(dy); if (moved > 8) { stage.classList.add('mv-drag'); dragBy(dx, dy); } } else if (ptrs.size === 2) {
 			p.x = e.clientX; p.y = e.clientY; const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
 			if (pinch) { moved = 99; zoomAt(d / pinch, (a.x + b.x) / 2, (a.y + b.y) / 2); } pinch = d; return;
 		}
@@ -332,7 +347,7 @@
 	});
 	const endPtr = (e) => {
 		if (!ptrs.has(e.pointerId)) { return; }
-		const single = ptrs.size === 1; ptrs.delete(e.pointerId); stage.classList.remove('mv-drag');
+		const single = ptrs.size === 1; ptrs.delete(e.pointerId); stage.classList.remove('mv-drag'); commitDrag();
 		if (single && moved <= 8 && e.type === 'pointerup') { mapClick(e.clientX, e.clientY, downTarget); }
 		if (ptrs.size < 2) { pinch = 0; }
 	};

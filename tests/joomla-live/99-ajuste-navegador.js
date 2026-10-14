@@ -26,6 +26,33 @@ const sphere = (page) => page.evaluate(() => { const b = document.getElementById
     afirma(Math.abs(s.w - ref[w].w) <= 3 && Math.abs(s.cx - ref[w].cx) <= 3, `de 1440 a ${w} px: el mapa se reajusta al ancho como en una carga nueva (${s.w} px, centro ${s.cx}; esperado ${ref[w].w}, ${ref[w].cx})`);
   }
   await c.close();
+  // dragging: the map and the pins layer move together, frame by frame (one transform each), and the view is committed on release
+  {
+    const d = await browser.newContext({ viewport: { width: 1200, height: 800 } }); const dp = await d.newPage(); await login(dp);
+    await dp.goto(BASE + '/index.php?option=com_mapaviajes'); await dp.waitForSelector('#mv-svg path.mv-sphere[d]'); await dp.waitForTimeout(800);
+    for (let i = 0; i < 3; i++) { await dp.click('#mv-zin'); await dp.waitForTimeout(250); }
+    await dp.waitForTimeout(900);
+    const rects = () => dp.evaluate(() => { const s = document.getElementById('mv-sphere').getBoundingClientRect(), pin = document.querySelector('.mv-pin:not([hidden])'); const q = pin ? pin.getBoundingClientRect() : null; return { sx: s.left, sy: s.top, px: q ? q.left : null, py: q ? q.top : null, ts: document.getElementById('mv-svg').style.transform, tp: document.getElementById('mv-pins').style.transform }; });
+    const before = await rects();
+    afirma(before.px !== null, 'hay una chincheta visible para medir');
+    await dp.mouse.move(600, 420); await dp.mouse.down(); await dp.mouse.move(660, 450, { steps: 3 }); await dp.mouse.move(720, 480, { steps: 3 });
+    const during = await rects();
+    afirma(during.ts !== '' && during.ts === during.tp, 'durante el arrastre mapa y capa de chinchetas llevan EXACTAMENTE la misma transformacion (' + during.ts + ')');
+    const dMap = [during.sx - before.sx, during.sy - before.sy], dPin = [during.px - before.px, during.py - before.py];
+    afirma(Math.abs(dMap[0] - dPin[0]) <= 1 && Math.abs(dMap[1] - dPin[1]) <= 1 && (Math.abs(dMap[0]) > 20 || Math.abs(dMap[1]) > 20), 'y se desplazan lo mismo en pantalla (mapa ' + dMap.map(Math.round) + ' / chincheta ' + dPin.map(Math.round) + ')');
+    await dp.mouse.up(); await dp.waitForTimeout(200);
+    const after = await rects();
+    afirma(after.ts === '' && after.tp === '' && Math.abs((after.sx - before.sx) - (after.px - before.px)) <= 1, 'al soltar se confirma la vista y siguen alineados (' + Math.round(after.sx - before.sx) + ' / ' + Math.round(after.px - before.px) + ')');
+    await d.close();
+  }
+  // the form: Send / Cancel are the end of the form, not pinned to the bottom
+  {
+    const f = await browser.newContext({ viewport: { width: 390, height: 460 }, isMobile: true, hasTouch: true }); const fp = await f.newPage(); await login(fp);
+    await fp.goto(BASE + '/index.php?option=com_mapaviajes'); await fp.waitForSelector('#mv-svg path.mv-sphere[d]'); await fp.click('#mv-btnAdd'); await fp.waitForTimeout(700);
+    const r = await fp.evaluate(() => { const b = document.getElementById('mv-btnSend'), body = document.getElementById('mv-body'); const rect = b.getBoundingClientRect(); return { inside: body.contains(b), visibleAtOpen: rect.bottom <= innerHeight, pos: getComputedStyle(b.closest('.mv-panel-foot')).position }; });
+    afirma(r.inside && r.pos === 'static' && !r.visibleAtOpen, 'el boton Enviar va dentro del formulario (al final), no fijo: con poco espacio hay que bajar para verlo');
+    await f.close();
+  }
   const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const mp = await m.newPage(); await login(mp);
   await mp.goto(BASE + '/index.php?option=com_mapaviajes'); await mp.waitForSelector('#mv-svg path.mv-sphere[d]'); await mp.waitForTimeout(600);
   const b = await mp.evaluate(() => { const z = document.querySelector('.mv-zoom').getBoundingClientRect(); return { bottomGap: innerHeight - z.bottom }; });

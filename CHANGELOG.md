@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.8.0 — 2026-10-14
+- **Arrastrar el mapa**: el mapa y la capa de chinchetas/polaroids se mueven ahora con UNA transformación de compositor cada uno, en el mismo fotograma, sin volver a pintar el mapa vectorial en cada movimiento (antes las chinchetas llegaban antes que el mapa). La vista real se confirma al soltar. Se dibuja 160 px de mapa de más alrededor de la pantalla para que no asome ningún borde durante el arrastre, y las chinchetas se mantienen hasta 600 px fuera de pantalla para que se muevan con la capa.
+- **Formulario de viaje**: «Cancelar» y «Enviar» van al final del propio formulario (se desplazan con él), ya no fijos abajo: con el teclado abierto los campos ocupan todo el espacio.
+
 ## 1.7.5 — 2026-10-18
 - El mapa y la página de comentarios se sirven con `Cache-Control: no-store` y `X-LiteSpeed-Cache-Control: no-cache`: llevan el token de seguridad de la sesión y contenido de cada persona; una caché del servidor (LiteSpeed, proxy, página en caché de Joomla) con una copia vieja hace que el comentario se rechace por token inválido y que la lista no se actualice.
 

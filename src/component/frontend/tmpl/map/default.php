@@ -281,16 +281,16 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			<?php endif; ?>
 
 			<div class="mv-sr" aria-hidden="true"><label for="mv-website">Website</label><input type="text" id="mv-website" tabindex="-1" autocomplete="off" value=""></div>
-		</div>
 
-		<div class="mv-panel-foot">
-			<div class="mv-progress" id="mv-progress" hidden><i id="mv-progressBar"></i></div>
-			<p class="mv-summary" id="mv-summary" role="alert"></p>
-			<div class="mv-foot-row">
-				<button class="mv-btn mv-btn-quiet" type="button" id="mv-btnCancel"><?php echo $t('JCANCEL'); ?></button>
-				<button class="mv-btn mv-btn-primary" type="submit" id="mv-btnSend"><?php echo $t('COM_MAPAVIAJES_SEND'); ?></button>
+			<div class="mv-panel-foot">
+				<div class="mv-progress" id="mv-progress" hidden><i id="mv-progressBar"></i></div>
+				<p class="mv-summary" id="mv-summary" role="alert"></p>
+				<div class="mv-foot-row">
+					<button class="mv-btn mv-btn-quiet" type="button" id="mv-btnCancel"><?php echo $t('JCANCEL'); ?></button>
+					<button class="mv-btn mv-btn-primary" type="submit" id="mv-btnSend"><?php echo $t('COM_MAPAVIAJES_SEND'); ?></button>
+				</div>
+				<p class="mv-priv"><?php echo $t('COM_MAPAVIAJES_PRIVACY_NOTE'); ?></p>
 			</div>
-			<p class="mv-priv"><?php echo $t('COM_MAPAVIAJES_PRIVACY_NOTE'); ?></p>
 		</div>
 	</form>
 </aside>

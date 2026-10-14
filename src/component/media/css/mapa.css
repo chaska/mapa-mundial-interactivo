@@ -21,15 +21,15 @@ body{margin:0}
 .mv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* ---------- map stage ---------- */
-.mv-stage{position:fixed;inset:0;touch-action:none;cursor:crosshair;background:
+.mv-stage{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:crosshair;background:
   radial-gradient(120% 90% at 30% 20%,#1a3ba6 0%,var(--ocean) 45%,var(--ocean-deep) 100%);user-select:none;-webkit-user-select:none}
 .mv-stage.mv-drag{cursor:grabbing}
-#mv-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#mv-svg{position:absolute;left:-160px;top:-160px;width:calc(100% + 320px);height:calc(100% + 320px);display:block;will-change:transform}
 .mv-sphere{fill:var(--ocean)}
 .mv-grat{fill:none;stroke:var(--ocean-line);stroke-width:1;vector-effect:non-scaling-stroke}
 .mv-land path{fill:var(--land);stroke:var(--land-edge);stroke-width:.6;vector-effect:non-scaling-stroke;stroke-linejoin:round;transition:fill .25s}
 .mv-land path:hover{fill:var(--land-hover)}
-#mv-pins{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#mv-pins{position:absolute;inset:0;pointer-events:none;will-change:transform}
 
 .mv-pin{position:absolute;left:0;top:0;pointer-events:auto;background:none;border:0;padding:0;cursor:pointer;will-change:transform;line-height:0}
 .mv-pin-body{display:block;transform-origin:50% 100%;transition:transform .25s var(--ease);animation:mv-drop .5s var(--ease) both}
@@ -603,3 +603,7 @@ html,body{overscroll-behavior:none}
   .mv-fi-hero{height:clamp(200px,36dvh,340px)}
 }
 @media (prefers-reduced-motion:reduce){.mv-fi-card,.mv-fi-img img{animation:none;transition:none}}
+
+/* the Send / Cancel buttons are the end of the form itself (not pinned to the bottom): with the keyboard open the fields get all the room */
+.mv-panel-body .mv-panel-foot{padding:14px 0 calc(22px + env(safe-area-inset-bottom));border-top:1px solid #e4d3ba;margin-top:8px;background:none;border-radius:0}
+@media (max-width:720px){.mv-panel-body .mv-panel-foot{padding:12px 0 calc(24px + env(safe-area-inset-bottom))}}
