@@ -60,6 +60,12 @@ class AlbumModel extends AdminModel
 	{
 		unset($data['logo']); // the column is ours alone
 
+		// Creating or editing a map does not include publishing it: that is its own permission
+		if (!$this->getCurrentUser()->authorise('core.edit.state', 'com_mapaviajes'))
+		{
+			unset($data['published']);
+		}
+
 		$storage = (new Settings())->storage();
 		$storage->prepare();
 		$tmp     = null;

@@ -39,6 +39,13 @@ final class Mapaviajes extends PrivacyPlugin implements SubscriberInterface
 	{
 		[$request, $user] = array_values($event->getArguments());
 		$result = $event->getArgument('result', []);
+
+		// A request for an e-mail address with no account has no user: export nothing (id 0 is where erased people's log rows live)
+		if (!$user || (int) $user->id <= 0)
+		{
+			return;
+		}
+
 		$data   = (new UserData($this->getDatabase()))->export((int) $user->id);
 		$titles = ['trips' => 'Trips on the map', 'photos' => 'Photos of those trips (data about each photo, not the file)', 'reactions' => 'Hearts and stars given to trips', 'ranking' => 'Weekly ranking', 'settings' => 'Map settings', 'events' => 'Security log entries (codes only)'];
 		$domains = [];

@@ -104,7 +104,7 @@ final class PrivateStorage
 		for ($i = 0; $i < 5; $i++)
 		{
 			$name = $userId > 0
-				? $userId . '/viaje_' . max(0, min(9999, $year)) . '_' . max(1, min(99, $number)) . '_' . bin2hex(random_bytes(4)) . '.webp'
+				? $userId . '/viaje_' . max(0, min(9999, $year)) . '_' . max(1, min(99, $number)) . '_' . bin2hex(random_bytes(12)) . '.webp'
 				: bin2hex(random_bytes(16)) . '.webp';
 			$dest = $this->root . '/photos/' . $name;
 

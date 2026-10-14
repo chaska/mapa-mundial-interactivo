@@ -283,6 +283,27 @@ final class TripSubmission
 	{
 		$max = max(20, $this->settings->perHour() * 6);
 
+		// Parallel requests queue here, so each one counts the attempts the previous ones really wrote (before any image is decoded)
+		$this->db->transactionStart();
+
+		try
+		{
+			\Chaska\Component\Mapaviajes\Administrator\Security\UserLock::take($this->db, $userId);
+			$this->reserveAttemptLocked($userId, $max);
+			$this->db->transactionCommit();
+		}
+		catch (\Throwable $e)
+		{
+			$this->db->transactionRollback();
+
+			throw $e;
+		}
+
+		EventLog::prune($this->db);
+	}
+
+	private function reserveAttemptLocked(int $userId, int $max): void
+	{
 		if ($this->countSince('#__mapaviajes_events', 'user_id', $userId, Factory::getDate('-1 hour')->toSql(), 'attempt') >= $max)
 		{
 			throw new SubmissionException('rate', 429);
@@ -303,7 +324,6 @@ final class TripSubmission
 				->bind(':c', $now)
 		)->execute();
 
-		EventLog::prune($this->db);
 	}
 
 	/** @return array{id: int, title: string, allow_comments: int} */

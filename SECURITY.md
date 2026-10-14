@@ -29,6 +29,15 @@ Principio: o es seguro o no está hecho. Cada afirmación de este documento est�
 | CORS, SSRF, path traversal en medios | No hace peticiones salientes; sirve las fotos por identificador, nunca por ruta |
 | Núcleo desactualizado | El instalador se niega por debajo de 5.4.9 / 6.1.4 y el panel avisa si el núcleo queda atrás |
 
+## Auditoría de seguridad (14/10/2026, versión 1.8.7)
+Tres revisores independientes leyeron el código por zonas (frontend; servicios de imagen, texto, almacenamiento y ranking; administración, plugins y JavaScript) y se contrastó con las clases de fallo de los avisos de Joomla 5 y 6 (2026: ACL de lotes en `com_users` CVE-2026-48898, MFA CVE-2026-48896, ACL de webservices CVE-2026-48950..58, y los ya citados). Sin fallos críticos ni altos. Corregido en 1.8.7: ETag que revelaba el nombre interno de la foto y el id del autor; nombres de foto con más aleatoriedad (96 bits); límites de envío y de reacciones sin carreras entre peticiones paralelas (bloqueo por usuario en transacción); `X-Frame-Options: SAMEORIGIN`; exportación RGPD de un correo sin cuenta; quien solo crea mapas ya no los publica; `core.edit` declarado; lote desactivado; filtro de Engage solo con viajes publicados.
+
+Decisiones que quedan en manos del propietario (no son fallos de código):
+- El mapa y el ranking muestran el **nombre de usuario de acceso** salvo que actives «Mostrar el nombre real»: cualquier usuario registrado puede listar los logins de los autores. Recomendado: un alias público (mejora futura) y no usar logins de administradores para publicar.
+- `ranking.data` (GET) cierra la semana y manda el correo del podio al primero que lo pida. Es idempotente; si te molesta, se mueve a una tarea programada.
+- El listado y CSV del sorteo incluye correos: solo los moderadores con `core.edit.state`. Concede ese permiso solo a quien deba ver esos datos.
+- La carpeta de fotos por defecto está dentro de la web (`media/com_mapaviajes_private`) y depende de `.htaccess`/`web.config`; en nginx o con `AllowOverride None` hay que moverla fuera de la web (Opciones → carpeta de fotos).
+
 ## Pruebas (resultados a 11/10/2026)
 - `tests/01-texto.php`: 103 correctas (ejecutar también con `php -d pcre.jit=0`). `tests/02-imagen.php`: 68. `tests/03-idiomas.php`: 25.
 - `tests/joomla-live/` contra Joomla 6.1.4 real (PostgreSQL): 144 + 46 correctas por HTTP (incluye 8 envíos simultáneos contra el límite y una inundación de peticiones rechazadas), 32 en Chromium con iPhone táctil y escritorio.

@@ -21,6 +21,14 @@ class TripsController extends AdminController
 {
 	protected $text_prefix = 'COM_MAPAVIAJES_TRIPS';
 
+	/** Batch (copy / move / change access in bulk) is not offered: a copy would skip the submission limits and the text and photo checks. */
+	public function batch($model = null)
+	{
+		$this->setRedirect(\Joomla\CMS\Router\Route::_('index.php?option=com_mapaviajes&view=trips', false), \Joomla\CMS\Language\Text::_('JERROR_ALERTNOAUTHOR'), 'error');
+
+		return false;
+	}
+
 	public function getModel($name = 'Trip', $prefix = 'Administrator', $config = ['ignore_request' => true])
 	{
 		return parent::getModel($name, $prefix, $config);

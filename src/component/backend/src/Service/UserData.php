@@ -31,6 +31,11 @@ final class UserData
 	 */
 	public function export(int $userId): array
 	{
+		if ($userId <= 0)
+		{
+			return [];
+		}
+
 		return [
 			'trips'     => $this->rows('SELECT id, album_id, title, place, lat, lon, allow_comments, published, photo_count, created FROM #__mapaviajes_trips WHERE user_id = :u ORDER BY id', $userId),
 			'photos'    => $this->rows('SELECT p.id, p.trip_id, p.ordering, p.width, p.height, p.bytes, p.caption, p.created FROM #__mapaviajes_photos p JOIN #__mapaviajes_trips t ON t.id = p.trip_id WHERE t.user_id = :u ORDER BY p.id', $userId),

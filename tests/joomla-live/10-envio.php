@@ -69,7 +69,7 @@ afirma(count($fotos) === 2 && $fotos[0]['caption'] === 'Yo en el templo, al aman
 afirma((int) $fotos[0]['width'] === 1000 && (int) $fotos[0]['height'] === 667, "horizontal 2400x1600 -> 1000x667 ({$fotos[0]['width']}x{$fotos[0]['height']})");
 $f0 = "$storage/photos/{$fotos[0]['filename']}";
 $anaId = (int) $trip['user_id'];
-afirma(preg_match('~^' . $anaId . '/viaje_2024_1_[a-f0-9]{8}\.webp$~', $fotos[0]['filename']) === 1 && preg_match('~^' . $anaId . '/viaje_2024_2_[a-f0-9]{8}\.webp$~', $fotos[1]['filename']) === 1 && is_file($f0) && (new finfo(FILEINFO_MIME_TYPE))->file($f0) === 'image/webp', 'la foto va a la carpeta de su autora (' . $fotos[0]['filename'] . ') con el ano del viaje y es WebP real');
+afirma(preg_match('~^' . $anaId . '/viaje_2024_1_[a-f0-9]{24}\.webp$~', $fotos[0]['filename']) === 1 && preg_match('~^' . $anaId . '/viaje_2024_2_[a-f0-9]{24}\.webp$~', $fotos[1]['filename']) === 1 && is_file($f0) && (new finfo(FILEINFO_MIME_TYPE))->file($f0) === 'image/webp', 'la foto va a la carpeta de su autora (' . $fotos[0]['filename'] . ') con el ano del viaje y es WebP real');
 afirma((int) $trip['trip_year'] === 2024, 'el ano del viaje se guarda');
 $bytes = file_get_contents("$storage/photos/{$fotos[1]['filename']}");
 afirma(!str_contains($bytes, 'GPS') && !str_contains($bytes, 'SECRETCAMERA') && !str_contains($bytes, 'Exif'), 'ni GPS ni EXIF sobreviven en el archivo guardado');
@@ -188,7 +188,7 @@ foreach (['999999', '0', '-1', '1 OR 1=1', '1;DROP TABLE jt_users', 'abc', ''] a
 	$r = enviar($ana, $o, ['trip_year' => '2024', 'album_id' => $a], [$foto()]);
 	afirma($r['code'] === 422 && ($r['json']['error'] ?? '') === ($enviar0 ??= $r['json']['error']), "album_id=[$a] rechazado con el mismo mensaje");
 }
-$aid = (int) $db->uno('SELECT id FROM ' . $db->t('mapaviajes_albums') . ' LIMIT 1');
+$aid = (int) $o['albumId'];
 $db->exec('UPDATE ' . $db->t('mapaviajes_albums') . ' SET access = 3 WHERE id = ' . $aid); // Special: Registered may not see it
 $r = enviar($ana, $o, [], [$foto()]);
 afirma($r['code'] === 422, 'album con nivel de acceso que ana no tiene: rechazado igual que uno inexistente');

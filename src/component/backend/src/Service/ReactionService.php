@@ -60,6 +60,29 @@ final class ReactionService
 			throw new SubmissionException('own_trip', 403);
 		}
 
+		$this->db->transactionStart();
+
+		try
+		{
+			// One person's reactions queue here, so the daily cap is counted against what the previous ones really wrote
+			\Chaska\Component\Mapaviajes\Administrator\Security\UserLock::take($this->db, $userId);
+			$this->apply($tripId, $userId, $kind);
+			$this->db->transactionCommit();
+		}
+		catch (\Throwable $e)
+		{
+			$this->db->transactionRollback();
+
+			throw $e;
+		}
+
+		$after = $this->find($tripId, $userId, $kind);
+
+		return ['active' => $after !== null && (int) $after['active'] === 1, 'count' => $this->count($tripId, $kind)];
+	}
+
+	private function apply(int $tripId, int $userId, string $kind): void
+	{
 		$now = Factory::getDate()->toSql();
 		$row = $this->find($tripId, $userId, $kind);
 
@@ -92,10 +115,6 @@ final class ReactionService
 		{
 			$this->flip((int) $row['id'], $now);
 		}
-
-		$after = $this->find($tripId, $userId, $kind);
-
-		return ['active' => $after !== null && (int) $after['active'] === 1, 'count' => $this->count($tripId, $kind)];
 	}
 
 	/** @return array{user_id: int}|null */

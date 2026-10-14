@@ -1,5 +1,15 @@
 # Registro de cambios
 
+## 1.8.7 — 2026-10-14 (revisión de seguridad)
+Revisión de seguridad con tres revisores independientes (frontend, servicios, administración/plugins/JS) y repaso contra los avisos de Joomla 5/6. Sin fallos críticos ni altos. Corregido:
+- **Las fotos ya no revelan su nombre interno ni el id del autor**: la cabecera `ETag` llevaba el nombre del archivo (con el número de usuario); ahora es un hash con la clave secreta del sitio.
+- **Nombres de foto más difíciles de adivinar**: 96 bits aleatorios (antes 32).
+- **Límites a prueba de peticiones en paralelo**: el recuento de intentos de envío y el tope diario de «me gusta»/favoritos se hacen ahora con el usuario bloqueado dentro de una transacción (antes, varias peticiones simultáneas podían saltarse el tope y obligar al servidor a procesar muchas imágenes).
+- **Clickjacking**: el mapa y la página de comentarios envían `X-Frame-Options: SAMEORIGIN`.
+- **Privacidad (RGPD)**: una petición de exportación con un correo sin cuenta ya no devuelve las filas del registro de seguridad de usuarios borrados.
+- **Permisos**: quien solo puede crear/editar mapas ya no puede publicarlos (`core.edit.state`); la acción `core.edit` aparece en la pestaña Permisos; se desactiva el «lote» (copiar/mover en bloque) de viajes y mapas, que se saltaba los límites y filtros de envío.
+- El filtro por título que usa Engage en el administrador solo devuelve viajes publicados y escapa `%` y `_`.
+
 ## 1.8.5 — 2026-10-14
 - Solo administradores: el «Diagnóstico» de la ficha incluye una **prueba en vivo del captcha** (¿se cargó el script de Google?, ¿cuántos campos de captcha hay y qué longitud tiene el código antes de enviar?, errores de JavaScript). Sirve para ver por qué reCAPTCHA v3 no rellena el código sin abrir la consola.
 

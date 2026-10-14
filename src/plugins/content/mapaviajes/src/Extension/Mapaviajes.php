@@ -100,9 +100,9 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 		}
 
 		$db   = $this->getDatabase();
-		$like = (str_contains($filter, '%') ? $filter : '%' . $filter . '%');
+		$like = (str_contains($filter, '%') ? $filter : '%' . addcslashes($filter, '\\_') . '%');
 		$q    = $db->getQuery(true)->select($db->quoteName('asset_id'))->from($db->quoteName('#__mapaviajes_trips'))
-			->where($db->quoteName('title') . ' LIKE :l')->where($db->quoteName('asset_id') . ' > 0')->bind(':l', $like, ParameterType::STRING);
+			->where($db->quoteName('title') . ' LIKE :l')->where($db->quoteName('asset_id') . ' > 0')->where($db->quoteName('published') . ' = 1')->bind(':l', $like, ParameterType::STRING);
 
 		try
 		{

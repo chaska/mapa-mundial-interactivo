@@ -156,7 +156,7 @@ foreach (['../x.webp', '..%2f..%2fetc%2fpasswd', $name . '/../../x', strtoupper(
 $st->delete($name); afirma($st->pathFor($name) === null, 'delete borra el archivo');
 $tmp = $st->newTemporaryPath(); $p->process(subir(fichero(jpeg(1200, 800), 'jpg')), $tmp);
 $un = $st->commit($tmp, 12, 2019, 3);
-afirma(preg_match('~^12/viaje_2019_3_[a-f0-9]{8}\.webp$~', $un) === 1 && is_dir($work . '/store/photos/12') && $st->pathFor($un) !== null, 'foto con usuario: photos/12/viaje_2019_3_<aleatorio>.webp (' . $un . ')');
+afirma(preg_match('~^12/viaje_2019_3_[a-f0-9]{24}\.webp$~', $un) === 1 && is_dir($work . '/store/photos/12') && $st->pathFor($un) !== null, 'foto con usuario: photos/12/viaje_2019_3_<aleatorio>.webp (' . $un . ')');
 foreach (['12/../13/viaje_2019_1_aaaaaaaa.webp', '12/../../x.webp', '12/13/a.webp', '/12/a.webp', 'a/viaje.webp', '12/.htaccess', '12/viaje 2019.webp', '12/Viaje_2019.webp', '123456789012/a.webp', "12/a.webp\0"] as $bad) {
 	afirma($st->pathFor($bad) === null, 'pathFor rechaza [' . addcslashes($bad, "\0..\37") . ']');
 }

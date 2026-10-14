@@ -81,6 +81,8 @@ class HtmlView extends BaseHtmlView
 
 		$app->allowCache(false);
 		$app->setHeader('X-Content-Type-Options', 'nosniff', true);
+		// Only this site may frame these pages (clickjacking of like / favourite / comment buttons)
+		$app->setHeader('X-Frame-Options', 'SAMEORIGIN', true);
 		$app->setHeader('Referrer-Policy', 'same-origin', true);
 		$app->setHeader('Cache-Control', 'no-store, private', true);
 		$this->getDocument()->setMetaData('robots', 'noindex, nofollow');

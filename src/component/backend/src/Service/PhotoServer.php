@@ -63,7 +63,9 @@ final class PhotoServer
 		}
 
 		$size = (int) filesize($path);
-		$etag = '"' . substr($etagSeed, 0, 32) . '"';
+		// Opaque: the stored file name (it carries the owner's user id) must never travel in a header
+		$secret = (string) \Joomla\CMS\Factory::getApplication()->get('secret', '');
+		$etag   = '"' . substr(hash_hmac('sha256', 'mapaviajes-etag|' . $etagSeed . '|' . $size, $secret !== '' ? $secret : JPATH_ROOT), 0, 32) . '"';
 
 		header('X-Content-Type-Options: nosniff');
 		header('Cache-Control: private, no-cache'); // revalidate every time: a hidden or trashed photo must stop showing at once
