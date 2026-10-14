@@ -28,6 +28,9 @@ class HtmlView extends BaseHtmlView
 	protected string $comments = '';
 	protected string $title    = '';
 
+	/** @var array<string, string> What the comment system is told about this trip (shown to administrators only, to find out why a thread stays closed). */
+	protected array $diag = [];
+
 	public function display($tpl = null): void
 	{
 		$app  = Factory::getApplication();
@@ -54,7 +57,26 @@ class HtmlView extends BaseHtmlView
 		}
 
 		$this->title    = (string) $trip['title'];
-		$this->comments = (new CommentsBridge($db, new Settings()))->render($user, $trip);
+		$settings       = new Settings();
+		$bridge         = new CommentsBridge($db, $settings);
+		$this->comments = $bridge->render($user, $trip);
+
+		if ($user->authorise('core.admin'))
+		{
+			$yes = Text::_('JYES');
+			$no  = Text::_('JNO');
+			$lvl = (int) $trip['album_access'];
+
+			$this->diag = [
+				'COM_MAPAVIAJES_DIAG_PROVIDER'  => $settings->commentsProvider(),
+				'COM_MAPAVIAJES_DIAG_ENGAGE'    => \Joomla\CMS\Component\ComponentHelper::isEnabled('com_engage') ? $yes : $no,
+				'COM_MAPAVIAJES_DIAG_ASSET'     => (string) $bridge->assetId((int) $trip['id'], (string) $trip['title']),
+				'COM_MAPAVIAJES_DIAG_PUBLISHED' => ((int) $trip['published'] === 1 && (int) $trip['album_published'] === 1) ? $yes : $no,
+				'COM_MAPAVIAJES_DIAG_OPEN'      => TripRepository::commentsAllowed($trip) ? $yes : $no,
+				'COM_MAPAVIAJES_DIAG_LEVEL'     => $lvl . ' (' . (\in_array($lvl, $user->getAuthorisedViewLevels(), true) ? $yes : $no) . ')',
+				'COM_MAPAVIAJES_DIAG_HTML'      => $this->comments === '' ? $no : $yes,
+			];
+		}
 
 		$app->allowCache(false);
 		$app->setHeader('X-Content-Type-Options', 'nosniff', true);

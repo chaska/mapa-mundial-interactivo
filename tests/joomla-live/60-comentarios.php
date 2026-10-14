@@ -50,6 +50,10 @@ afirma($r['code'] !== 200 || !str_contains($r['body'], 'akengage'), 'invitado: n
 $r = $page($beto, $idA);
 afirma($r['code'] === 200 && str_contains($r['body'], 'akengage-comments-section') && str_contains($r['body'], 'Con comentarios'), 'beto ve el hilo de Engage del viaje A y su titulo');
 afirma(str_contains($r['body'], 'akengageCommentForm'), 'y el formulario para comentar (Engage deja comentar a registrados)');
+afirma(!str_contains($r['body'], 'COM_MAPAVIAJES_DIAG') && !preg_match('/Diagn[oó]stic|Diagnostics \(admin/', $r['body']), 'una persona normal no ve el diagnostico de administradores');
+$af = new Cliente($base, 'afront'); $af->login('admin', getenv('MV_ADMIN') ?: 'cambia-esta-clave-de-prueba');
+$ra = $page($af, $idA);
+afirma(preg_match('/Diagn[oó]stic|Diagnostics \(admin/', $ra['body']) === 1 && str_contains($ra['body'], 'asset_id'), 'un administrador si ve el diagnostico (proveedor, activo, publicado, nivel de acceso)');
 afirma(str_contains($r['body'], 'data-context="com_mapaviajes.trip"') && str_contains($r['body'], 'data-id="0"'), 'otras extensiones de contenido solo ven el evento con el contexto del viaje y el asset id (el objeto solo lleva asset_id)');
 $assetA = (int) $db->uno("SELECT asset_id FROM $T WHERE id = :i", [':i' => $idA]);
 afirma($assetA > 0 && $db->uno("SELECT name FROM $A WHERE id = :a", [':a' => $assetA]) === "com_mapaviajes.trip.$idA", 'el viaje tiene su activo "com_mapaviajes.trip.N" (no se hace pasar por articulo)');
