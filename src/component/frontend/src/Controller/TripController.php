@@ -15,6 +15,7 @@ use Chaska\Component\Mapaviajes\Administrator\Security\ImageProcessor;
 use Chaska\Component\Mapaviajes\Administrator\Service\EventLog;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Chaska\Component\Mapaviajes\Administrator\Service\SubmissionException;
+use Chaska\Component\Mapaviajes\Administrator\Service\TripCommentsSwitch;
 use Chaska\Component\Mapaviajes\Administrator\Service\TripRemoval;
 use Chaska\Component\Mapaviajes\Administrator\Service\TripSubmission;
 use Joomla\CMS\Language\Text;
@@ -159,6 +160,53 @@ class TripController extends BaseController
 		}
 
 		$this->json(['ok' => true, 'id' => $id, 'message' => Text::_('COM_MAPAVIAJES_REMOVED')], 200);
+	}
+
+	/** Opens or closes the comments of one trip (its author, or an administrator). POST: id, on = 0|1. Same gates as the other writes. */
+	public function comments(): void
+	{
+		$app  = $this->app;
+		$user = $app->getIdentity();
+
+		if (strtoupper((string) $app->getInput()->getMethod()) !== 'POST')
+		{
+			header('Allow: POST');
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_GENERIC')], 405);
+		}
+
+		if (strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) !== 'xmlhttprequest' || !Session::checkToken('post'))
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SESSION'), 'expired' => true], 403);
+		}
+
+		if ($user->guest)
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_LOGIN'), 'expired' => true], 403);
+		}
+
+		$raw = $_POST['id'] ?? '';
+		$on  = $_POST['on'] ?? '';
+		$id  = (\is_string($raw) && preg_match('/^\d{1,9}$/', $raw) === 1) ? (int) $raw : 0;
+
+		if ($on !== '0' && $on !== '1')
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_GENERIC')], 400);
+		}
+
+		try
+		{
+			(new TripCommentsSwitch(Factory::getContainer()->get(DatabaseInterface::class)))->set($user, $id, $on === '1');
+		}
+		catch (SubmissionException $e)
+		{
+			$this->json(['ok' => false, 'error' => Text::_($e->key() === 'login' ? 'COM_MAPAVIAJES_ERR_LOGIN' : 'COM_MAPAVIAJES_ERR_TRIP_GONE')], $e->status());
+		}
+		catch (\Throwable $e)
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
+		}
+
+		$this->json(['ok' => true, 'id' => $id, 'on' => (int) $on]);
 	}
 
 	/**

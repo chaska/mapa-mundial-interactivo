@@ -461,6 +461,28 @@
 		f.style.height = '220px'; f.src = O.commentsUrl + encodeURIComponent(String(VWR.t.id));
 		if ($('fiDiag')) { $('fiDiag').hidden = !O.isAdmin; $('fiOpenCm').href = f.src; }
 	}
+	/* the author opens or closes the comments of their own trip (an administrator may too) */
+	function syncCmSwitch() {
+		const b = $('fCmSw'), t = VWR.t; if (!b) { return; }
+		const can = !!(t && (t.mine || O.canEditState) && O.commentsProvider && O.allowComments && !t.pending);
+		b.hidden = !can; if (!can) { return; }
+		b.querySelector('span').textContent = T(t.cm ? 'COM_MAPAVIAJES_JS_CM_OFF' : 'COM_MAPAVIAJES_JS_CM_ON'); b.classList.toggle('mv-on', !t.cm);
+	}
+	if ($('fCmSw')) {
+		$('fCmSw').onclick = async () => {
+			const t = VWR.t; if (!t) { return; }
+			const want = !t.cm, b = $('fCmSw'); b.disabled = true;
+			try {
+				const fd = new FormData(); fd.append(O.token, '1'); fd.append('id', String(t.id)); fd.append('on', want ? '1' : '0');
+				const r = await fetch(O.commentsSwitchUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
+				const j = await r.json(); if (!r.ok || !j.ok) { throw new Error('x'); }
+				t.cm = want; const a = ALL.find((x) => x.id === t.id); if (a) { a.cm = want; }
+				fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending)); syncCmSwitch();
+				toast(T(want ? 'COM_MAPAVIAJES_JS_CM_ON_DONE' : 'COM_MAPAVIAJES_JS_CM_OFF_DONE'));
+			} catch (_) { toast(T('COM_MAPAVIAJES_JS_FOL_ERR')); }
+			b.disabled = false;
+		};
+	}
 	function openViewer(t) {
 		if (!t || !t.ph.length) { return; }
 		closePop(); VWR.t = t; VWR.i = 0; VWR.opener = document.activeElement;
@@ -471,7 +493,7 @@
 		const th = $('fiTh'); th.replaceChildren(...(t.ph.length > 1 ? t.ph.map((p, k) => h('button', { type: 'button', class: 'mv-th', 'aria-label': fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), k + 1, t.ph.length), onclick: () => fiShow(k, k > VWR.i ? 1 : -1) }, h('img', { alt: '', src: photoSrc(p.id) }))) : []));
 		for (const id of ['fiPrev', 'fiNext']) { $(id).hidden = t.ph.length < 2; }
 		fi.hidden = false; syncFollow(); $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
-		fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending));
+		fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending)); syncCmSwitch();
 		$('fiX').focus({ preventScroll: true });
 	}
 	/* delete a trip for good (its author, or an administrator): our own confirmation window, then the server decides */

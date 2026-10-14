@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.12.1 — 2026-10-14
+- **Activar o desactivar los comentarios de tu viaje cuando quieras**: en la ficha de un viaje propio, junto a «Me gusta» y «Soy fan», sale el botón **«Activar comentarios»** (si los cerraste al subirlo) o **«Desactivar comentarios»**. Al activar aparece enseguida el hilo de Engage; al desactivar se conservan los comentarios ya escritos y vuelven si se reactivan. Los administradores (permiso «Editar estado») pueden hacerlo en cualquier viaje. Nadie más (mismo 404 que un viaje inexistente); si el ÁLBUM tiene los comentarios cerrados, el viaje tampoco los muestra. Queda anotado el cambio (solo el código).
+- Pruebas nuevas: `107-comentarios-viaje.php` (32) y `104-comentarios-viaje-navegador.js` (9).
+
 ## 1.12.0 — 2026-10-14 (seguir a viajeros, correos en HTML)
 - **Seguir a una persona**: botón «Seguir a NOMBRE» en la ficha de cada viaje ajeno y botón de seguir en cada fila de la lista de personas del mapa. En «Descubrir» hay una pestaña nueva **«Siguiendo»** con los viajes de la gente a quien sigues (los nuevos llevan la etiqueta «Nuevo») y un puntito en el menú cuando hay novedades sin ver. Nadie puede seguirse a sí mismo ni a quien no ha publicado nada; máximo 300 seguidos por persona; nadie ve quién le sigue.
 - **Resumen semanal por correo (opcional, apagado de entrada)**: casilla «Resumen semanal por correo» en la pestaña «Siguiendo». Un correo a la semana como máximo, con los nombres y el número de viajes nuevos de quien sigues (nunca el texto de los viajes). Interruptor general del administrador en Opciones → Correos. Se manda cuando alguien abre el mapa (como máximo una vez cada 6 horas), sin necesidad de tareas programadas.

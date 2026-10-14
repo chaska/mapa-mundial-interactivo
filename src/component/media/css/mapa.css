@@ -653,3 +653,8 @@ html,body{overscroll-behavior:none}
 .mv-digest{display:flex;gap:12px;align-items:flex-start;margin:0 0 14px;padding:12px 14px;border-radius:14px;background:#f1e6cf;cursor:pointer}
 .mv-digest input{width:22px;height:22px;margin-top:2px;accent-color:#a8321f;flex:none}.mv-digest span{display:flex;flex-direction:column}.mv-digest small{color:var(--ink-2)}
 .mv-tabs{grid-template-columns:repeat(3,1fr)!important}
+
+/* open / close the comments of my trip */
+.mv-fi-cmsw{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid #c4a982;background:#fffaf0;color:var(--ink);font:600 .9375rem var(--text);cursor:pointer}
+.mv-fi-cmsw[hidden]{display:none}.mv-fi-cmsw svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mv-fi-cmsw.mv-on{background:#1f6f78;border-color:#1f6f78;color:#fff}
