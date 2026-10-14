@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.11.2 — 2026-10-14
+- **Mapas oscuros («Océano de noche» y «Plano técnico»): la pastilla «N álbumes · N países» bajo el logo se leía mal** (letra clara sobre fondo claro). Ahora es una pastilla oscura con letra clara. La prueba de contraste de la ficha comprueba también esa línea en los seis estilos.
+
 ## 1.11.1 — 2026-10-14
 - **Corregido: ningún enlace del administrador funcionaba** (todos volvían al Panel). Los enlaces y las acciones de los formularios se escapaban DOS veces (`&amp;amp;`), de modo que el navegador perdía el parámetro `view` y `task`. Arreglados el menú lateral, las tarjetas y accesos del Panel, los filtros de Viajes, los botones de Ranking y Sorteo y la pantalla de Opciones. La prueba del administrador ahora **hace clic de verdad** en cada enlace y vigila que ningún enlace ni formulario lleve «amp;».
 

@@ -18,3 +18,4 @@
 [data-map="noche"] .mv-zoom button:hover{background:#1d3a66}
 /* the panels (card, forms, lists) keep the light paper so their dark text stays readable; only the map, header and controls go dark */
 [data-map="noche"] .mv-menu{background:#12233a;border-color:#27466b}
+[data-map="noche"] .mv-has-logo .mv-brand p{background:rgba(10,29,54,.82);border-color:rgba(110,190,255,.4);color:#cfe3f7}
