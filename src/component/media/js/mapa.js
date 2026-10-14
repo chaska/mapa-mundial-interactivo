@@ -504,7 +504,7 @@
 					const d = $('fiFrame').contentDocument; if (!d || !d.body) { return; }
 					if (!d.getElementById('mv-fi-style')) {
 						const st = d.createElement('style'); st.id = 'mv-fi-style';
-						st.textContent = '.mv-form-hidden #akengage-comments-section > form{position:absolute!important;left:-99999px!important;top:0;width:min(100%,720px)!important;visibility:hidden!important}';
+						st.textContent = '.mv-form-hidden #akengage-comments-section > form{height:0!important;max-height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important}';
 						d.head.appendChild(st);
 					}
 					if (d.getElementById('akengage-comments-section')) { d.documentElement.classList.add('mv-form-hidden'); }

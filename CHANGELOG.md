@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.8.3 — 2026-10-14
+- El formulario de Engage, mientras no se pide, se oculta con altura 0 y `overflow:hidden` (antes: fuera de la pantalla y `visibility:hidden`), para no estorbar al captcha invisible de Joomla (que se inicializa al cargar y se ejecuta al enviar). Si el sitio exige captcha a quien comenta y el comentario se rechaza con «Captcha answer is missing», ver Engage → Opciones → «Captcha» / «Captcha para».
+
 ## 1.8.2 — 2026-10-14
 - Solo administradores: bajo «Comentarios» de la ficha, un enlace «Abrir esta página de comentarios en una pestaña nueva» con la dirección REAL de esa página (con el menú y las URL amigables del sitio), para probar los comentarios fuera de la ficha sin tener que adivinar la ruta.
 
