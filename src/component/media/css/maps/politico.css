@@ -14,7 +14,6 @@
 [data-map="politico"] .mv-land path:nth-child(5n+3){fill:#b9dfa6}
 [data-map="politico"] .mv-land path:nth-child(5n+4){fill:#d3bfe8}
 [data-map="politico"] .mv-land path:nth-child(5n){fill:#f2e3a0}
-[data-map="politico"] .mv-land path:hover{filter:brightness(1.07)}
 [data-map="politico"] .mv-olabs text{fill:rgba(255,255,255,.85)}
 [data-map="politico"] .mv-brand h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;color:#2a2230;text-shadow:0 2px 0 rgba(255,255,255,.8)}
 [data-map="politico"] .mv-brand p{color:#3f3548;text-shadow:0 1px 0 rgba(255,255,255,.7)}[data-map="politico"] .mv-me{color:#2a2230}

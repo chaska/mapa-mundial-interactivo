@@ -627,3 +627,15 @@ html,body{overscroll-behavior:none}
 @media (prefers-reduced-motion:reduce){.mv-menu{animation:none}}
 .mv-has-logo .mv-actions .mv-menu .mv-btn{width:100%;min-width:0;padding:0 14px;justify-content:flex-start}
 .mv-has-logo .mv-actions .mv-menu .mv-albumpick{display:block}
+
+/* delete my trip */
+.mv-fi-del{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid #c9a8a3;background:#fbefed;color:#8f2a1b;font:600 .9375rem var(--text);cursor:pointer}
+.mv-fi-del[hidden]{display:none}.mv-fi-del svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mv-fi-del:hover{background:#f6dcd7}
+.mv-dlg{border:0;border-radius:20px;padding:22px;max-width:min(400px,calc(100vw - 32px));background:#fff7e0;color:#2d1b10;box-shadow:0 30px 70px -20px rgba(0,0,0,.6)}
+.mv-dlg::backdrop{background:rgba(20,10,5,.55)}
+.mv-dlg strong{display:block;margin:0 0 8px;font:800 1.125rem var(--display)}.mv-dlg p{margin:0 0 18px;line-height:1.5}
+.mv-dlg-row{display:flex;gap:10px;justify-content:flex-end}.mv-btn-danger{background:#a8321f;color:#fff}.mv-btn-danger:hover{background:#7e2415}
+
+/* while the map is being dragged nothing under the finger may react (a hover repaint of the big vector map made it lag behind the pins) */
+.mv-stage.mv-drag #mv-svg *{pointer-events:none!important;transition:none!important}

@@ -48,7 +48,7 @@ class HtmlView extends BaseHtmlView
 		'COM_MAPAVIAJES_JS_ALBUMS_N', 'COM_MAPAVIAJES_JS_POD_HOW_S1', 'COM_MAPAVIAJES_JS_POD_HOW_S2', 'COM_MAPAVIAJES_JS_POD_HOW_S3', 'COM_MAPAVIAJES_JS_POD_HOW_S4', 'COM_MAPAVIAJES_JS_TAGS_MORE', 'COM_MAPAVIAJES_JS_FILTER_CHIP_N', 'COM_MAPAVIAJES_JS_FILTER_NONE', 'COM_MAPAVIAJES_JS_E_YEAR', 'COM_MAPAVIAJES_JS_COUNT_ALBUMS_1', 'COM_MAPAVIAJES_JS_COUNT_PLACES_1', 'COM_MAPAVIAJES_JS_ALBUM_ONE', 'COM_MAPAVIAJES_JS_COUNT_ALBUMS', 'COM_MAPAVIAJES_JS_COUNT_PLACES',
 		'COM_MAPAVIAJES_JS_OPEN', 'COM_MAPAVIAJES_JS_CLOSE', 'COM_MAPAVIAJES_JS_NEAR', 'COM_MAPAVIAJES_JS_POINT', 'COM_MAPAVIAJES_JS_SEA',
 		'COM_MAPAVIAJES_JS_COORDS', 'COM_MAPAVIAJES_JS_USE_POINT', 'COM_MAPAVIAJES_JS_NO_PLACE', 'COM_MAPAVIAJES_JS_PHOTOS_N', 'COM_MAPAVIAJES_JS_PHOTO_ONE',
-		'COM_MAPAVIAJES_JS_COMMENTS', 'COM_MAPAVIAJES_JS_PENDING', 'COM_MAPAVIAJES_JS_BY', 'COM_MAPAVIAJES_JS_CAPTION_PH', 'COM_MAPAVIAJES_JS_WORDS',
+		'COM_MAPAVIAJES_JS_COMMENTS', 'COM_MAPAVIAJES_JS_DEL_CONFIRM', 'COM_MAPAVIAJES_JS_DEL_OK', 'COM_MAPAVIAJES_JS_DEL_NO', 'COM_MAPAVIAJES_JS_DEL_DONE', 'COM_MAPAVIAJES_JS_DEL_ERR', 'COM_MAPAVIAJES_JS_PENDING', 'COM_MAPAVIAJES_JS_BY', 'COM_MAPAVIAJES_JS_CAPTION_PH', 'COM_MAPAVIAJES_JS_WORDS',
 		'COM_MAPAVIAJES_JS_REMOVE', 'COM_MAPAVIAJES_JS_PHOTOS_OF', 'COM_MAPAVIAJES_JS_E_PLACE', 'COM_MAPAVIAJES_JS_E_TITLE', 'COM_MAPAVIAJES_JS_E_PHOTOS',
 		'COM_MAPAVIAJES_JS_E_TYPE', 'COM_MAPAVIAJES_JS_E_SIZE', 'COM_MAPAVIAJES_JS_E_MAX', 'COM_MAPAVIAJES_JS_E_NET', 'COM_MAPAVIAJES_JS_E_MISSING',
 		'COM_MAPAVIAJES_JS_SENDING', 'COM_MAPAVIAJES_JS_SEND', 'COM_MAPAVIAJES_JS_PREPARING', 'COM_MAPAVIAJES_JS_PREV', 'COM_MAPAVIAJES_JS_NEXT',
@@ -127,6 +127,8 @@ class HtmlView extends BaseHtmlView
 			'searchUrl'  => Route::_('index.php?option=com_mapaviajes&task=places.search&format=json', false),
 			'nearUrl'    => Route::_('index.php?option=com_mapaviajes&task=places.near&format=json', false),
 			'dataUrl'    => Route::_('index.php?option=com_mapaviajes&task=trips.data&album=' . (int) ($this->album['id'] ?? 0), false),
+			'removeUrl'  => Route::_('index.php?option=com_mapaviajes&task=trip.remove&format=json', false),
+			'canDelete'  => $user->authorise('core.delete', 'com_mapaviajes'),
 			'submitUrl'  => Route::_('index.php?option=com_mapaviajes&task=trip.submit&format=json', false),
 			'commentsOn' => $this->commentsOn,
 			'commentsUrl' => Route::_('index.php?option=com_mapaviajes&view=tripcomments&tmpl=component&id=', false),
@@ -155,16 +157,16 @@ class HtmlView extends BaseHtmlView
 
 		$wa = $this->getDocument()->getWebAssetManager();
 		$this->getDocument()->addScriptOptions('com_mapaviajes', $options);
-		$wa->registerAndUseStyle('com_mapaviajes.fonts', 'com_mapaviajes/fonts.css')
-			->registerAndUseStyle('com_mapaviajes.map', 'com_mapaviajes/mapa.css', [], [], ['com_mapaviajes.fonts'])
-			->registerAndUseScript('com_mapaviajes.map', 'com_mapaviajes/mapa.js', [], ['defer' => true], ['core']);
+		$wa->registerAndUseStyle('com_mapaviajes.fonts', 'com_mapaviajes/fonts.css', ['version' => 'auto'])
+			->registerAndUseStyle('com_mapaviajes.map', 'com_mapaviajes/mapa.css', ['version' => 'auto'], [], ['com_mapaviajes.fonts'])
+			->registerAndUseScript('com_mapaviajes.map', 'com_mapaviajes/mapa.js', ['version' => 'auto'], ['defer' => true], ['core']);
 
 		// Only the looks that can be shown: the chosen one, or all of them when each person may pick (each file is a few kilobytes)
 		foreach (array_keys($this->mapStyles) as $id)
 		{
 			if ($id !== 'pergamino' && ($this->mapChoice || $id === $this->mapStyle))
 			{
-				$wa->registerAndUseStyle('com_mapaviajes.mapa.' . $id, 'com_mapaviajes/maps/' . $id . '.css', [], [], ['com_mapaviajes.map']);
+				$wa->registerAndUseStyle('com_mapaviajes.mapa.' . $id, 'com_mapaviajes/maps/' . $id . '.css', ['version' => 'auto'], [], ['com_mapaviajes.map']);
 			}
 		}
 

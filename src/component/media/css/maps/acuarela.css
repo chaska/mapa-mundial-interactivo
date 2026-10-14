@@ -13,7 +13,6 @@
 [data-map="acuarela"] .mv-land path:nth-child(4n+2){fill:#dbe6c5}
 [data-map="acuarela"] .mv-land path:nth-child(4n+3){fill:#f4e3b6}
 [data-map="acuarela"] .mv-land path:nth-child(4n){fill:#e0d0e6}
-[data-map="acuarela"] .mv-land path:hover{fill-opacity:1;filter:brightness(1.05)}
 [data-map="acuarela"] .mv-olabs text{fill:rgba(60,120,135,.6);font-family:Caveat,cursive;font-weight:600;letter-spacing:.2em}
 [data-map="acuarela"] .mv-compass{opacity:.7;filter:hue-rotate(-20deg) saturate(.6)}
 [data-map="acuarela"] .mv-brand h1{font-family:Caveat,cursive;font-weight:600;letter-spacing:0;font-size:clamp(1.8rem,1.3rem + 2vw,2.8rem);line-height:.95;color:#3a2e3d;text-shadow:0 1px 0 rgba(255,255,255,.7)}

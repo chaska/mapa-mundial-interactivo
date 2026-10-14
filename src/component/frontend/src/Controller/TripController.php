@@ -15,6 +15,7 @@ use Chaska\Component\Mapaviajes\Administrator\Security\ImageProcessor;
 use Chaska\Component\Mapaviajes\Administrator\Service\EventLog;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Chaska\Component\Mapaviajes\Administrator\Service\SubmissionException;
+use Chaska\Component\Mapaviajes\Administrator\Service\TripRemoval;
 use Chaska\Component\Mapaviajes\Administrator\Service\TripSubmission;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Factory;
@@ -112,6 +113,52 @@ class TripController extends BaseController
 			'published' => $result['published'] === 1,
 			'message'   => Text::_($result['published'] === 1 ? 'COM_MAPAVIAJES_SENT_PUBLISHED' : 'COM_MAPAVIAJES_SENT_REVIEW'),
 		], 201);
+	}
+
+	/**
+	 * Deletes a trip for good: its author deletes their own (a wrong pin they cannot otherwise remove), administrators with the
+	 * "delete" permission delete any. Same gates as submit(): POST, AJAX header, session token, logged-in user.
+	 */
+	public function remove(): void
+	{
+		$app  = $this->app;
+		$user = $app->getIdentity();
+
+		if (strtoupper((string) $app->getInput()->getMethod()) !== 'POST')
+		{
+			header('Allow: POST');
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_GENERIC')], 405);
+		}
+
+		if (strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) !== 'xmlhttprequest' || !Session::checkToken('post'))
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SESSION'), 'expired' => true], 403);
+		}
+
+		if ($user->guest)
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_LOGIN'), 'expired' => true], 403);
+		}
+
+		$raw = $_POST['id'] ?? '';
+		$id  = (\is_string($raw) && preg_match('/^\d{1,9}$/', $raw) === 1) ? (int) $raw : 0;
+		$db  = Factory::getContainer()->get(DatabaseInterface::class);
+
+		try
+		{
+			(new TripRemoval($db, new Settings()))->remove($user, $id);
+		}
+		catch (SubmissionException $e)
+		{
+			$this->json(['ok' => false, 'error' => Text::_($e->key() === 'login' ? 'COM_MAPAVIAJES_ERR_LOGIN' : 'COM_MAPAVIAJES_ERR_TRIP_GONE')], $e->status());
+		}
+		catch (\Throwable $e)
+		{
+			EventLog::add($db, (int) $user->id, 'error', 'remove');
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
+		}
+
+		$this->json(['ok' => true, 'id' => $id, 'message' => Text::_('COM_MAPAVIAJES_REMOVED')], 200);
 	}
 
 	/**

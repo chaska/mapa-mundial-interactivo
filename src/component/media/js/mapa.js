@@ -465,12 +465,37 @@
 		$('fiT').textContent = t.t;
 		$('fiS').textContent = [t.p, t.yr > 0 ? String(t.yr) : '', t.by ? fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) : ''].filter(Boolean).join(' · ');
 		$('fiPend').hidden = !t.pending;
+		$('fDel').hidden = !(t.mine || O.canDelete);
 		const th = $('fiTh'); th.replaceChildren(...(t.ph.length > 1 ? t.ph.map((p, k) => h('button', { type: 'button', class: 'mv-th', 'aria-label': fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), k + 1, t.ph.length), onclick: () => fiShow(k, k > VWR.i ? 1 : -1) }, h('img', { alt: '', src: photoSrc(p.id) }))) : []));
 		for (const id of ['fiPrev', 'fiNext']) { $(id).hidden = t.ph.length < 2; }
 		fi.hidden = false; $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
 		fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending));
 		$('fiX').focus({ preventScroll: true });
 	}
+	/* delete a trip for good (its author, or an administrator): our own confirmation window, then the server decides */
+	function askDelete() {
+		const t = VWR.t; if (!t || typeof HTMLDialogElement !== 'function') { return; }
+		const dlg = document.createElement('dialog'); dlg.className = 'mv-dlg';
+		const p = h('p', { text: T('COM_MAPAVIAJES_JS_DEL_CONFIRM') });
+		const no = h('button', { type: 'button', class: 'mv-btn mv-btn-soft', text: T('COM_MAPAVIAJES_JS_DEL_NO') });
+		const ok = h('button', { type: 'button', class: 'mv-btn mv-btn-danger', text: T('COM_MAPAVIAJES_JS_DEL_OK') });
+		dlg.append(h('strong', { text: t.t }), p, h('div', { class: 'mv-dlg-row' }, no, ok)); document.body.append(dlg);
+		const done = () => { try { dlg.close(); } catch (_) { /* already closed */ } dlg.remove(); };
+		no.onclick = done;
+		ok.onclick = async () => {
+			ok.disabled = true; no.disabled = true;
+			const fd = new FormData(); fd.append(O.token, '1'); fd.append('id', String(t.id));
+			try {
+				const r = await fetch(O.removeUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
+				const j = await r.json();
+				if (!r.ok || !j.ok) { throw new Error('x'); }
+				done(); ALL = ALL.filter((x) => x.id !== t.id); closeFi(); refilter();
+				const hint = $('hint'); if (hint) { hint.textContent = T('COM_MAPAVIAJES_JS_DEL_DONE'); hint.classList.remove('mv-off'); }
+			} catch (_) { p.textContent = T('COM_MAPAVIAJES_JS_DEL_ERR'); ok.disabled = false; no.disabled = false; }
+		};
+		dlg.addEventListener('cancel', () => dlg.remove()); dlg.showModal(); no.focus();
+	}
+	if ($('fDel')) { $('fDel').onclick = askDelete; }
 	function closeFi() {
 		if (fi.hidden) { return; }
 		fi.hidden = true; if ($('fiFrame')) { $('fiFrame').removeAttribute('src'); }
