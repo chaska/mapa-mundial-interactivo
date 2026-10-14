@@ -8,7 +8,7 @@ require __DIR__ . '/lib/http.php';
 $base = getenv('MV_BASE') ?: 'http://127.0.0.1:8081';
 $storage = rtrim((string) getenv('MV_STORAGE'), '/');
 $db = new Bd(getenv('MV_PREFIX') ?: 'jt_');
-$U = $db->t('users'); $T = $db->t('mapaviajes_trips'); $P = $db->t('mapaviajes_photos'); $R = $db->t('mapaviajes_reactions'); $K = $db->t('mapaviajes_ranking'); $PF = $db->t('mapaviajes_prefs'); $EV = $db->t('mapaviajes_events'); $A = $db->t('assets'); $EC = $db->t('engage_comments'); $PR = $db->t('privacy_requests'); $UG = $db->t('user_usergroup_map');
+$U = $db->t('users'); $T = $db->t('mapaviajes_trips'); $P = $db->t('mapaviajes_photos'); $R = $db->t('mapaviajes_reactions'); $K = $db->t('mapaviajes_ranking'); $PF = $db->t('mapaviajes_prefs'); $FO = $db->t('mapaviajes_follows'); $EV = $db->t('mapaviajes_events'); $A = $db->t('assets'); $EC = $db->t('engage_comments'); $PR = $db->t('privacy_requests'); $UG = $db->t('user_usergroup_map');
 $db->pdo->exec(file_get_contents(__DIR__ . '/engage-pg.sql'));
 $album = (int) $db->uno('SELECT id FROM ' . $db->t('mapaviajes_albums') . ' ORDER BY id LIMIT 1');
 $anaId = (int) $db->uno("SELECT id FROM $U WHERE username = 'ana'");
@@ -19,7 +19,7 @@ $mk = function (string $n) use ($db, $U, $UG): int {
 	$db->exec("INSERT INTO $UG (user_id, group_id) VALUES (:i, 2)", [':i' => $id]);
 	return $id;
 };
-$seed = function (int $uid, string $tag) use ($db, $T, $P, $R, $K, $PF, $EV, $A, $EC, $album, $storage, $anaId): array {
+$seed = function (int $uid, string $tag) use ($db, $T, $P, $R, $K, $PF, $FO, $EV, $A, $EC, $album, $storage, $anaId): array {
 	$files = []; $trips = [];
 	foreach ([1, 2] as $k) {
 		$db->exec("INSERT INTO $T (album_id, user_id, title, place, lat, lon, allow_comments, notify, published, photo_count, created) VALUES (:a, :u, :t, 'Lisboa', 1, 1, 1, 0, 1, 2, now())", [':a' => $album, ':u' => $uid, ':t' => "Privado $tag $k"]);
@@ -39,6 +39,7 @@ $seed = function (int $uid, string $tag) use ($db, $T, $P, $R, $K, $PF, $EV, $A,
 	$db->exec("INSERT INTO $R (trip_id, user_id, kind, active, created, changed) VALUES (:t, :u, 'fan', 1, now(), now())", [':t' => $trips[0], ':u' => $anaId]); // somebody else's reaction to his trip
 	$db->exec("INSERT INTO $K (week_start, user_id, position, score, stars, points) VALUES ('2026-01-05', :u, 1, 50, 3, 10)", [':u' => $uid]);
 	$db->exec("INSERT INTO $PF (user_id, hide_ranking) VALUES (:u, 1)", [':u' => $uid]);
+	$db->exec("INSERT INTO $FO (follower_id, followed_id, created) VALUES (:u, :a, now()), (:a, :u, now())", [':u' => $uid, ':a' => $anaId]); // follows and is followed
 	$db->exec("INSERT INTO $EV (user_id, event, detail, created) VALUES (:u, 'test_event', 'x', now())", [':u' => $uid]);
 	return ['files' => $files, 'trips' => $trips, 'asset' => $asset];
 };
@@ -48,6 +49,7 @@ $count = fn (int $uid) => [
 	'react' => (int) $db->uno("SELECT COUNT(*) FROM $R WHERE user_id = :u", [':u' => $uid]),
 	'rank' => (int) $db->uno("SELECT COUNT(*) FROM $K WHERE user_id = :u", [':u' => $uid]),
 	'prefs' => (int) $db->uno("SELECT COUNT(*) FROM $PF WHERE user_id = :u", [':u' => $uid]),
+	'follows' => (int) $db->uno("SELECT COUNT(*) FROM $FO WHERE follower_id = :u OR followed_id = :u", [':u' => $uid]),
 	'events' => (int) $db->uno("SELECT COUNT(*) FROM $EV WHERE user_id = :u", [':u' => $uid]),
 ];
 $admin = new Cliente($base, 'admin');
@@ -64,6 +66,7 @@ afirma($x['code'] === 200 && str_contains($x['body'], 'mapaviajes_trips') && str
 afirma(str_contains($x['body'], 'mapaviajes_photos') && str_contains($x['body'], 'pie A') && str_contains($x['body'], 'mapaviajes_reactions') && str_contains($x['body'], 'mapaviajes_ranking') && str_contains($x['body'], 'mapaviajes_settings'), 'sus fotos (datos), reacciones, ranking y ajustes');
 afirma(!str_contains($x['body'], $sa['files'][0]) && !str_contains($x['body'], 'hilo'), 'sin nombres de archivo internos y sin comentarios de otras personas');
 afirma(!str_contains($x['body'], 'Privado B'), 'nada de otra persona');
+afirma(str_contains($x['body'], 'mapaviajes_following'), 'la exportacion incluye a quien sigue');
 
 seccion('Peticion de borrado de Joomla');
 $db->exec("INSERT INTO $PR (email, requested_at, status, request_type, confirm_token) VALUES ('pv_a@example.test', now(), 1, 'remove', 'x')");
@@ -72,7 +75,7 @@ afirma(max($count($a)) > 0 && is_file($storage . '/photos/' . $sa['files'][0]), 
 $r = $admin->get('/administrator/index.php?option=com_privacy&task=request.remove&id=' . $rm . '&' . $tok . '=1');
 afirma(in_array($r['code'], [302, 303], true), 'el administrador ejecuta el borrado (' . $r['code'] . ')');
 $c = $count($a);
-afirma($c['trips'] === 0 && $c['photos'] === 0 && $c['react'] === 0 && $c['rank'] === 0 && $c['prefs'] === 0 && $c['events'] === 0, 'se borran viajes, fotos, reacciones, ranking, ajustes y se desvincula el registro: ' . json_encode($c));
+afirma($c['trips'] === 0 && $c['photos'] === 0 && $c['react'] === 0 && $c['rank'] === 0 && $c['prefs'] === 0 && $c['follows'] === 0 && $c['events'] === 0, 'se borran viajes, fotos, reacciones, ranking, ajustes y se desvincula el registro: ' . json_encode($c));
 clearstatcache(); // another process deleted them: do not trust PHP's cached answer
 $gone = true; foreach ($sa['files'] as $f) { if (is_file($storage . '/photos/' . $f)) { $gone = false; } }
 afirma($gone, 'y los archivos de las fotos desaparecen del almacen privado');

@@ -78,6 +78,10 @@
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
 		</field>
+		<field name="notify_follows" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_NOTIFY_FOLLOWS" description="COM_MAPAVIAJES_CONFIG_NOTIFY_FOLLOWS_DESC" default="1" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
 		<field name="notify_emails" type="text" label="COM_MAPAVIAJES_CONFIG_NOTIFY_EMAILS" description="COM_MAPAVIAJES_CONFIG_NOTIFY_EMAILS_DESC" default="" filter="string" size="60" />
 	</fieldset>
 

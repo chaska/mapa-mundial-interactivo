@@ -15,9 +15,8 @@ use Chaska\Component\Mapaviajes\Administrator\Security\ImageProcessor;
 use Chaska\Component\Mapaviajes\Administrator\Security\SanitizeException;
 use Chaska\Component\Mapaviajes\Administrator\Security\TextSanitizer;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
-use Joomla\CMS\Mail\MailerFactoryInterface;
-use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -493,32 +492,14 @@ final class TripSubmission
 			return;
 		}
 
-		try
-		{
-			$flat   = static fn (string $s): string => trim(preg_replace('/[\r\n\t]+/', ' ', $s) ?? '');
-			$mailer = Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
-			$mailer->isHtml(false);
-			$mailer->CharSet = 'UTF-8';
-			$mailer->setSubject('[' . $flat((string) Factory::getApplication()->get('sitename', 'Site')) . '] ' . ($needsReview ? 'Nuevo viaje por revisar' : 'Nuevo viaje publicado'));
-			$mailer->setBody(
-				"Álbum: " . $flat($album) . "\n"
-				. "Título: " . $flat($title) . "\n"
-				. "Usuario: " . $flat((string) $author->username) . "\n"
-				. "Fotos: " . $photos . "\n\n"
-				. "Gestionar: " . Uri::root() . "administrator/index.php?option=com_mapaviajes&view=trips\n"
-			);
+		$flat = static fn (string $s): string => trim(preg_replace('/[\r\n\t]+/', ' ', $s) ?? '');
+		$site = $flat((string) Factory::getApplication()->get('sitename', 'Site'));
 
-			foreach ($to as $address)
-			{
-				$mailer->addRecipient($address);
-			}
-
-			$mailer->Send();
-		}
-		catch (\Throwable $e)
-		{
-			// A mail problem never rejects a trip that was saved correctly.
-		}
+		(new Notifier($this->db, $this->settings))->administrators(
+			array_values($to),
+			'[' . $site . '] ' . Text::_($needsReview ? 'COM_MAPAVIAJES_MAIL_ADMIN_REVIEW' : 'COM_MAPAVIAJES_MAIL_ADMIN_NEW'),
+			sprintf(Text::_('COM_MAPAVIAJES_MAIL_ADMIN_BODY'), $flat($album), $flat($title), $flat((string) $author->username), $photos)
+		);
 	}
 
 	private function intField(mixed $v): int

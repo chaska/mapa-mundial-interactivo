@@ -74,6 +74,8 @@ final class Settings
 	public function rankEnabled(): bool   { return (int) $this->params->get('rank_enabled', 1) === 1; }
 	/** E-mail the author when a moderator publishes or rejects their trip. */
 	public function notifyAuthor(): bool  { return (int) $this->params->get('notify_author', 1) === 1; }
+	/** The weekly summary of new trips by the people someone follows (only people who switched it on in the map get it). */
+	public function notifyFollows(): bool { return (int) $this->params->get('notify_follows', 1) === 1; }
 	/** E-mail the podium of the week when it closes (off by default: it is not a transactional message). */
 	public function notifyPodium(): bool  { return (int) $this->params->get('notify_podium', 0) === 1; }
 

@@ -115,12 +115,14 @@ $tid = (int) $db->uno("SELECT MAX(id) FROM $T WHERE user_id = :u", [':u' => $ana
 $p = $admin->get('/administrator/index.php?option=com_mapaviajes&view=trips'); preg_match('/name="([a-f0-9]{32})" value="1"/', $p['body'], $m); $tt = $m[1] ?? '';
 $act = fn (string $task) => $admin->post('/administrator/index.php?option=com_mapaviajes&view=trips', http_build_query(['task' => $task, 'cid' => [$tid], 'boxchecked' => 1, $tt => '1']));
 $flush(); $act('trips.publish'); usleep(300000);
-$files = $mails(); $mail = $files ? (string) file_get_contents($files[0]) : '';
-afirma(count($files) === 1 && stripos($mail, 'To: ' . $anaMail) !== false || stripos($mail, $anaMail) !== false, 'publicar: sale un correo a la autora');
-afirma(str_contains($mail, 'Mi viaje a Gante') && str_contains($mail, 'trip=' . $tid), 'con el titulo y un enlace a SU viaje en el mapa');
-afirma(substr_count($mail, 'http') === 1, 'un solo enlace en todo el correo');
+$files = $mails(); $raw = $files ? (string) file_get_contents($files[0]) : ''; $mail = correoTexto($raw);
+afirma(count($files) === 1 && stripos($raw, $anaMail) !== false, 'publicar: sale un correo a la autora');
+afirma(str_contains($mail, 'Mi viaje a Gante') && !str_contains($mail, 'trip=') && !str_contains($mail, '<a '), 'con el titulo de SU viaje y SIN enlace');
+afirma(!str_contains($mail, 'http') && !str_contains($mail, 'www.'), 'ninguna direccion web en todo el correo');
+afirma(str_contains($raw, 'text/html') && str_contains($raw, 'text/plain') && str_contains($mail, '<table'), 'el correo es HTML con su version en texto plano');
+afirma(stripos($mail, 'confidencialidad') !== false || stripos($mail, 'Confidentiality') !== false, 'y lleva abajo el aviso de confidencialidad');
 $flush(); $act('trips.publish'); usleep(200000); afirma(count($mails()) === 0, 'publicar otra vez lo ya publicado no manda otro correo');
-$act('trips.trash'); usleep(300000); $files = $mails(); $mail = $files ? (string) file_get_contents($files[0]) : '';
+$act('trips.trash'); usleep(300000); $files = $mails(); $mail = $files ? correoTexto((string) file_get_contents($files[0])) : '';
 afirma(count($files) === 1 && str_contains($mail, 'Mi viaje a Gante') && !str_contains($mail, 'trip='), 'despublicar (papelera): correo neutro, sin enlace');
 $flush(); $db->exec("UPDATE $X SET params = :p WHERE element = 'com_mapaviajes' AND type = 'component'", [':p' => json_encode(array_merge($params(), ['notify_author' => 0]))]);
 $act('trips.report'); usleep(200000); afirma(count($mails()) === 0, 'con el aviso a la autora apagado no se manda nada');
@@ -140,7 +142,7 @@ afirma(count($mails()) === 0, 'con el aviso del podio apagado, cerrar una semana
 passthru('php ' . escapeshellarg(__DIR__ . '/lib/semilla-podio.php'));
 $db->exec("UPDATE $X SET params = :p WHERE element = 'com_mapaviajes' AND type = 'component'", [':p' => json_encode(array_merge($params(), ['notify_podium' => 1]))]);
 $flush(); $ana->get('/index.php?option=com_mapaviajes&task=ranking.data&format=json'); usleep(500000);
-$all = array_map('file_get_contents', $mails()); $to = [];
+$all = array_map(fn ($f) => correoTexto((string) file_get_contents($f)) . (string) file_get_contents($f), $mails()); $to = [];
 foreach ($all as $m) { if (preg_match('/^To:\s*(\S+)/mi', $m, $mm)) { $to[] = strtolower($mm[1]); } }
 sort($to);
 afirma(count($all) === 3 && $to === [strtolower($anaMail), 'pd_alba@example.test', 'pd_bruno@example.test'], 'encendido: un correo a cada una de las tres personas del podio (' . implode(',', $to) . ')');

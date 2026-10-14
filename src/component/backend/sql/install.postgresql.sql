@@ -106,5 +106,19 @@ CREATE INDEX IF NOT EXISTS "#__mapaviajes_ranking_idx_user" ON "#__mapaviajes_ra
 CREATE TABLE IF NOT EXISTS "#__mapaviajes_prefs" (
   "user_id" bigint NOT NULL,
   "hide_ranking" smallint NOT NULL DEFAULT 0,
+  "digest" smallint NOT NULL DEFAULT 0,
+  "follows_seen" timestamp without time zone NULL,
+  "digest_sent" timestamp without time zone NULL,
   PRIMARY KEY ("user_id")
 );
+
+CREATE TABLE IF NOT EXISTS "#__mapaviajes_follows" (
+  "id" serial NOT NULL,
+  "follower_id" bigint NOT NULL,
+  "followed_id" bigint NOT NULL,
+  "created" timestamp without time zone NOT NULL,
+  PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "#__mapaviajes_follows_uq" ON "#__mapaviajes_follows" ("follower_id", "followed_id");
+CREATE INDEX IF NOT EXISTS "#__mapaviajes_follows_idx_followed" ON "#__mapaviajes_follows" ("followed_id");
+

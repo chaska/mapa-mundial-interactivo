@@ -40,6 +40,17 @@ class TripsController extends BaseController
 			$this->json(['ok' => false], 404);
 		}
 
-		$this->json(['ok' => true, 'trips' => $repo->forMap($user, $albumId, 3000, (new Settings())->showRealNames())]);
+		$db = Factory::getContainer()->get(DatabaseInterface::class);
+
+		try
+		{
+			(new \Chaska\Component\Mapaviajes\Administrator\Service\Notifier($db, new Settings()))->followDigest();
+		}
+		catch (\Throwable $e)
+		{
+			// a mail problem never stops the map
+		}
+
+		$this->json(['ok' => true, 'trips' => $repo->forMap($user, $albumId, 3000, (new Settings())->showRealNames()), 'follow' => (new \Chaska\Component\Mapaviajes\Administrator\Service\FollowService($db))->state((int) $user->id)]);
 	}
 }

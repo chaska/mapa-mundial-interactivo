@@ -50,6 +50,7 @@
 
 	/* ---------------------------------------------------------------- state */
 	let TRIPS = [], ALL = [];
+	let FW = { keys: new Set(), seen: 0, digest: 0 }; // who I follow, when I last looked at the news, the weekly-mail switch
 	const stage = $('stage'), svg = $('svg'), worldG = $('world'), pinsEl = $('pins');
 	const V = { k: 1, tx: 0, ty: 0 };
 	/* Dragging moves the map and the pins layer with ONE compositor transform each (same frame, no repaint of the vector map per move);
@@ -387,6 +388,7 @@
 		for (const tb of document.querySelectorAll('#mv-drawer [role=tab]')) { tb.setAttribute('aria-selected', String(tb.dataset.tab === dtab)); }
 		$('favN').textContent = favs.length ? String(favs.length) : ''; $('favN').hidden = !favs.length;
 		body.setAttribute('aria-labelledby', 'mv-tab-' + dtab);
+		if (dtab === 'fol') { renderFollowing(body); return; }
 		if (dtab === 'fav') {
 			body.replaceChildren(...[favs.length ? h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_FAV_HELP') }) : null,
 				favs.length ? h('ul', { class: 'mv-list2' }, favs.map(tripRow))
@@ -398,7 +400,7 @@
 	}
 	for (const tb of document.querySelectorAll('#mv-drawer [role=tab]')) {
 		tb.addEventListener('click', () => { dtab = tb.dataset.tab; renderDrawer(); });
-		tb.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const o = document.querySelector('#mv-drawer [role=tab]:not([data-tab="' + tb.dataset.tab + '"])'); o.focus(); o.click(); } });
+		tb.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const tabs = [...document.querySelectorAll('#mv-drawer [role=tab]')], o = tabs[(tabs.indexOf(tb) + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; o.focus(); o.click(); } });
 	}
 	function openDrawer() { closePop(); if (panelOpen()) { closePanel(false); } renderDrawer(); $('drawer').classList.add('mv-open'); $('hint').classList.add('mv-off'); setTimeout(() => $('dTitle').focus({ preventScroll: true }), 300); }
 	function closeDrawer() { $('drawer').classList.remove('mv-open'); }
@@ -468,7 +470,7 @@
 		$('fDel').hidden = !(t.mine || O.canDelete);
 		const th = $('fiTh'); th.replaceChildren(...(t.ph.length > 1 ? t.ph.map((p, k) => h('button', { type: 'button', class: 'mv-th', 'aria-label': fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), k + 1, t.ph.length), onclick: () => fiShow(k, k > VWR.i ? 1 : -1) }, h('img', { alt: '', src: photoSrc(p.id) }))) : []));
 		for (const id of ['fiPrev', 'fiNext']) { $(id).hidden = t.ph.length < 2; }
-		fi.hidden = false; $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
+		fi.hidden = false; syncFollow(); $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
 		fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending));
 		$('fiX').focus({ preventScroll: true });
 	}
@@ -590,7 +592,8 @@
 		const list = $('pplList'); list.replaceChildren(...peopleList().map((p) => {
 			const cb = h('input', { type: 'checkbox', 'data-u': p.u }); cb.checked = !HIDE.has(p.u);
 			cb.addEventListener('change', () => { if (cb.checked) { HIDE.delete(p.u); } else { HIDE.add(p.u); } refilter(); });
-			return h('li', {}, h('label', { class: 'mv-ppl-row' }, cb, h('span', { class: 'mv-ppl-n', text: p.n }), h('small', { text: String(p.c) })));
+			const fbtn = isMe(p.u) ? null : h('button', { type: 'button', class: 'mv-ppl-fol', 'data-u': p.u, 'aria-pressed': String(FW.keys.has(p.u)), 'aria-label': fmt(T(FW.keys.has(p.u) ? 'COM_MAPAVIAJES_JS_FOLLOWING_A' : 'COM_MAPAVIAJES_JS_FOLLOW_A'), p.n), onclick: () => toggleFollow(p.u, p.n) }, followIcon());
+			return h('li', { class: 'mv-ppl-li' }, h('label', { class: 'mv-ppl-row' }, cb, h('span', { class: 'mv-ppl-n', text: p.n }), h('small', { text: String(p.c) })), fbtn);
 		}));
 	}
 	if ($('zppl')) {
@@ -639,6 +642,60 @@
 		$('mapsX').onclick = () => { closeMaps(); $('zmap').focus({ preventScroll: true }); };
 		if ($('zppl')) { $('zppl').addEventListener('click', closeMaps); }
 	}
+
+	/* ---- follow a traveller: a button in the trip card and in the people list; the news are in the "Following" tab ---- */
+	const NEWIDS = new Set();
+	const isMe = (u) => ALL.some((t) => t.mine && t.u === u);
+	const nameOf = (u) => { const t = ALL.find((x) => x.u === u); return t ? (t.by || '—') : '—'; };
+	const newTrips = () => ALL.filter((t) => FW.keys.has(t.u) && !t.mine && !t.pending && t.ts > FW.seen);
+	function followIcon() {
+		const s = document.createElementNS(SVGNS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true');
+		const p = document.createElementNS(SVGNS, 'path'); p.setAttribute('d', 'M12 20.500s-7.500-4.600-9-9.500C2 7.800 4.300 5.500 7 5.500c1.900 0 3.400 1 5 3 1.600-2 3.100-3 5-3 2.700 0 5 2.300 4 5.500-1.500 4.900-9 9.500-9 9.500z'); s.appendChild(p); return s;
+	}
+	function syncFollow() {
+		const n = newTrips().length;
+		for (const id of ['btnMenu', 'btnDisc']) { if ($(id)) { $(id).classList.toggle('mv-dot', n > 0); } }
+		const total = ALL.filter((t) => FW.keys.has(t.u) && !t.mine && !t.pending).length;
+		if ($('folN')) { $('folN').textContent = n > 0 ? String(n) : ''; $('folN').hidden = n === 0; }
+		const t = VWR && VWR.t, b = $('fFollow');
+		if (b) {
+			const show = !!(t && !t.mine && t.u && !fi.hidden);
+			b.hidden = !show;
+			if (show) { const on = FW.keys.has(t.u); b.setAttribute('aria-pressed', String(on)); b.classList.toggle('mv-on', on); b.querySelector('span').textContent = fmt(T(on ? 'COM_MAPAVIAJES_JS_FOLLOWING_A' : 'COM_MAPAVIAJES_JS_FOLLOW_A'), t.by || '—'); }
+		}
+		for (const pb of document.querySelectorAll('.mv-ppl-fol')) { const on = FW.keys.has(pb.dataset.u); pb.setAttribute('aria-pressed', String(on)); }
+		return total;
+	}
+	let followBusy = false;
+	async function post(url, fields) {
+		const fd = new FormData(); fd.append(O.token, '1'); for (const [k, v] of Object.entries(fields)) { fd.append(k, v); }
+		const r = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
+		const j = await r.json(); if (!r.ok || !j.ok) { throw new Error('x'); } return j;
+	}
+	async function toggleFollow(u, name) {
+		if (followBusy || !u) { return; } followBusy = true;
+		try {
+			const j = await post(O.followUrl, { u });
+			FW = { keys: new Set(j.follow.keys || []), seen: Number(j.follow.seen) || 0, digest: Number(j.follow.digest) || 0 };
+			syncFollow(); toast(fmt(T(j.following ? 'COM_MAPAVIAJES_JS_FOLLOW_ON' : 'COM_MAPAVIAJES_JS_FOLLOW_OFF'), name || nameOf(u)));
+			if (drawerOpen() && dtab === 'fol') { renderDrawer(); }
+		} catch (_) { toast(T('COM_MAPAVIAJES_JS_FOL_ERR')); }
+		followBusy = false;
+	}
+	function renderFollowing(body) {
+		const mine = ALL.filter((t) => FW.keys.has(t.u) && !t.mine && !t.pending).sort((a, b) => b.ts - a.ts);
+		NEWIDS.clear(); for (const t of newTrips()) { NEWIDS.add(t.id); }
+		const dg = h('input', { type: 'checkbox', id: 'mv-digest' }); dg.checked = FW.digest === 1;
+		dg.addEventListener('change', async () => { const on = dg.checked; try { const j = await post(O.digestUrl, { on: on ? '1' : '0' }); FW.digest = Number(j.digest) || 0; } catch (_) { dg.checked = !on; toast(T('COM_MAPAVIAJES_JS_FOL_ERR')); } });
+		const rows = mine.map((t, i) => { const li = tripRow(t, i); if (NEWIDS.has(t.id)) { const box = li.querySelector('.mv-arow-main > span:last-child'); if (box) { box.prepend(h('span', { class: 'mv-newtag', text: T('COM_MAPAVIAJES_JS_FOL_NEW') })); } } return li; });
+		body.replaceChildren(...[
+			FW.keys.size ? h('label', { class: 'mv-digest' }, dg, h('span', {}, h('strong', { text: T('COM_MAPAVIAJES_JS_FOL_DIGEST') }), h('small', { text: T('COM_MAPAVIAJES_JS_FOL_DIGEST_HELP') }))) : null,
+			rows.length ? h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_FOL_HELP') }) : null,
+			rows.length ? h('ul', { class: 'mv-list2' }, rows)
+				: h('div', { class: 'mv-empty-fav' }, h('strong', { text: T('COM_MAPAVIAJES_JS_FOL_EMPTY') }), h('span', { text: T('COM_MAPAVIAJES_JS_FOL_EMPTY_HELP') }))].filter(Boolean));
+		if (NEWIDS.size) { FW.seen = Math.floor(Date.now() / 1000); syncFollow(); post(O.seenUrl, {}).catch(() => {}); }
+	}
+	if ($('fFollow')) { $('fFollow').onclick = () => { const t = VWR.t; if (t) { toggleFollow(t.u, t.by); } }; }
 
 	/* ---- the weekly podium (comic style): data comes from our own server, names are escaped by textContent ---- */
 	if ($('pod')) {
@@ -978,6 +1035,7 @@
 			if (res.status === 403) { toast(T('COM_MAPAVIAJES_JS_SESSION')); return; }
 			const j = await res.json();
 			ALL = (j.trips || []).map((t) => { const [x, y] = project(t.lo, t.la); return { ...t, x, y }; });
+			FW = { keys: new Set((j.follow && j.follow.keys) || []), seen: Number(j.follow && j.follow.seen) || 0, digest: Number(j.follow && j.follow.digest) || 0 }; syncFollow();
 			TRIPS = visibleTrips();
 			syncChip();
 			for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }

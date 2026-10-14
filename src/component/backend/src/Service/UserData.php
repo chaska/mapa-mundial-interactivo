@@ -41,7 +41,8 @@ final class UserData
 			'photos'    => $this->rows('SELECT p.id, p.trip_id, p.ordering, p.width, p.height, p.bytes, p.caption, p.created FROM #__mapaviajes_photos p JOIN #__mapaviajes_trips t ON t.id = p.trip_id WHERE t.user_id = :u ORDER BY p.id', $userId),
 			'reactions' => $this->rows('SELECT id, trip_id, kind, active, created FROM #__mapaviajes_reactions WHERE user_id = :u ORDER BY id', $userId),
 			'ranking'   => $this->rows('SELECT week_start, position, score, trips, photos, likes, comments, stars, points FROM #__mapaviajes_ranking WHERE user_id = :u ORDER BY week_start', $userId),
-			'settings'  => $this->rows('SELECT hide_ranking FROM #__mapaviajes_prefs WHERE user_id = :u', $userId),
+			'settings'  => $this->rows('SELECT hide_ranking, digest, follows_seen FROM #__mapaviajes_prefs WHERE user_id = :u', $userId),
+			'following' => $this->rows('SELECT followed_id, created FROM #__mapaviajes_follows WHERE follower_id = :u ORDER BY id', $userId),
 			'events'    => $this->rows('SELECT event, detail, created FROM #__mapaviajes_events WHERE user_id = :u ORDER BY id', $userId),
 		];
 	}
@@ -78,6 +79,13 @@ final class UserData
 			}
 
 			$bridge->forget([(int) $t['asset_id']]);
+		}
+
+		// who they follow and who follows them
+		foreach (['follower_id', 'followed_id'] as $col)
+		{
+			$fu = $userId;
+			$this->db->setQuery($this->db->getQuery(true)->delete($this->db->quoteName('#__mapaviajes_follows'))->where($this->db->quoteName($col) . ' = :f')->bind(':f', $fu, ParameterType::INTEGER))->execute();
 		}
 
 		foreach (['#__mapaviajes_reactions', '#__mapaviajes_ranking', '#__mapaviajes_prefs'] as $table)

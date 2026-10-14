@@ -1,5 +1,12 @@
 # Registro de cambios
 
+## 1.12.0 — 2026-10-14 (seguir a viajeros, correos en HTML)
+- **Seguir a una persona**: botón «Seguir a NOMBRE» en la ficha de cada viaje ajeno y botón de seguir en cada fila de la lista de personas del mapa. En «Descubrir» hay una pestaña nueva **«Siguiendo»** con los viajes de la gente a quien sigues (los nuevos llevan la etiqueta «Nuevo») y un puntito en el menú cuando hay novedades sin ver. Nadie puede seguirse a sí mismo ni a quien no ha publicado nada; máximo 300 seguidos por persona; nadie ve quién le sigue.
+- **Resumen semanal por correo (opcional, apagado de entrada)**: casilla «Resumen semanal por correo» en la pestaña «Siguiendo». Un correo a la semana como máximo, con los nombres y el número de viajes nuevos de quien sigues (nunca el texto de los viajes). Interruptor general del administrador en Opciones → Correos. Se manda cuando alguien abre el mapa (como máximo una vez cada 6 horas), sin necesidad de tareas programadas.
+- **Todos los correos del componente, ahora en HTML y SIN enlaces**: tienen el logo del mapa incrustado en el propio correo (no se descarga de internet), versión en texto plano, y abajo el aviso de confidencialidad y el motivo por el que se recibe. Ningún correo contiene ya una dirección web (antes los avisos de publicación, el podio y el aviso al administrador llevaban una).
+- Privacidad: la exportación de datos incluye a quién sigues y el borrado de una cuenta elimina sus seguimientos en los dos sentidos.
+- Pruebas nuevas: `106-seguir.php` (40) y `103-seguir-navegador.js` (21); `90` y `95` ampliadas.
+
 ## 1.11.3 — 2026-10-14
 - **Corregido: «Guardar», «Guardar y cerrar» y «Cancelar» del formulario de álbum no hacían nada.** Esa pantalla no cargaba el JavaScript de los botones. Revisadas todas las pantallas: Panel, Viajes, Álbumes, Edición de álbum, Ranking, Sorteo y Opciones.
 - **Álbumes**: al quitar la barra de Joomla se habían perdido sus acciones de estado. Ahora cada tarjeta tiene Publicar / Despublicar / Papelera / Restaurar / Eliminar definitivamente (con ventana de confirmación propia) y hay filtros por estado con su recuento.

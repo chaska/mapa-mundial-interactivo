@@ -81,3 +81,22 @@ final class Bd
 	}
 	public function exec(string $sql, array $p = []): void { $s = $this->pdo->prepare($sql); $s->execute($p); }
 }
+
+/** The readable parts (text and html, decoded) of a captured mail, headers and attachments left out. */
+function correoTexto(string $raw): string
+{
+	$out = '';
+	$walk = function (string $msg) use (&$walk, &$out): void {
+		[$head, $body] = array_pad(preg_split("/\r?\n\r?\n/", $msg, 2), 2, '');
+		$head = preg_replace("/\r?\n[ \t]+/", ' ', $head);
+		if (preg_match('/^Content-Type:\s*multipart\/[a-z]+;.*?boundary="?([^";\s]+)"?/mis', $head, $m)) {
+			foreach (preg_split('/\r?\n--' . preg_quote($m[1], '/') . '(?:--)?\r?\n?/', "\n" . $body) as $part) { if (trim($part) !== '') { $walk(ltrim($part, "\r\n")); } }
+			return;
+		}
+		if (!preg_match('/^Content-Type:\s*text\//mi', $head)) { return; }
+		$enc = strtolower(preg_match('/^Content-Transfer-Encoding:\s*(\S+)/mi', $head, $e) ? $e[1] : '7bit');
+		$out .= match ($enc) { 'base64' => (string) base64_decode(preg_replace('/\s+/', '', $body)), 'quoted-printable' => quoted_printable_decode($body), default => $body } . "\n";
+	};
+	$walk($raw);
+	return $out;
+}

@@ -1,6 +1,7 @@
 // Real browser test: delete my trip from its card (own confirmation window), and every control of the card is readable on every map look.
 const { chromium } = require('playwright');
 const { execSync } = require('child_process');
+const fs = require('fs');
 const BASE = process.env.MV_BASE || 'http://127.0.0.1:8081';
 let ok = 0, fail = 0;
 const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, console.log('  FALLA ' + m)); };
@@ -27,13 +28,19 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
     const worst = Math.min(...bad.map((b) => contrast(b.color, b.bg)));
     afirma(bad.length >= 3 && worst >= 3, look + ': los botones de la ficha se leen (contraste minimo ' + worst.toFixed(1) + ')');
   }
-  // the "3 albums · 2 countries" line (a pill under the logo) is readable on every look
+  // the "3 albums · 2 countries" line (a pill under the logo) is readable on every look: give the album a logo for this check
+  const store = process.env.MV_STORAGE, logoName = 'logo_contraste1.png';
+  if (store) {
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAEklEQVR4nGP8z8Dwn4EIwDiqEAAjsgIKd1ADQAAAAABJRU5ErkJggg==', 'base64');
+    fs.writeFileSync(store + '/photos/' + logoName, png); psql("UPDATE jt_mapaviajes_albums SET logo='" + logoName + "' WHERE id=1");
+  }
   await p.goto(BASE + '/index.php?option=com_mapaviajes'); await p.waitForSelector('#mv-stat'); await p.waitForTimeout(600);
   for (const look of ['pergamino', 'noche', 'atlas', 'politico', 'acuarela', 'plano']) {
     await p.evaluate((l) => document.getElementById('mv-root').setAttribute('data-map', l), look); await p.waitForTimeout(200);
     const r = await p.evaluate(() => { const e = document.getElementById('mv-stat'); if (!e || !e.offsetParent) { return null; } const c = getComputedStyle(e); let bg = c.backgroundColor, n = e; while ((bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') && n.parentElement) { n = n.parentElement; bg = getComputedStyle(n).backgroundColor; } const a = (bg.match(/[\d.]+/g) || []); return { color: c.color, bg, alpha: a.length > 3 ? +a[3] : 1 }; });
     afirma(r === null || contrast(r.color, r.bg) >= 3, look + ': la linea de albumes y paises se lee' + (r ? ' (contraste ' + contrast(r.color, r.bg).toFixed(1) + ')' : ' (no se muestra)'));
   }
+  if (store) { psql("UPDATE jt_mapaviajes_albums SET logo='' WHERE id=1"); try { fs.unlinkSync(store + '/photos/' + logoName); } catch (_) { /* gone */ } }
   await p.evaluate(() => document.getElementById('mv-root').setAttribute('data-map', 'pergamino'));
   await open(mine);
   afirma(await p.locator('#mv-fDel').isVisible(), 'en un viaje propio SI hay boton de eliminar');

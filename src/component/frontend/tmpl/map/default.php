@@ -148,6 +148,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<div class="mv-tabs" role="tablist" aria-label="<?php echo $t('COM_MAPAVIAJES_LATEST'); ?>">
 		<button type="button" role="tab" id="mv-tab-new" aria-selected="true" aria-controls="mv-dBody" data-tab="new"><?php echo $t('COM_MAPAVIAJES_TAB_NEW'); ?></button>
 		<button type="button" role="tab" id="mv-tab-fav" aria-selected="false" aria-controls="mv-dBody" data-tab="fav"><?php echo $t('COM_MAPAVIAJES_TAB_FAV'); ?> <b id="mv-favN"></b></button>
+		<button type="button" role="tab" id="mv-tab-fol" aria-selected="false" aria-controls="mv-dBody" data-tab="fol"><?php echo $t('COM_MAPAVIAJES_TAB_FOL'); ?> <b id="mv-folN"></b></button>
 	</div>
 	<div class="mv-d-body" id="mv-dBody" role="tabpanel" tabindex="0"></div>
 </aside>
@@ -155,7 +156,8 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 <section class="mv-fi" id="mv-fi" role="dialog" aria-modal="true" aria-labelledby="mv-fiT" hidden>
 	<div class="mv-fi-card">
 		<header class="mv-fi-head">
-			<div><h2 id="mv-fiT"></h2><p id="mv-fiS"></p><p class="mv-fi-pend" id="mv-fiPend" hidden><?php echo $t('COM_MAPAVIAJES_JS_PENDING'); ?></p></div>
+			<div><h2 id="mv-fiT"></h2><p id="mv-fiS"></p><p class="mv-fi-pend" id="mv-fiPend" hidden><?php echo $t('COM_MAPAVIAJES_JS_PENDING'); ?></p>
+				<button type="button" class="mv-follow" id="mv-fFollow" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.300 2.700-5.500 6-5.500s6 2.200 6 5.500M18 8v6M15 11h6"/></svg><span></span></button></div>
 			<button class="mv-fi-x" type="button" id="mv-fiX" aria-label="<?php echo $t('COM_MAPAVIAJES_CLOSE'); ?>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 		</header>
 		<div class="mv-fi-body" id="mv-fiBody">
