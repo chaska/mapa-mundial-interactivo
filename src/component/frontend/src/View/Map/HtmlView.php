@@ -123,6 +123,7 @@ class HtmlView extends BaseHtmlView
 			'openTrip'   => (int) preg_replace('/\D/', '', substr((string) ($_GET['trip'] ?? ''), 0, 9)),
 			'rankOn'     => $this->rankOn,
 			'selfReact'  => $this->selfReact,
+			'isAdmin'    => $user->authorise('core.admin'),
 			'rankUrl'    => Route::_('index.php?option=com_mapaviajes&task=ranking.data&format=json', false),
 			'reactUrl'   => Route::_('index.php?option=com_mapaviajes&task=reaction.toggle&format=json', false),
 			'photoUrl'   => Route::_('index.php?option=com_mapaviajes&task=photo.view&id=', false),

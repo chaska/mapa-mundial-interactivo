@@ -163,6 +163,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			<?php if ($this->commentsOn) : ?>
 			<section class="mv-fi-cm" id="mv-fiCm" aria-labelledby="mv-fiCmT" hidden>
 				<h3 id="mv-fiCmT"><?php echo $t('COM_MAPAVIAJES_JS_COMMENTS_BTN'); ?></h3>
+				<p class="mv-fi-diag" id="mv-fiDiag" hidden><a id="mv-fiOpenCm" href="#" target="_blank" rel="noopener"><?php echo $t('COM_MAPAVIAJES_FI_OPEN_TAB'); ?></a></p>
 				<iframe id="mv-fiFrame" title="<?php echo $t('COM_MAPAVIAJES_JS_COMMENTS_BTN'); ?>" referrerpolicy="same-origin" scrolling="no"></iframe>
 			</section>
 			<?php endif; ?>

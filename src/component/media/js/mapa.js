@@ -457,6 +457,7 @@
 		$('fiCm').hidden = !on; $('fCom').hidden = !on; if ($('fiWriteBar')) { $('fiWriteBar').hidden = !on; }
 		if (!on) { f.removeAttribute('src'); return; }
 		f.style.height = '220px'; f.src = O.commentsUrl + encodeURIComponent(String(VWR.t.id));
+		if ($('fiDiag')) { $('fiDiag').hidden = !O.isAdmin; $('fiOpenCm').href = f.src; }
 	}
 	function openViewer(t) {
 		if (!t || !t.ph.length) { return; }

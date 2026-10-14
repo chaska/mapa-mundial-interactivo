@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.8.2 — 2026-10-14
+- Solo administradores: bajo «Comentarios» de la ficha, un enlace «Abrir esta página de comentarios en una pestaña nueva» con la dirección REAL de esa página (con el menú y las URL amigables del sitio), para probar los comentarios fuera de la ficha sin tener que adivinar la ruta.
+
 ## 1.8.1 — 2026-10-14
 - **Los mensajes de Engage ahora se ven**: cuando Engage rechaza un comentario (sin permiso, comentarios cerrados, token caducado…) deja el motivo en la cola de mensajes de Joomla y vuelve a la página; la página de comentarios de la ficha no la imprimía y por eso «no pasaba nada» (el editor solo reponía el texto). Ahora se muestran los mensajes arriba del hilo.
 - **Diagnóstico para administradores** al final del hilo (desplegable «Diagnóstico»): proveedor, Engage activo, `asset_id` del viaje, si viaje y álbum están publicados, si los comentarios están abiertos y si tu usuario tiene el nivel de acceso del álbum.

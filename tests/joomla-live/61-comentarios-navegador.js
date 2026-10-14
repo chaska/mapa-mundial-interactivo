@@ -23,6 +23,7 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     await page.waitForSelector('#mv-fi:not([hidden])', { timeout: 20000 });
     afirma((await page.textContent('#mv-fiT')).includes('Semilla'), 'el enlace con ?trip= abre la ficha de ese viaje');
     afirma(await page.locator('#mv-fCom:not([hidden])').count() === 1 && await page.locator('#mv-fiCm:not([hidden])').count() === 1, 'la ficha trae el boton de comentarios y la seccion de comentarios debajo de las fotos');
+    afirma(await page.locator('#mv-fiDiag[hidden]').count() === 1, 'una persona normal no ve el enlace de diagnostico de administradores');
     await page.click('#mv-fCom');
     const frame = page.frameLocator('#mv-fiFrame');
     await frame.locator('#akengageCommentForm').waitFor({ state: 'attached', timeout: 20000 });
