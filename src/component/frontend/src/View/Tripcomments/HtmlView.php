@@ -75,6 +75,7 @@ class HtmlView extends BaseHtmlView
 				'COM_MAPAVIAJES_DIAG_OPEN'      => TripRepository::commentsAllowed($trip) ? $yes : $no,
 				'COM_MAPAVIAJES_DIAG_LEVEL'     => $lvl . ' (' . (\in_array($lvl, $user->getAuthorisedViewLevels(), true) ? $yes : $no) . ')',
 				'COM_MAPAVIAJES_DIAG_HTML'      => $this->comments === '' ? $no : $yes,
+				'COM_MAPAVIAJES_DIAG_CAPTCHA'   => $this->captchaName(),
 			];
 		}
 
@@ -86,5 +87,30 @@ class HtmlView extends BaseHtmlView
 		$this->getDocument()->setTitle($this->title);
 
 		parent::display($tpl);
+	}
+
+	/**
+	 * Which captcha Engage uses for its comment form: "name (for whom)". Read only, for the administrator's diagnostic.
+	 * Engage stores the plugin element in its "captcha" option; empty or 0 means none, "default" the site-wide one.
+	 */
+	private function captchaName(): string
+	{
+		$params = \Joomla\CMS\Component\ComponentHelper::getParams('com_engage');
+		$name   = (string) $params->get('captcha', '');
+		$for    = (string) $params->get('captcha_for', 'guests');
+
+		if ($name === '' || $name === '0')
+		{
+			return Text::_('COM_MAPAVIAJES_DIAG_CAPTCHA_NONE');
+		}
+
+		if ($name === 'default' || $name === '1')
+		{
+			$name = (string) Factory::getApplication()->get('captcha', '');
+		}
+
+		$out = $name . ' (' . $for . ')';
+
+		return stripos($name, 'recaptcha') !== false ? $out . ' — ' . Text::_('COM_MAPAVIAJES_DIAG_CAPTCHA_V3HINT') : $out;
 	}
 }

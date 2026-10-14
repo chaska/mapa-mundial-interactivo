@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.8.4 — 2026-10-14
+- Solo administradores: el diagnóstico de la ficha indica ahora «Captcha activo en Engage» (plugin y «para quién») y, si es un reCAPTCHA, avisa de qué mirar si el comentario se rechaza con «Captcha answer is missing». Probado con «Proof of Work» (iframe oculto y revelado: se guarda). Con reCAPTCHA v3 de terceros no se pudo reproducir aquí (requiere claves reales de Google); no se debilita ninguna comprobación.
+
 ## 1.8.3 — 2026-10-14
 - El formulario de Engage, mientras no se pide, se oculta con altura 0 y `overflow:hidden` (antes: fuera de la pantalla y `visibility:hidden`), para no estorbar al captcha invisible de Joomla (que se inicializa al cargar y se ejecuta al enviar). Si el sitio exige captcha a quien comenta y el comentario se rechaza con «Captcha answer is missing», ver Engage → Opciones → «Captcha» / «Captcha para».
 
