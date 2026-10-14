@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.8.5 — 2026-10-14
+- Solo administradores: el «Diagnóstico» de la ficha incluye una **prueba en vivo del captcha** (¿se cargó el script de Google?, ¿cuántos campos de captcha hay y qué longitud tiene el código antes de enviar?, errores de JavaScript). Sirve para ver por qué reCAPTCHA v3 no rellena el código sin abrir la consola.
+
 ## 1.8.4 — 2026-10-14
 - Solo administradores: el diagnóstico de la ficha indica ahora «Captcha activo en Engage» (plugin y «para quién») y, si es un reCAPTCHA, avisa de qué mirar si el comentario se rechaza con «Captcha answer is missing». Probado con «Proof of Work» (iframe oculto y revelado: se guarda). Con reCAPTCHA v3 de terceros no se pudo reproducir aquí (requiere claves reales de Google); no se debilita ninguna comprobación.
 

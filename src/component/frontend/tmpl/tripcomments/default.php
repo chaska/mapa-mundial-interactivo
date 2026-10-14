@@ -32,6 +32,27 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBS
 		<details style="margin:18px 0 0;font-size:.8125rem;color:#6b4f3a"><summary><?php echo $e(Text::_('COM_MAPAVIAJES_DIAG_TITLE')); ?></summary>
 			<ul style="margin:6px 0;padding-left:18px">
 			<?php foreach ($this->diag as $k => $v) : ?><li><?php echo $e(Text::_($k)); ?>: <strong><?php echo $e($v); ?></strong></li><?php endforeach; ?>
+			<li><?php echo $e(Text::_('COM_MAPAVIAJES_DIAG_CAPTCHA_LIVE')); ?>: <strong id="mv-capdiag">…</strong></li>
 			</ul></details>
+		<?php
+		$this->getDocument()->getWebAssetManager()->addInlineScript(<<<'JS'
+(function () {
+	var errs = [], last = '';
+	window.addEventListener('error', function (e) { errs.push(String(e.message || e.type).slice(0, 80)); });
+	function tokens() {
+		return Array.prototype.map.call(document.querySelectorAll('[name="jform[captcha]"],input.plg-captcha-recaptcha-v3-hidden'), function (i) { return (i.value || '').length; }).join('/') || '0';
+	}
+	function report() {
+		var o = document.getElementById('mv-capdiag');
+		if (!o) { return; }
+		var scripts = Array.prototype.filter.call(document.scripts, function (s) { return /recaptcha|gstatic/.test(s.src); }).length;
+		o.textContent = 'grecaptcha=' + (typeof window.grecaptcha) + ', scripts=' + scripts + ', campos(longitud)=' + tokens() + (last ? ', al enviar: ' + last : '') + (errs.length ? ', errores JS: ' + errs.slice(0, 3).join(' | ') : '');
+	}
+	document.addEventListener('submit', function () { last = tokens(); try { sessionStorage.setItem('mvcap', last); } catch (e) {} }, true);
+	try { last = sessionStorage.getItem('mvcap') || ''; } catch (e) {}
+	setInterval(report, 1500); report();
+})();
+JS);
+		?>
 	<?php endif; ?>
 </div>
