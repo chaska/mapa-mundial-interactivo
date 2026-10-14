@@ -24,6 +24,9 @@ class HtmlView extends BaseHtmlView
 	protected $pagination;
 	protected $state;
 
+	/** @var array<int, int> albums per state (0 unpublished, 1 published, -2 trashed) */
+	protected array $counts = [];
+
 	public function display($tpl = null): void
 	{
 		$model = $this->getModel();
@@ -34,6 +37,13 @@ class HtmlView extends BaseHtmlView
 		$this->state         = $model->getState();
 		$this->filterForm    = $model->getFilterForm();
 		$this->activeFilters = $model->getActiveFilters();
+
+		$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+
+		foreach ($db->setQuery('SELECT ' . $db->quoteName('published') . ' AS s, COUNT(*) AS n FROM ' . $db->quoteName('#__mapaviajes_albums') . ' GROUP BY ' . $db->quoteName('published'))->loadAssocList() ?: [] as $row)
+		{
+			$this->counts[(int) $row['s']] = (int) $row['n'];
+		}
 
 		$canDo   = ContentHelper::getActions('com_mapaviajes');
 		$toolbar = $this->getDocument()->getToolbar();

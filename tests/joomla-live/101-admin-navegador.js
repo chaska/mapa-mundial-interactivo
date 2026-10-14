@@ -64,11 +64,43 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
   afirma((await chipN('Trashed')) === before, 'viajes: «Restaurar» la saca de la papelera');
   await open('&view=trips&filter[published]=0'); if (await p.locator('[data-mv-task="trips.publish"]').count()) { await Promise.all([p.waitForNavigation(), p.locator('[data-mv-task="trips.publish"]').first().click()]); }
 
-  await open('&view=albums');
-  afirma((await p.locator('article.mvA-album').count()) >= 1, 'albumes: tarjetas');
+  await open('&view=albums&filter[published]=');
+  afirma((await p.locator('article.mvA-album').count()) >= 1 && (await p.locator('.mvA-chip').count()) === 4, 'albumes: tarjetas y 4 filtros');
   await open('&task=album.edit&id=1');
   afirma((await p.locator('#jform_title').count()) === 1 && (await p.locator('input[name="logo_upload"]').count()) === 1, 'edicion de album: formulario completo con subida de logo');
-  await open('&view=albums');
+  // the three buttons of the album form, really clicked
+  const title0 = await p.inputValue('#jform_title');
+  await p.fill('#jform_title', title0 + ' ');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-submit="album.apply"]').click()]); await p.waitForSelector('.mvA-app');
+  afirma(p.url().includes('layout=edit') && /saved|guardad/i.test(await p.locator('#system-message-container').innerText()), 'album: «Guardar» guarda y se queda en el formulario');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-submit="album.save"]').click()]); await p.waitForSelector('.mvA-app');
+  afirma(p.url().includes('view=albums') && !p.url().includes('layout=edit'), 'album: «Guardar y cerrar» vuelve a la lista');
+  await open('&task=album.edit&id=1');
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-submit="album.cancel"]').click()]); await p.waitForSelector('.mvA-app');
+  afirma(p.url().includes('view=albums') && !p.url().includes('layout=edit'), 'album: «Cancelar» vuelve a la lista');
+  // full life of a new album: create, trash, restore, trash, delete for good (own confirmation window)
+  await Promise.all([p.waitForNavigation(), p.locator('.mvA-head .mvA-btn.p').click()]); await p.waitForSelector('.mvA-app');
+  const nm = 'Prueba ' + Date.now();
+  await p.fill('#jform_title', nm);
+  await Promise.all([p.waitForNavigation(), p.locator('[data-mv-submit="album.save"]').click()]); await p.waitForSelector('.mvA-app');
+  await open('&view=albums&filter[published]=*');
+  const card = () => p.locator('article.mvA-album', { hasText: nm });
+  afirma((await card().count()) === 1, 'album nuevo: creado y listado');
+  await Promise.all([p.waitForNavigation(), card().locator('[data-mv-task="albums.trash"]').click()]); await p.waitForSelector('.mvA-app');
+  await open('&view=albums&filter[published]=-2');
+  afirma((await card().count()) === 1, 'album: la papelera de la tarjeta lo manda a «Trashed»');
+  await Promise.all([p.waitForNavigation(), card().locator('[data-mv-task="albums.unpublish"]').click()]); await p.waitForSelector('.mvA-app');
+  await open('&view=albums&filter[published]=*');
+  afirma((await card().count()) === 1 && (await card().locator('[data-mv-task="albums.publish"]').count()) === 1, 'album: «Restaurar» lo saca de la papelera (queda sin publicar)');
+  await Promise.all([p.waitForNavigation(), card().locator('[data-mv-task="albums.publish"]').click()]); await p.waitForSelector('.mvA-app');
+  await open('&view=albums&filter[published]=1');
+  afirma((await card().count()) === 1, 'album: «Publicar» de la tarjeta lo publica');
+  await Promise.all([p.waitForNavigation(), card().locator('[data-mv-task="albums.trash"]').click()]); await p.waitForSelector('.mvA-app');
+  await open('&view=albums&filter[published]=-2');
+  await card().locator('[data-mv-task="albums.delete"]').click(); await p.waitForSelector('dialog#mvA-dlg[open]');
+  await Promise.all([p.waitForNavigation(), p.locator('#mvA-dlg .mvA-btn.p').click()]); await p.waitForSelector('.mvA-app');
+  await open('&view=albums&filter[published]=*');
+  afirma((await card().count()) === 0, 'album: «Eliminar definitivamente» (con ventana de confirmacion) lo borra');
   await open('&view=settings');
   afirma((await p.locator('.mvA-side .on').count()) === 1 && (await p.locator('input[name="jform[max_photos]"]').count()) === 1, 'opciones: pantalla propia con el menu lateral y los campos');
   // out-of-range values are refused with a message (the test site keeps the abuse brakes at 1000 on purpose, which the form rejects)
@@ -83,7 +115,13 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
   afirma(!(await p.locator('.sidebar-wrapper, #header, .header').count()), 'sin el menu ni la barra de Joomla (la pantalla es de la app)');
   await open('&view=ranking');
   afirma((await p.locator('.mvA-table').count()) >= 1, 'ranking: tablas con el diseño nuevo');
+  await Promise.all([p.waitForNavigation(), p.locator('form[action*="ranking.close"] button').click()]); await p.waitForSelector('.mvA-app');
+  afirma(p.url().includes('view=ranking') && (await p.locator('#system-message-container .alert-danger, #system-message-container .alert-error').count()) === 0, 'ranking: «Cerrar semanas pendientes» funciona (vuelve al ranking sin error)');
   await open('&view=raffle');
+  if (await p.locator('form[action*="raffle.draw"] button:not([disabled])').count()) {
+    await Promise.all([p.waitForNavigation(), p.locator('form[action*="raffle.draw"] button').click()]); await p.waitForSelector('.mvA-app');
+    afirma(await p.locator('.mvA-winners li').count() >= 1, 'sorteo: «Sortear» muestra a los ganadores');
+  }
   afirma((await p.locator('.mvA-card').count()) >= 2 && (await p.locator('form[action*="raffle.draw"] button').count()) === 1, 'sorteo: filtros y boton de sorteo');
   afirma(errs.length === 0, 'sin errores de JavaScript en las pantallas ' + JSON.stringify(errs.slice(0, 2)));
   await browser.close();

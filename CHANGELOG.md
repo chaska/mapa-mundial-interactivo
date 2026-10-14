@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## 1.11.3 — 2026-10-14
+- **Corregido: «Guardar», «Guardar y cerrar» y «Cancelar» del formulario de álbum no hacían nada.** Esa pantalla no cargaba el JavaScript de los botones. Revisadas todas las pantallas: Panel, Viajes, Álbumes, Edición de álbum, Ranking, Sorteo y Opciones.
+- **Álbumes**: al quitar la barra de Joomla se habían perdido sus acciones de estado. Ahora cada tarjeta tiene Publicar / Despublicar / Papelera / Restaurar / Eliminar definitivamente (con ventana de confirmación propia) y hay filtros por estado con su recuento.
+- La prueba del administrador (42 comprobaciones) hace clic de verdad en: los tres botones del formulario de álbum, el ciclo completo de un álbum nuevo (crear, papelera, restaurar, publicar, eliminar), «Cerrar semanas pendientes» del ranking y «Sortear».
+
 ## 1.11.2 — 2026-10-14
 - **Mapas oscuros («Océano de noche» y «Plano técnico»): la pastilla «N álbumes · N países» bajo el logo se leía mal** (letra clara sobre fondo claro). Ahora es una pastilla oscura con letra clara. La prueba de contraste de la ficha comprueba también esa línea en los seis estilos.
 

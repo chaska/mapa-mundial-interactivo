@@ -16,7 +16,7 @@ use Joomla\CMS\Router\Route;
 
 /** @var \Chaska\Component\Mapaviajes\Administrator\View\Album\HtmlView $this */
 
-$this->getDocument()->getWebAssetManager()->useScript('keepalive')->useScript('form.validate')->useStyle('com_mapaviajes.admin');
+$this->getDocument()->getWebAssetManager()->useScript('keepalive')->useScript('form.validate')->useStyle('com_mapaviajes.admin')->useScript('com_mapaviajes.admin');
 $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 ?>
 <form action="<?php echo Route::_('index.php?option=com_mapaviajes&layout=edit&id=' . (int) ($this->item->id ?? 0)); ?>" method="post" name="adminForm" id="album-form" class="form-validate" enctype="multipart/form-data">
