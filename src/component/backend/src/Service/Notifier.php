@@ -188,6 +188,22 @@ final class Notifier
 		$this->send($to, $subject, $body, $lang);
 	}
 
+	/** A trip was reported: the moderators hear about it, in the site's language, without a link. @param list<string> $to */
+	public function reported(array $to, int $tripId, string $title, string $reason): void
+	{
+		$tag  = (string) Factory::getApplication()->get('language', 'en-GB');
+		$lang = Language::getInstance(preg_match('/^[a-z]{2,3}-[A-Z]{2}$/', $tag) === 1 ? $tag : 'en-GB');
+		$lang->load('com_mapaviajes', JPATH_ADMINISTRATOR, null, true);
+		$lang->load('com_mapaviajes', JPATH_SITE, null, true);
+		$site = $this->oneLine((string) Factory::getApplication()->get('sitename', 'Site'));
+		$this->send(
+			$to,
+			'[' . $site . '] ' . $lang->_('COM_MAPAVIAJES_MAIL_REPORT_SUBJECT'),
+			sprintf($lang->_('COM_MAPAVIAJES_MAIL_REPORT_BODY'), $tripId, $this->oneLine($title), $lang->_('COM_MAPAVIAJES_REPORT_REASON_' . strtoupper($reason))),
+			$lang
+		);
+	}
+
 	/** @param string|list<string> $to */
 	private function send(string|array $to, string $subject, string $body, Language $lang): void
 	{
@@ -225,7 +241,17 @@ final class Notifier
 	/** @return list<string> why the person gets the mail, and the confidentiality notice */
 	private function footerLines(Language $lang, string $site): array
 	{
-		return [sprintf($lang->_('COM_MAPAVIAJES_MAIL_WHY'), $site !== '' ? $site : '—'), $lang->_('COM_MAPAVIAJES_MAIL_CONFIDENTIAL')];
+		$lines  = [sprintf($lang->_('COM_MAPAVIAJES_MAIL_WHY'), $site !== '' ? $site : '—')];
+		$sender = $this->settings->senderLine();
+
+		if ($sender !== '')
+		{
+			$lines[] = sprintf($lang->_('COM_MAPAVIAJES_MAIL_SENDER'), $sender);
+		}
+
+		$lines[] = $lang->_('COM_MAPAVIAJES_MAIL_CONFIDENTIAL');
+
+		return $lines;
 	}
 
 	/** The logo of the first published album that has one (a stored PNG), as a path; null when there is none. */

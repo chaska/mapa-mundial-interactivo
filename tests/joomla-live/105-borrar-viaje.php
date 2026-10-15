@@ -18,7 +18,7 @@ $oa = $ana->opciones(); $ob = $beto->opciones(); $oadm = $adm->opciones();
 afirma(($oa['canDelete'] ?? true) === false && ($oadm['canDelete'] ?? false) === true, 'el mapa sabe quien puede borrar cualquier viaje (ana no, el administrador si)');
 
 $make = function (Cliente $c, array $o, string $title) use ($db, $T): int {
-	$f = ['trip_year' => '2024', 'album_id' => (string) $o['albumId'], 'title' => $title, 'place' => 'Lisboa', 'lat' => '38.72', 'lon' => '-9.14', 'allow_comments' => '1', 'notify' => '0', 'website' => '', $o['token'] => '1'];
+	$f = ['trip_year' => '2024', 'album_id' => (string) $o['albumId'], 'title' => $title, 'place' => 'Lisboa', 'lat' => '38.72', 'lon' => '-9.14', 'allow_comments' => '1', 'notify' => '0', 'website' => '', 'rights' => '1', $o['token'] => '1'];
 	$ct = ''; $body = multipart($f, [['field' => 'photos[]', 'filename' => 'a.jpg', 'type' => 'image/jpeg', 'data' => jpegBytes(900, 600)], ['field' => 'photos[]', 'filename' => 'b.jpg', 'type' => 'image/jpeg', 'data' => jpegBytes(700, 500)]], $ct);
 	$r = $c->post('/index.php?option=com_mapaviajes&task=trip.submit&format=json', $body, ['X-Requested-With: XMLHttpRequest', "Content-Type: $ct"]);
 	if (!isset(json_decode($r['body'], true)['id'])) { fwrite(STDERR, 'SUBMIT: ' . substr($r['body'], 0, 200) . "\n"); }

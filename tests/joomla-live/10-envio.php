@@ -48,7 +48,7 @@ $d = json_decode($ana->get('/index.php?option=com_mapaviajes&task=trips.data&alb
 afirma(($d['ok'] ?? false) === true && $d['trips'] === [], 'los datos del mapa llegan (aun vacios)');
 
 function enviar(Cliente $c, array $o, array $fields, array $files, array $extraHeaders = [], bool $withToken = true, string $path = '/index.php?option=com_mapaviajes&task=trip.submit&format=json'): array {
-	$f = $fields + ['trip_year' => '2024', 'album_id' => (string) $o['albumId'], 'title' => 'Fotos en Kioto', 'place' => 'Kioto, Japón', 'lat' => '35.011600', 'lon' => '135.768300', 'allow_comments' => '1', 'notify' => '1', 'website' => ''];
+	$f = $fields + ['trip_year' => '2024', 'album_id' => (string) $o['albumId'], 'title' => 'Fotos en Kioto', 'place' => 'Kioto, Japón', 'lat' => '35.011600', 'lon' => '135.768300', 'allow_comments' => '1', 'notify' => '1', 'website' => '', 'rights' => '1'];
 	if ($withToken) { $f[$o['token']] = '1'; }
 	$ct = ''; $body = multipart($f, $files, $ct);
 	$r = $c->post($path, $body, array_merge(XHR, ["Content-Type: $ct"], $extraHeaders));
@@ -262,7 +262,7 @@ $db->exec('DELETE FROM ' . $db->t('mapaviajes_events'));
 $ob2 = $ana->opciones();
 $handles = []; $mh = curl_multi_init(); $jar = $ana->jar;
 for ($i = 0; $i < 8; $i++) {
-	$f = ['trip_year' => '2024', 'album_id' => (string) $ob2['albumId'], 'title' => "Carrera $i", 'place' => 'x', 'lat' => '1.5', 'lon' => '2.5', 'allow_comments' => '0', 'notify' => '0', 'website' => '', $ob2['token'] => '1'];
+	$f = ['trip_year' => '2024', 'album_id' => (string) $ob2['albumId'], 'title' => "Carrera $i", 'place' => 'x', 'lat' => '1.5', 'lon' => '2.5', 'allow_comments' => '0', 'notify' => '0', 'website' => '', 'rights' => '1', $ob2['token'] => '1'];
 	$ct = ''; $body = multipart($f, [$foto(jpegBytes(900, 600))], $ct);
 	$ch = curl_init($base . '/index.php?option=com_mapaviajes&task=trip.submit&format=json');
 	curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEFILE => $jar, CURLOPT_HTTPHEADER => array_merge(XHR, ["Content-Type: $ct"]), CURLOPT_TIMEOUT => 120]);

@@ -71,6 +71,12 @@ final class TripSubmission
 
 		$this->assertRate($userId);
 
+		// The person declares they may share what they upload (their own photos, people shown agree, no identifiable minors).
+		if (($post['rights'] ?? '') !== '1')
+		{
+			throw new SubmissionException('rights', 422, ['field' => 'rights']);
+		}
+
 		$album = $this->loadAlbum($user, $this->intField($post['album_id'] ?? null));
 
 		try

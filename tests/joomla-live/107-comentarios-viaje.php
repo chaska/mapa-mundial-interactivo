@@ -20,7 +20,7 @@ afirma($adm->login('admin', getenv('MV_ADMIN') ?: 'cambia-esta-clave-de-prueba')
 $oa = $ana->opciones(); $ob = $beto->opciones(); $oadm = $adm->opciones();
 afirma(($oadm['canEditState'] ?? false) === true && ($oa['canEditState'] ?? true) === false && ($oa['commentsProvider'] ?? false) === true, 'el mapa sabe quien puede abrir y cerrar comentarios de otros');
 
-$f = ['trip_year' => '2024', 'album_id' => (string) $oa['albumId'], 'title' => 'Sin comentarios', 'place' => 'Lisboa', 'lat' => '38.72', 'lon' => '-9.14', 'allow_comments' => '0', 'notify' => '0', 'website' => '', $oa['token'] => '1'];
+$f = ['trip_year' => '2024', 'album_id' => (string) $oa['albumId'], 'title' => 'Sin comentarios', 'place' => 'Lisboa', 'lat' => '38.72', 'lon' => '-9.14', 'allow_comments' => '0', 'notify' => '0', 'website' => '', 'rights' => '1', $oa['token'] => '1'];
 $ct = ''; $body = multipart($f, [['field' => 'photos[]', 'filename' => 'a.jpg', 'type' => 'image/jpeg', 'data' => jpegBytes(900, 600)]], $ct);
 $r = $ana->post('/index.php?option=com_mapaviajes&task=trip.submit&format=json', $body, ['X-Requested-With: XMLHttpRequest', "Content-Type: $ct"]);
 $id = (int) (json_decode($r['body'], true)['id'] ?? 0);

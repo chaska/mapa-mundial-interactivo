@@ -32,8 +32,8 @@ $mapUrl = \Joomla\CMS\Uri\Uri::root() . 'index.php?option=com_mapaviajes';
 ]); ?>
 
 	<section class="mvA-grid mvA-g4" style="margin-bottom:16px" aria-label="<?php echo $e(Text::_('COM_MAPAVIAJES_CP_DOORS')); ?>">
-		<?php echo $kpi('index.php?option=com_mapaviajes&view=trips&filter[published]=0', 'clock', Text::_('COM_MAPAVIAJES_CP_PENDING'), Text::_('COM_MAPAVIAJES_CP_PENDING_HINT'), $this->stats['pending'], '', $this->stats['pending'] > 0, $this->stats['pending'] > 0 ? Text::_('COM_MAPAVIAJES_CP_REVIEW_NOW') : ''); ?>
-		<?php echo $kpi('index.php?option=com_mapaviajes&view=trips&filter[published]=1', 'image', Text::_('COM_MAPAVIAJES_CP_PUBLISHED'), sprintf(Text::_('COM_MAPAVIAJES_CP_PUBLISHED_HINT'), $this->stats['photos']), $this->stats['published']); ?>
+		<?php echo $kpi('index.php?option=com_mapaviajes&view=trips&filter[published]=0&filter[reported]=', 'clock', Text::_('COM_MAPAVIAJES_CP_PENDING'), Text::_('COM_MAPAVIAJES_CP_PENDING_HINT'), $this->stats['pending'], '', $this->stats['pending'] > 0, $this->stats['pending'] > 0 ? Text::_('COM_MAPAVIAJES_CP_REVIEW_NOW') : ''); ?>
+		<?php echo $kpi('index.php?option=com_mapaviajes&view=trips&filter[published]=1&filter[reported]=', 'image', Text::_('COM_MAPAVIAJES_CP_PUBLISHED'), sprintf(Text::_('COM_MAPAVIAJES_CP_PUBLISHED_HINT'), $this->stats['photos']), $this->stats['published']); ?>
 		<?php echo $kpi('index.php?option=com_mapaviajes&view=albums', 'globe', Text::_('COM_MAPAVIAJES_MENU_ALBUMS'), Text::_('COM_MAPAVIAJES_CP_ALBUMS_HINT'), $this->stats['albums'], 't'); ?>
 		<?php echo $kpi('index.php?option=com_mapaviajes&view=ranking', 'star', Text::_('COM_MAPAVIAJES_MENU_RANKING'), Text::_('COM_MAPAVIAJES_CP_RANKING_HINT'), $this->stats['weeks'], 'w'); ?>
 		<?php echo $kpi('index.php?option=com_mapaviajes&view=raffle', 'users', Text::_('COM_MAPAVIAJES_MENU_RAFFLE'), Text::_('COM_MAPAVIAJES_CP_RAFFLE_HINT'), $this->stats['people'], 't'); ?>

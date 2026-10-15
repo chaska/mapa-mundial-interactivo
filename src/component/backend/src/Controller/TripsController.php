@@ -34,6 +34,35 @@ class TripsController extends AdminController
 		return parent::getModel($name, $prefix, $config);
 	}
 
+	/** A moderator looked at the reports of the selected trips and leaves them as they are: the reports are cleared. */
+	public function dismissreports(): void
+	{
+		$this->checkToken();
+		$back = Route::_('index.php?option=com_mapaviajes&view=trips', false);
+
+		if (!$this->app->getIdentity()->authorise('core.edit.state', 'com_mapaviajes'))
+		{
+			$this->app->enqueueMessage(Text::_('JERROR_ALERTNOAUTHOR'), 'error');
+			$this->setRedirect($back);
+
+			return;
+		}
+
+		$ids = array_values(array_filter(array_map('intval', (array) $this->input->get('cid', [], 'array'))));
+
+		if ($ids === [])
+		{
+			$this->app->enqueueMessage(Text::_('JERROR_NO_ITEMS_SELECTED'), 'warning');
+		}
+		else
+		{
+			\Chaska\Component\Mapaviajes\Administrator\Service\ReportService::dismiss(\Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class), $ids);
+			$this->app->enqueueMessage(Text::_('COM_MAPAVIAJES_REPORTS_CLEARED'));
+		}
+
+		$this->setRedirect($back);
+	}
+
 	/**
 	 * Delete for good in one step: trashes the selected trips and then deletes them, which also removes their photos, their
 	 * reactions and their comment thread (the same deletion as "Delete from trash").

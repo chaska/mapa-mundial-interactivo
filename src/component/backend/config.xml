@@ -82,6 +82,8 @@
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
 		</field>
+		<field name="contact_email" type="email" label="COM_MAPAVIAJES_CONFIG_CONTACT_EMAIL" description="COM_MAPAVIAJES_CONFIG_CONTACT_EMAIL_DESC" default="" validate="email" size="40" />
+		<field name="sender_line" type="text" label="COM_MAPAVIAJES_CONFIG_SENDER_LINE" description="COM_MAPAVIAJES_CONFIG_SENDER_LINE_DESC" default="" filter="string" size="60" maxlength="200" />
 		<field name="notify_emails" type="text" label="COM_MAPAVIAJES_CONFIG_NOTIFY_EMAILS" description="COM_MAPAVIAJES_CONFIG_NOTIFY_EMAILS_DESC" default="" filter="string" size="60" />
 	</fieldset>
 

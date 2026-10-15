@@ -3,6 +3,14 @@
 Fecha: 2026-10-15. Alcance: componente `com_mapaviajes` y paquete `pkg_mapaviajes`. Primera pasada: **solo auditoría, sin cambios de código.**
 Esto es una pre-auditoría técnica. No sustituye el asesoramiento de un abogado o DPD.
 
+## 0. Estado tras la segunda pasada (versión 1.13.0)
+- H1 botón «Denunciar» y punto de contacto: **RESUELTO** en el código (el correo de contacto lo rellena el administrador en Opciones).
+- H2 declaración de derechos al subir: **RESUELTO**.
+- H5 ranking: ya existía la opción «no aparecer»; queda informar en la política de privacidad (**SIGUE**, documento).
+- H7 identidad del remitente: **RESUELTO** (campo «Quién envía los correos»).
+- H8 `docs/PRIVACIDAD.md`: **RESUELTO** (reescrito).
+- H3 captcha, H4 Engage, H6 edad mínima: **SIGUEN**, son decisiones o textos del sitio (ver `docs/PRIVACIDAD.md` §3 y §7).
+
 ## 1. Resumen
 
 El vídeo habla sobre todo de **leyes de EE. UU.** (COPPA, wiretap de California, CAN-SPAM, DMCA, renovaciones de Stripe en California). Si el sitio opera desde España para público español/UE, esas leyes probablemente no son la vía principal de reclamación. Lo que sí puede aplicar son las **equivalentes europeas** (RGPD, ePrivacy/LSSI, DSA, LOPDGDD).

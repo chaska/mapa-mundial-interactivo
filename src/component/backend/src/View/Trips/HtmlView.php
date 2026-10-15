@@ -33,6 +33,9 @@ class HtmlView extends BaseHtmlView
 	/** @var array<int, int> trips per state (0 pending, 1 published, 2 hidden, -2 trashed) */
 	protected array $counts = [];
 
+	/** @var int trips with at least one open report */
+	protected int $reported = 0;
+
 	public function display($tpl = null): void
 	{
 		$model = $this->getModel();
@@ -50,6 +53,8 @@ class HtmlView extends BaseHtmlView
 		{
 			$this->counts[(int) $row['s']] = (int) $row['n'];
 		}
+
+		$this->reported = (int) $db->setQuery('SELECT COUNT(DISTINCT ' . $db->quoteName('trip_id') . ') FROM ' . $db->quoteName('#__mapaviajes_reports'))->loadResult();
 
 		if (version_compare(JVERSION, '6.0.0', '>=') ? version_compare(JVERSION, '6.1.4', '<') : version_compare(JVERSION, '5.4.9', '<'))
 		{

@@ -43,6 +43,7 @@ final class UserData
 			'ranking'   => $this->rows('SELECT week_start, position, score, trips, photos, likes, comments, stars, points FROM #__mapaviajes_ranking WHERE user_id = :u ORDER BY week_start', $userId),
 			'settings'  => $this->rows('SELECT hide_ranking, digest, follows_seen FROM #__mapaviajes_prefs WHERE user_id = :u', $userId),
 			'following' => $this->rows('SELECT followed_id, created FROM #__mapaviajes_follows WHERE follower_id = :u ORDER BY id', $userId),
+			'reports'   => $this->rows('SELECT trip_id, reason, note, created FROM #__mapaviajes_reports WHERE reporter_id = :u ORDER BY id', $userId),
 			'events'    => $this->rows('SELECT event, detail, created FROM #__mapaviajes_events WHERE user_id = :u ORDER BY id', $userId),
 		];
 	}
@@ -64,7 +65,7 @@ final class UserData
 			$id    = (int) $t['id'];
 			$files = $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName('filename'))->from($this->db->quoteName('#__mapaviajes_photos'))->where($this->db->quoteName('trip_id') . ' = :i')->bind(':i', $id, ParameterType::INTEGER))->loadColumn() ?: [];
 
-			foreach (['#__mapaviajes_photos', '#__mapaviajes_reactions'] as $table)
+			foreach (['#__mapaviajes_photos', '#__mapaviajes_reactions', '#__mapaviajes_reports'] as $table)
 			{
 				$tid = $id;
 				$this->db->setQuery($this->db->getQuery(true)->delete($this->db->quoteName($table))->where($this->db->quoteName('trip_id') . ' = :t')->bind(':t', $tid, ParameterType::INTEGER))->execute();
@@ -87,6 +88,9 @@ final class UserData
 			$fu = $userId;
 			$this->db->setQuery($this->db->getQuery(true)->delete($this->db->quoteName('#__mapaviajes_follows'))->where($this->db->quoteName($col) . ' = :f')->bind(':f', $fu, ParameterType::INTEGER))->execute();
 		}
+
+		$ru = $userId;
+		$this->db->setQuery($this->db->getQuery(true)->delete($this->db->quoteName('#__mapaviajes_reports'))->where($this->db->quoteName('reporter_id') . ' = :r')->bind(':r', $ru, ParameterType::INTEGER))->execute();
 
 		foreach (['#__mapaviajes_reactions', '#__mapaviajes_ranking', '#__mapaviajes_prefs'] as $table)
 		{

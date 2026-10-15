@@ -1,5 +1,13 @@
 # Registro de cambios
 
+## 1.13.0 — 2026-10-15 (cumplimiento: denunciar contenido, derechos de las fotos, remitente)
+Segunda pasada de la pre-auditoría legal (`docs/AUDITORIA-LEGAL-mapa-viajes-2026-10-15.md`).
+- **Botón «Denunciar» en la ficha de los viajes ajenos** (aviso y acción, DSA art. 16): ventana propia con motivo (contenido ilegal, fotos sin permiso, salgo yo sin permiso, se ve un menor, otro) y nota opcional. Una denuncia por persona y viaje, máximo 10 por hora, mismas puertas que el resto de escrituras (POST + cabecera AJAX + token + sesión). **No oculta nada sola**: avisa por correo (sin enlaces) a los moderadores y aparece en el administrador: filtro **«Denunciados»** con su recuento, etiqueta «N denuncias» en cada tarjeta y botón «Descartar denuncias». Se borran con el viaje, y la persona que denunció las ve en su exportación de datos y se borran al eliminar su cuenta. Nadie denuncia su propio viaje.
+- **Opciones → Correos: «Correo de contacto para avisos»** (se enseña en la ventana de denuncia) y **«Quién envía los correos»** (nombre o empresa y contacto, impreso al pie de todos los correos).
+- **Declaración al subir fotos**: casilla obligatoria «las fotos son mías o tengo permiso, las personas que salen están de acuerdo y no se ve ningún menor identificable». Si falta, el servidor responde 422 y no se crea nada.
+- `docs/PRIVACIDAD.md` reescrito con lo que hace la versión actual (correos HTML, captcha de Joomla, Engage, seguimientos, denuncias).
+- Pruebas nuevas: `108-denunciar.php` (28) y `109-denunciar-navegador.js`; el resto añaden la casilla de derechos.
+
 ## 1.12.1 — 2026-10-14
 - **Activar o desactivar los comentarios de tu viaje cuando quieras**: en la ficha de un viaje propio, junto a «Me gusta» y «Soy fan», sale el botón **«Activar comentarios»** (si los cerraste al subirlo) o **«Desactivar comentarios»**. Al activar aparece enseguida el hilo de Engage; al desactivar se conservan los comentarios ya escritos y vuelven si se reactivan. Los administradores (permiso «Editar estado») pueden hacerlo en cualquier viaje. Nadie más (mismo 404 que un viaje inexistente); si el ÁLBUM tiene los comentarios cerrados, el viaje tampoco los muestra. Queda anotado el cambio (solo el código).
 - Pruebas nuevas: `107-comentarios-viaje.php` (32) y `104-comentarios-viaje-navegador.js` (9).

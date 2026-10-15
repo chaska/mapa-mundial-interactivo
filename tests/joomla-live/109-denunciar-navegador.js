@@ -1,0 +1,51 @@
+// Real browser test: "Report" on another person's trip (reason + note, own window), not on your own, guests only see where to write.
+const { chromium } = require('playwright');
+const { execSync } = require('child_process');
+const BASE = process.env.MV_BASE || 'http://127.0.0.1:8081';
+let ok = 0, fail = 0;
+const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, console.log('  FALLA ' + m)); };
+const psql = (sql) => execSync(process.env.MV_PSQL + ' -Atc "' + sql + '"').toString().trim();
+(async () => {
+  if (!process.env.MV_PSQL) { console.log('Falta MV_PSQL'); process.exit(2); }
+  psql("DELETE FROM jt_mapaviajes_reports");
+  psql("UPDATE jt_extensions SET params=(params::jsonb || '{\\\"contact_email\\\":\\\"avisos@example.test\\\",\\\"notify_admin\\\":0}'::jsonb)::text WHERE element='com_mapaviajes' AND type='component'");
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }).catch(() => chromium.launch());
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } }); const p = await ctx.newPage();
+  const errs = []; p.on('pageerror', (e) => errs.push(String(e)));
+  await p.goto(BASE + '/index.php?option=com_users&view=login'); await p.fill('#username', 'ana'); await p.fill('#password', process.env.MV_ANA || 'cambia-esta-clave-de-prueba');
+  await Promise.all([p.waitForNavigation(), p.click('button[type=submit].btn-primary, .btn-primary[type=submit]')]);
+  const mine = psql("SELECT id FROM jt_mapaviajes_trips WHERE user_id=(SELECT id FROM jt_users WHERE username='ana') AND published=1 AND photo_count>0 ORDER BY id DESC LIMIT 1");
+  const other = psql("SELECT id FROM jt_mapaviajes_trips WHERE user_id<>(SELECT id FROM jt_users WHERE username='ana') AND published=1 AND photo_count>0 ORDER BY id DESC LIMIT 1");
+  const open = async (pg, id) => { await pg.goto(BASE + '/index.php?option=com_mapaviajes&trip=' + id); await pg.waitForSelector('#mv-fi:not([hidden])'); await pg.waitForTimeout(900); };
+  await open(p, mine);
+  afirma(await p.locator('#mv-fRep').isHidden(), 'en tu propio viaje NO hay boton de denunciar');
+  await open(p, other);
+  afirma(await p.locator('#mv-fRep').isVisible(), 'en un viaje ajeno SI hay boton «Denunciar»');
+  await p.click('#mv-fRep');
+  await p.waitForSelector('dialog.mv-dlg[open]');
+  afirma((await p.locator('dialog.mv-dlg select option').count()) === 5, 'la ventana ofrece cinco motivos');
+  afirma((await p.locator('dialog.mv-dlg').textContent()).includes('avisos@example.test'), 'enseña el correo de contacto');
+  await p.selectOption('dialog.mv-dlg select', 'other');
+  await p.click('dialog.mv-dlg .mv-btn-danger'); await p.waitForTimeout(800);
+  afirma((await p.locator('.mv-dlg-msg').textContent()).length > 0 && psql("SELECT COUNT(*) FROM jt_mapaviajes_reports") === '0', '«Otro motivo» sin explicacion: avisa y no guarda nada');
+  await p.fill('dialog.mv-dlg textarea', 'Prueba de aviso');
+  await p.click('dialog.mv-dlg .mv-btn-danger'); await p.waitForTimeout(1200);
+  afirma(await p.locator('dialog.mv-dlg').count() === 0 && psql("SELECT COUNT(*) FROM jt_mapaviajes_reports WHERE trip_id=" + other) === '1', 'el aviso se envia, la ventana se cierra y queda guardado');
+  afirma(/Thank|Gracias/.test(await p.locator('#mv-fMsg').textContent()), 'confirmacion visible en la ficha');
+  // administrator: the "Reported" filter, the badge on the card, and dismissing
+  const actx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
+  const gg = await actx.request.get(BASE + '/administrator/index.php'); const tk = (await gg.text()).match(/name="([a-f0-9]{32})" value="1"/)[1];
+  await actx.request.post(BASE + '/administrator/index.php', { form: { username: 'admin', passwd: process.env.MV_ADMIN || 'cambia-esta-clave-de-prueba', option: 'com_login', task: 'login', return: 'aW5kZXgucGhw', [tk]: '1' }, maxRedirects: 0 }).catch(() => {});
+  const ap = await actx.newPage(); ap.on('pageerror', (e) => errs.push(e.message));
+  await ap.goto(BASE + '/administrator/index.php?option=com_mapaviajes&view=trips&filter[published]=*&filter[reported]=1', { waitUntil: 'domcontentloaded' }); await ap.waitForSelector('.mvA-app');
+  afirma(await ap.locator('.mvA-trip').count() === 1 && /1 (report|denuncia)/.test(await ap.locator('.mvA-trip .mvA-pill.b').first().textContent()), 'el administrador ve SOLO el viaje denunciado, con «1 denuncia»');
+  afirma(/Reported|Denunciados/.test(await ap.locator('.mvA-chip.on').textContent()) && !(await ap.content()).includes('amp;amp;'), 'el filtro «Denunciados» esta activo y los enlaces estan bien escapados');
+  await ap.click('.mvA-trip [data-mv-task="trips.dismissreports"]'); await ap.waitForLoadState('domcontentloaded'); await ap.waitForTimeout(800);
+  afirma(psql("SELECT COUNT(*) FROM jt_mapaviajes_reports") === '0', '«Descartar denuncias» las borra');
+  await ap.goto(BASE + '/administrator/index.php?option=com_mapaviajes&view=trips&filter[published]=&filter[reported]=', { waitUntil: 'domcontentloaded' }); await ap.waitForSelector('.mvA-app');
+  afirma(await ap.locator('.mvA-trip').count() > 1, 'al quitar el filtro vuelven todos los viajes');
+  afirma(errs.length === 0, 'sin errores de JavaScript ' + JSON.stringify(errs));
+  psql("DELETE FROM jt_mapaviajes_reports");
+  await browser.close();
+  console.log(`\n${ok} correctas, ${fail} fallos`); process.exit(fail ? 1 : 0);
+})();

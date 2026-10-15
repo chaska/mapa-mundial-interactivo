@@ -54,7 +54,7 @@ final class TripRemoval
 		{
 			UserLock::take($db, $userId);
 
-			foreach (['#__mapaviajes_photos' => 'trip_id', '#__mapaviajes_reactions' => 'trip_id', '#__mapaviajes_trips' => 'id'] as $table => $column)
+			foreach (['#__mapaviajes_photos' => 'trip_id', '#__mapaviajes_reactions' => 'trip_id', '#__mapaviajes_reports' => 'trip_id', '#__mapaviajes_trips' => 'id'] as $table => $column)
 			{
 				$db->setQuery($db->getQuery(true)->delete($db->quoteName($table))->where($db->quoteName($column) . ' = :x')->bind(':x', $id, ParameterType::INTEGER))->execute();
 			}

@@ -13,6 +13,7 @@ defined('_JEXEC') || die;
 
 use Chaska\Component\Mapaviajes\Administrator\Security\ImageProcessor;
 use Chaska\Component\Mapaviajes\Administrator\Service\EventLog;
+use Chaska\Component\Mapaviajes\Administrator\Service\ReportService;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Chaska\Component\Mapaviajes\Administrator\Service\SubmissionException;
 use Chaska\Component\Mapaviajes\Administrator\Service\TripCommentsSwitch;
@@ -162,6 +163,54 @@ class TripController extends BaseController
 		$this->json(['ok' => true, 'id' => $id, 'message' => Text::_('COM_MAPAVIAJES_REMOVED')], 200);
 	}
 
+	/** Flags a trip for the moderators (notice-and-action). POST: id, reason, note. Same gates as the other writes. */
+	public function report(): void
+	{
+		$app  = $this->app;
+		$user = $app->getIdentity();
+
+		if (strtoupper((string) $app->getInput()->getMethod()) !== 'POST')
+		{
+			header('Allow: POST');
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_GENERIC')], 405);
+		}
+
+		if (strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) !== 'xmlhttprequest' || !Session::checkToken('post'))
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SESSION'), 'expired' => true], 403);
+		}
+
+		if ($user->guest)
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_LOGIN'), 'expired' => true], 403);
+		}
+
+		$raw    = $_POST['id'] ?? '';
+		$id     = (\is_string($raw) && preg_match('/^\d{1,9}$/', $raw) === 1) ? (int) $raw : 0;
+		$reason = \is_string($_POST['reason'] ?? null) ? (string) $_POST['reason'] : '';
+		$note   = \is_string($_POST['note'] ?? null) ? (string) $_POST['note'] : '';
+		$db     = Factory::getContainer()->get(DatabaseInterface::class);
+
+		try
+		{
+			(new ReportService($db, new Settings()))->add($user, $id, $reason, $note);
+		}
+		catch (SubmissionException $e)
+		{
+			$key = 'COM_MAPAVIAJES_ERR_' . strtoupper($e->key());
+			$msg = Text::_($key);
+
+			$this->json(['ok' => false, 'error' => $msg !== $key ? $msg : Text::_('COM_MAPAVIAJES_ERR_GENERIC')], $e->status());
+		}
+		catch (\Throwable $e)
+		{
+			EventLog::add($db, (int) $user->id, 'error', 'report');
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
+		}
+
+		$this->json(['ok' => true, 'message' => Text::_('COM_MAPAVIAJES_JS_REPORT_DONE')]);
+	}
+
 	/** Opens or closes the comments of one trip (its author, or an administrator). POST: id, on = 0|1. Same gates as the other writes. */
 	public function comments(): void
 	{
@@ -218,7 +267,7 @@ class TripController extends BaseController
 	{
 		$out = [];
 
-		foreach (['album_id', 'trip_year', 'title', 'place', 'lat', 'lon', 'allow_comments', 'notify', 'website'] as $key)
+		foreach (['album_id', 'trip_year', 'title', 'place', 'lat', 'lon', 'allow_comments', 'notify', 'website', 'rights'] as $key)
 		{
 			$out[$key] = $_POST[$key] ?? '';
 		}

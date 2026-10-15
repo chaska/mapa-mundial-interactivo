@@ -1,67 +1,76 @@
 # Privacidad y cumplimiento (pre-auditoría técnica, UE + España)
 
-> Esto es una pre-auditoría técnica del componente. **No sustituye el asesoramiento de un abogado o DPD.** Habla de lo que el código hace; qué obligaciones tiene *tu* sitio depende de quién eres y de cómo lo uses.
+> Esto es una pre-auditoría técnica del componente (versión 1.13.0). **No sustituye el asesoramiento de un abogado o DPD.** Habla de lo que el código hace; qué obligaciones tiene *tu* sitio depende de quién eres y de cómo lo uses. El informe completo está en `docs/AUDITORIA-LEGAL-mapa-viajes-2026-10-15.md`.
 
 ## 1. Quién es quién
 - El componente es **software** que instalas en tu Joomla. **Tú (quien explota el sitio) eres el responsable del tratamiento** (RGPD art. 4.7). Nada se envía al autor del componente ni a ningún tercero.
-- Si alojas el mapa para otra organización, tú eres encargado y necesitas el contrato del art. 28 con ella. Eso no se puede resolver con código.
+- Si alojas el mapa para otra organización, tú eres encargado y necesitas el contrato del art. 28 con ella.
+- El mapa solo se ve con sesión iniciada: no hay visitantes anónimos que vean fotos.
 
 ## 2. Lo que hace el código (hechos comprobados)
-| Hecho | Dónde | Estado |
+| Hecho | Dónde |
+|---|---|
+| **Ningún recurso de terceros** en el navegador: sin Google Fonts, sin CDNs, sin mapas externos, sin analítica. Fuentes, mapa y ciudades están en tu servidor; la compilación **rechaza** URLs externas en CSS, JS o PHP | `media/css/fonts.css`, `build/build.php` |
+| **Sin cookies propias** (solo la sesión de Joomla). En el navegador solo guarda la preferencia de estilo de mapa (`localStorage` `mvMapStyle`) si la persona elige uno | `media/js/mapa.js` |
+| **IP no guardada por el componente**: el registro de seguridad guarda códigos de suceso y el id de usuario; se poda a los 90 días | `EventLog` |
+| **Fotos**: se recodifican a WebP y se elimina todo lo que traigan (EXIF, GPS, XMP). Nombre de archivo aleatorio; solo las sirve el componente tras comprobar permisos | `ImageProcessor`, `PhotoServer` |
+| **Declaración al subir**: casilla obligatoria de que las fotos son suyas o tiene permiso, que las personas que salen están de acuerdo y que no se ve ningún menor identificable | formulario del mapa, `TripSubmission` |
+| **Denunciar**: cualquier persona registrada puede avisar de un viaje; una denuncia por persona y viaje; los moderadores reciben correo y la gestionan en el administrador («Denunciados»). Guarda: viaje, quien denuncia, motivo, nota (500 caracteres) y fecha | `ReportService` |
+| **Nombre visible**: el alias (nombre de usuario) salvo que actives «nombre real» | Opciones → Privacidad |
+| **Ranking**: se muestra el alias; cada persona puede **no aparecer** (interruptor en el podio) | `RankingService`, `#__mapaviajes_prefs` |
+| **Seguir a viajeros**: se guarda a quién sigue cada persona (nadie ve quién le sigue) | `FollowService` |
+| **Correos** (todos en HTML, sin enlaces, con el logo incrustado, el motivo por el que se reciben, el remitente que configures y un aviso de confidencialidad): aviso de publicación o no publicación de su viaje; felicitación del podio (si la activas); aviso a moderadores; y el **resumen semanal opcional** de quien sigue, que solo recibe quien activa la casilla (opt-in) | `Notifier` |
+| **Sorteo**: lista de personas con nombre y correo, solo para moderadores; el sorteo queda anotado sin datos personales | `RaffleService` |
+| **Acceso y supresión** (RGPD arts. 15 y 17): herramientas de Privacidad de Joomla (plugin `privacy`) y borrado de cuenta (plugin `user`): viajes, fotos (archivos incluidos), reacciones, ranking, ajustes, seguimientos en los dos sentidos, denuncias enviadas y comentarios de sus viajes | `UserData` |
+
+## 3. Terceros y extensiones que NO son este componente (decídelo tú)
+| Qué | Qué recibe | Qué hacer |
 |---|---|---|
-| **Ningún recurso de terceros** en el navegador: sin Google Fonts, sin CDNs, sin mapas externos, sin captcha, sin Gravatar, sin analítica. Las fuentes, el mapa del mundo y las ciudades están en tu servidor. | `media/css/fonts.css`, `media/data/*`; la compilación **rechaza** cualquier URL externa en CSS, JS o PHP (`build/build.php`) | Bien. Sin avisos de cookies propios porque no hay cookies de terceros |
-| **Sin cookies propias**: solo la sesión de Joomla (estrictamente necesaria) | — | Bien |
-| **IP no guardada**: el registro de seguridad guarda códigos de suceso y el id de usuario, nunca IP ni cabeceras | `EventLog` | Bien. Se poda a los 90 días |
-| **Fotos**: se recodifican a WebP; **se elimina todo lo que traiga la foto** (EXIF, GPS, XMP, comentarios). El nombre del archivo es aleatorio | `ImageProcessor`, `PrivateStorage` | Bien (minimización) |
-| Las fotos solo las sirve el componente tras comprobar permisos (no hay URL pública adivinable) | `PhotoServer` | Bien |
-| **Nombre visible = nombre de usuario** (alias) salvo que actives «nombre real» | Opciones → Privacidad | Por defecto, alias |
-| **Búsqueda de lugares**: la consulta se resuelve en tu servidor y no se guarda | `PlaceSearch` | Bien |
-| **Ranking**: se muestra el alias; cada persona puede **no aparecer** (interruptor en el podio) | `RankingService`, `#__mapaviajes_prefs` | Bien |
-| **Correos a personas**: solo el aviso de publicación o no publicación de su viaje (y, si lo enciendes, la felicitación del podio). Texto plano, sin datos de otras personas | `Notifier` | Revisar con tus textos legales |
-| **Sorteo**: lista de personas con viajes con fotos; contiene nombre y correo; solo para moderadores; la descarga y el sorteo quedan en el registro **sin datos personales** | `RaffleService` | Ver §5 |
-| **Acceso y supresión** (RGPD arts. 15 y 17): herramientas de Privacidad de Joomla (plugin `privacy`) y borrado de cuenta (plugin `user`): se borran viajes, fotos (archivos incluidos), reacciones, filas de ranking, ajustes y el hilo de comentarios de sus viajes | `UserData` | Bien, con pruebas |
+| **Captcha de Joomla** (p. ej. reCAPTCHA v3) | Con reCAPTCHA, la **IP y datos del navegador van a Google**. «Proof of Work» y otros captchas locales no envían nada fuera | Prefiere uno local; si mantienes reCAPTCHA, cítalo en tu política y valora el consentimiento |
+| **Comentarios (Engage)** | Guarda texto, usuario y puede guardar IP y navegador de quien comenta. Gravatar solo se carga tras consentimiento (modo «preguntar») | Cítalo en tu política con su plazo de conservación |
+| **Servidor de correo** | Ve los correos | Tu proveedor |
+| **Copias de seguridad** | Contienen las fotos hasta que roten | Define la rotación |
 
-## 3. Inventario de datos personales
-| Dato | Origen | Finalidad | Dónde | Conservación |
-|---|---|---|---|---|
-| Viajes: título, lugar, coordenadas, fecha | La persona | Publicar en el mapa | `#__mapaviajes_trips` | Hasta que ella o la administración lo borre, o se borre la cuenta |
-| Fotos y pies de foto | La persona | Publicar en el mapa | Archivos `media/com_mapaviajes_private/photos` + `#__mapaviajes_photos` | Ídem |
-| Reacciones (corazón, estrella) | La persona | Mostrar contadores y favoritos | `#__mapaviajes_reactions` | Hasta borrar la cuenta |
-| Puntos del ranking semanal | Calculado | Podio | `#__mapaviajes_ranking` | Hasta borrar la cuenta |
-| Preferencia «no aparecer» | La persona | Respetar su elección | `#__mapaviajes_prefs` | Hasta borrar la cuenta |
-| Códigos de suceso (límites, rechazos, sorteo) | Sistema | Seguridad | `#__mapaviajes_events` | 90 días; al borrar la cuenta se desvincula |
-| Comentarios | La persona | Conversación | Los guarda la extensión de comentarios (p. ej. Engage) | Según esa extensión |
-| Nombre y correo de la cuenta | Joomla | Identificar, avisar | Joomla | Joomla |
+## 4. Inventario de datos personales
+| Dato | Finalidad | Dónde | Conservación |
+|---|---|---|---|
+| Viajes (título, lugar, coordenadas, año) | Publicar en el mapa | `#__mapaviajes_trips` | Hasta que ella o la administración lo borre, o se borre la cuenta |
+| Fotos y pies de foto | Publicar | `media/com_mapaviajes_private/photos` + `#__mapaviajes_photos` | Ídem |
+| Reacciones | Contadores y favoritos | `#__mapaviajes_reactions` | Hasta borrar la cuenta |
+| Puntos del ranking | Podio | `#__mapaviajes_ranking` | Hasta borrar la cuenta |
+| Preferencias («no aparecer», resumen semanal) | Respetar su elección | `#__mapaviajes_prefs` | Hasta borrar la cuenta |
+| A quién sigue | Avisos y pestaña «Siguiendo» | `#__mapaviajes_follows` | Hasta dejar de seguir o borrar la cuenta (en ambos sentidos) |
+| Denuncias enviadas | Moderación | `#__mapaviajes_reports` | Hasta que el moderador las descarte, se borre el viaje o la cuenta |
+| Códigos de suceso | Seguridad | `#__mapaviajes_events` | 90 días; al borrar la cuenta se desvincula |
+| Nombre y correo de la cuenta | Identificar, avisar | Joomla | Joomla |
 
-## 4. Matriz de aplicabilidad (resumen)
+## 5. Matriz de aplicabilidad (resumen)
 | Norma | ¿Aplica? | Nota |
 |---|---|---|
-| RGPD / LOPDGDD | Sí, si hay usuarios en la UE | Responsable: el sitio. Base: ejecución del servicio pedido (publicar) y consentimiento para lo opcional |
-| ePrivacy art. 5.3 / LSSI art. 22.2 | No hay cookies no esenciales ni almacenamiento propio en el navegador | Sin aviso de cookies propio necesario por este componente (tu sitio puede tener otros) |
-| Google Fonts (LG München I, 20/01/2022) | **No aplica**: no se carga nada remoto | El candado de compilación impide que vuelva a entrar |
-| DSA | Alojas contenido de terceros (fotos) | Si eres microempresa hay exenciones; en cualquier caso conviene un punto de contacto visible y una vía para avisar de contenido ilegal. **No resuelto por el código**: el administrador puede ocultar o borrar en un clic |
-| Menores | **Pendiente de tu decisión**: el formulario de alta es el de Joomla. Si tu sitio admite menores de 14 años (LOPDGDD art. 7), el consentimiento no puede darlo el menor | No hay verificación de edad |
-| Consumo, IA, CRA, NIS2, EAA, VeriFactu | No aplican a este componente tal como está | — |
+| RGPD / LOPDGDD | Sí, si hay usuarios en la UE | Responsable: el sitio |
+| ePrivacy 5.3 / LSSI 22.2 | Solo almacenamiento funcional (preferencia de mapa y sesión) | Sin aviso de cookies propio por este componente |
+| Google Fonts (LG München I, 20/01/2022) | No aplica | La compilación impide que vuelva |
+| LSSI 21 (comunicaciones comerciales) | Probablemente no: el resumen es un servicio que la persona pide | Con baja desde el mapa. Confírmalo |
+| DSA (alojamiento) | Sí | Hay botón de denuncia, motivo guardado y moderación. Falta tu **correo de contacto** (Opciones) y las condiciones |
+| Menores | **Tu decisión**: el alta es la de Joomla. Con menores de 14 años (LOPDGDD art. 7) el consentimiento no lo da el menor | Añade aviso de edad mínima en el registro |
+| Consumo, IA, CRA, NIS2, EAA, VeriFactu | No aplican a este componente | — |
 
-## 5. El sorteo — qué comprobar antes de usarlo
-El código solo ofrece la **lista** y un **sorteo al azar** con una fuente de aleatoriedad del sistema, sin repetir personas, y deja constancia sin datos personales. Lo demás es del organizador:
-1. **Bases públicas** y una forma clara de participar (aquí: publicar viajes con fotos). Edad mínima, fechas, premio, cómo se elige y cómo se avisa a quien gana.
-2. **Informar antes** a quien participa de que su nombre y correo se usarán para el sorteo (RGPD art. 13) y de cuánto tiempo se guardan.
-3. **Minimizar**: descarga el CSV solo si lo necesitas, bórralo al terminar.
-4. **Régimen legal del sorteo**: según fuentes secundarias consultadas (no oficiales), los sorteos promocionales sin pago ni sobreprecio quedan fuera de la Ley 13/2011 (art. 2.2) y no necesitan autorización estatal; si el premio es de cierto valor puede haber **obligaciones fiscales** (retenciones del IRPF al ganador, impuestos sobre actividades de juego). **Compruébalo en el BOE, la DGOJ, la Agencia Tributaria y tu comunidad autónoma, o con un abogado**: no lo he podido verificar en fuentes oficiales.
-5. Las cuentas bloqueadas no participan; las personas que piden **no aparecer en el ranking** sí pueden participar en el sorteo (son cosas distintas): dilo en las bases.
+## 6. El sorteo — qué comprobar antes de usarlo
+1. **Bases públicas**: cómo participar, fechas, premio, edad mínima, cómo se elige y se avisa a quien gana.
+2. **Informar antes** de que nombre y correo se usarán para el sorteo y cuánto tiempo (RGPD art. 13).
+3. **Minimizar**: descarga el CSV solo si lo necesitas y bórralo al terminar.
+4. **Régimen legal**: comprueba en el BOE, la DGOJ, la Agencia Tributaria y tu comunidad autónoma, o con un abogado, si hay obligaciones fiscales o de autorización (no se ha verificado en fuentes oficiales).
+5. Quien pide **no aparecer en el ranking** sí puede participar en el sorteo: dilo en las bases.
 
-## 6. Lo que te falta (documentos, no código)
-- Política de privacidad que cite este tratamiento (finalidad, base, conservación, derechos y cómo ejercerlos: pide el acceso o el borrado desde las herramientas de Privacidad de Joomla).
+## 7. Lo que te falta (documentos y ajustes, no código)
+- Política de privacidad que cite este tratamiento, el captcha y Engage (finalidad, base, conservación, derechos).
 - Aviso legal con los datos del prestador (LSSI art. 10).
-- Texto de las bases del sorteo.
-- Un punto de contacto para avisos de contenido (DSA art. 16, si te alcanza).
-- Contrato de encargo (art. 28) si lo alojas para otros.
-- Protocolo de brechas (avisar a la AEPD en 72 horas, arts. 33-34).
-- Registro de actividades del tratamiento (art. 30) si procede por tamaño.
+- **Opciones → Correos**: rellenar «Correo de contacto para avisos» y «Quién envía los correos».
+- Aviso de edad mínima (14 años) en el registro de Joomla.
+- Bases del sorteo; contrato de encargo si lo alojas para otros; protocolo de brechas (AEPD en 72 horas); registro de actividades si procede.
 
-## 7. Lo que NO está cubierto
-Edad de los usuarios, contenido ilegal subido por usuarios (hay moderación, no detección automática), los comentarios (los trata la extensión que elijas), copias de seguridad de tu servidor (contienen las fotos hasta que roten) y los correos del servidor (tu proveedor de correo los ve).
+## 8. Lo que NO está cubierto
+Edad real de los usuarios, contenido ilegal subido por usuarios (hay moderación y denuncia, no detección automática), los comentarios (los trata la extensión que elijas), las copias de seguridad del servidor y los correos (tu proveedor los ve).
 
-## Fuentes consultadas (a 13/10/2026)
-RGPD arts. 4, 5, 6, 13, 15, 17, 28, 30, 32-34; LOPDGDD art. 7; LSSI art. 10 y 22; LG München I 20/01/2022 (3 O 17493/20); búsqueda sobre sorteos promocionales (fuentes secundarias, sin confirmar en el BOE).
+## Fuentes consultadas (a 15/10/2026)
+RGPD arts. 4, 5, 6, 13, 15, 17, 21, 28, 30, 32-34; LOPDGDD art. 7; LSSI arts. 10, 21 y 22; DSA arts. 16, 17 y 19; LG München I 20/01/2022 (3 O 17493/20).

@@ -490,6 +490,7 @@
 		$('fiS').textContent = [t.p, t.yr > 0 ? String(t.yr) : '', t.by ? fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) : ''].filter(Boolean).join(' · ');
 		$('fiPend').hidden = !t.pending;
 		$('fDel').hidden = !(t.mine || O.canDelete);
+		if ($('fRep')) { $('fRep').hidden = !!t.mine || !!t.pending; }
 		const th = $('fiTh'); th.replaceChildren(...(t.ph.length > 1 ? t.ph.map((p, k) => h('button', { type: 'button', class: 'mv-th', 'aria-label': fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), k + 1, t.ph.length), onclick: () => fiShow(k, k > VWR.i ? 1 : -1) }, h('img', { alt: '', src: photoSrc(p.id) }))) : []));
 		for (const id of ['fiPrev', 'fiNext']) { $(id).hidden = t.ph.length < 2; }
 		fi.hidden = false; syncFollow(); $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
@@ -520,6 +521,36 @@
 		dlg.addEventListener('cancel', () => dlg.remove()); dlg.showModal(); no.focus();
 	}
 	if ($('fDel')) { $('fDel').onclick = askDelete; }
+	/* report a trip to the moderators (notice-and-action): reason + optional note; guests only see where to write */
+	function askReport() {
+		const t = VWR.t; if (!t || typeof HTMLDialogElement !== 'function') { return; }
+		const dlg = document.createElement('dialog'); dlg.className = 'mv-dlg';
+		const no = h('button', { type: 'button', class: 'mv-btn mv-btn-soft', text: T('COM_MAPAVIAJES_JS_REPORT_CANCEL') });
+		const msg = h('p', { class: 'mv-dlg-msg', role: 'alert' });
+		const parts = [h('strong', { text: T('COM_MAPAVIAJES_JS_REPORT_TITLE') }), h('p', { text: t.t })];
+		const sel = h('select', { class: 'mv-input', 'aria-label': T('COM_MAPAVIAJES_JS_REPORT_TITLE') });
+		for (const r of ['ILLEGAL', 'RIGHTS', 'PRIVACY', 'MINOR', 'OTHER']) { sel.append(h('option', { value: r.toLowerCase(), text: T('COM_MAPAVIAJES_REPORT_REASON_' + r) })); }
+		const note = h('textarea', { class: 'mv-input', maxlength: '500', rows: '3', placeholder: T('COM_MAPAVIAJES_JS_REPORT_NOTE'), 'aria-label': T('COM_MAPAVIAJES_JS_REPORT_NOTE') });
+		const ok = h('button', { type: 'button', class: 'mv-btn mv-btn-danger', text: T('COM_MAPAVIAJES_JS_REPORT_SEND') });
+		parts.push(h('p', { class: 'mv-help', text: T('COM_MAPAVIAJES_JS_REPORT_HELP') }), sel, note);
+		if (O.contactEmail) { parts.push(h('p', { class: 'mv-help', text: fmt(T('COM_MAPAVIAJES_JS_REPORT_CONTACT'), O.contactEmail) })); }
+		parts.push(msg, h('div', { class: 'mv-dlg-row' }, no, ok));
+		dlg.append(...parts); document.body.append(dlg);
+		const done = () => { try { dlg.close(); } catch (_) { /* already closed */ } dlg.remove(); };
+		no.onclick = done;
+		ok.onclick = async () => {
+			ok.disabled = true; no.disabled = true; msg.textContent = '';
+			const fd = new FormData(); fd.append(O.token, '1'); fd.append('id', String(t.id)); fd.append('reason', sel.value); fd.append('note', note.value);
+			try {
+				const r = await fetch(O.reportUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
+				const j = await r.json();
+				if (!r.ok || !j.ok) { msg.textContent = (j && typeof j.error === 'string') ? j.error : T('COM_MAPAVIAJES_JS_REPORT_ERR'); ok.disabled = false; no.disabled = false; return; }
+				done(); const f = $('fMsg'); f.textContent = T('COM_MAPAVIAJES_JS_REPORT_DONE'); f.classList.add('mv-show');
+			} catch (_) { msg.textContent = T('COM_MAPAVIAJES_JS_REPORT_ERR'); ok.disabled = false; no.disabled = false; }
+		};
+		dlg.addEventListener('cancel', () => dlg.remove()); dlg.showModal(); no.focus();
+	}
+	if ($('fRep')) { $('fRep').onclick = askReport; }
 	function closeFi() {
 		if (fi.hidden) { return; }
 		fi.hidden = true; if ($('fiFrame')) { $('fiFrame').removeAttribute('src'); }
@@ -992,6 +1023,7 @@
 			if (!$('year').value) { $('yerr').textContent = T('COM_MAPAVIAJES_JS_E_YEAR'); $('year').setAttribute('aria-invalid', 'true'); errs.push($('year')); }
 			if (!$('title').value.trim()) { $('terr').textContent = T('COM_MAPAVIAJES_JS_E_TITLE'); $('title').setAttribute('aria-invalid', 'true'); errs.push($('title')); }
 			if (!F.photos.length) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PHOTOS'); errs.push($('files')); }
+			$('rerr').textContent = ''; if (!$('rights').checked) { $('rerr').textContent = T('COM_MAPAVIAJES_JS_E_RIGHTS'); errs.push($('rights')); }
 			$('summary').textContent = errs.length ? T('COM_MAPAVIAJES_JS_E_MISSING') : '';
 			if (errs.length) { const f = errs[0]; (f.id === 'mv-files' ? $('drop') : f).scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); if (f.id !== 'mv-files') { f.focus({ preventScroll: true }); } }
 			return errs.length === 0;
@@ -1004,7 +1036,7 @@
 			try { blobs = await Promise.all(F.photos.map((p) => prepare(p.file))); } catch (_) { setBusy(false); $('perr').textContent = fmt(T('COM_MAPAVIAJES_JS_E_SIZE'), ''); return; }
 			const fd = new FormData();
 			fd.append(O.token, '1'); fd.append('album_id', String(O.albumId)); fd.append('title', $('title').value); fd.append('trip_year', $('year').value); fd.append('place', F.pt.label);
-			fd.append('lat', F.pt.la.toFixed(6)); fd.append('lon', F.pt.lo.toFixed(6)); fd.append('website', $('website').value);
+			fd.append('lat', F.pt.la.toFixed(6)); fd.append('lon', F.pt.lo.toFixed(6)); fd.append('website', $('website').value); fd.append('rights', $('rights').checked ? '1' : '0');
 			const r = document.querySelector('input[name="mv-comments"]:checked'), allow = r ? r.value === '1' : false;
 			fd.append('allow_comments', allow ? '1' : '0'); fd.append('notify', allow && $('sub') && $('sub').checked ? '1' : '0');
 			blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', F.photos[i].cap); });

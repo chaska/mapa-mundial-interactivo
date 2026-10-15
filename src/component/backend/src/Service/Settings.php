@@ -74,6 +74,20 @@ final class Settings
 	public function rankEnabled(): bool   { return (int) $this->params->get('rank_enabled', 1) === 1; }
 	/** E-mail the author when a moderator publishes or rejects their trip. */
 	public function notifyAuthor(): bool  { return (int) $this->params->get('notify_author', 1) === 1; }
+	/** Where people can write to flag content (shown in the map's report window); empty = not shown. */
+	public function contactEmail(): string
+	{
+		$v = trim((string) $this->params->get('contact_email', ''));
+
+		return filter_var($v, FILTER_VALIDATE_EMAIL) !== false ? $v : '';
+	}
+
+	/** Who sends the e-mails (name / company and contact), printed at the bottom of every message; empty = only the site name. */
+	public function senderLine(): string
+	{
+		return mb_substr(trim((string) preg_replace('/[\p{C}]+/u', ' ', (string) $this->params->get('sender_line', ''))), 0, 200, 'UTF-8');
+	}
+
 	/** The weekly summary of new trips by the people someone follows (only people who switched it on in the map get it). */
 	public function notifyFollows(): bool { return (int) $this->params->get('notify_follows', 1) === 1; }
 	/** E-mail the podium of the week when it closes (off by default: it is not a transactional message). */

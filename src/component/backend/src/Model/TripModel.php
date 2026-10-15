@@ -102,6 +102,9 @@ class TripModel extends AdminModel
 				$del2 = $pk;
 				$db->setQuery($db->getQuery(true)->delete($db->quoteName('#__mapaviajes_reactions'))->where($db->quoteName('trip_id') . ' = :d2')->bind(':d2', $del2, ParameterType::INTEGER))->execute();
 
+				$del3 = $pk;
+				$db->setQuery($db->getQuery(true)->delete($db->quoteName('#__mapaviajes_reports'))->where($db->quoteName('trip_id') . ' = :d3')->bind(':d3', $del3, ParameterType::INTEGER))->execute();
+
 				foreach ($names as $name)
 				{
 					$storage->delete((string) $name);

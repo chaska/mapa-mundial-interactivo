@@ -176,6 +176,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<button type="button" id="mv-fFan" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17.2 6.4 20.3l1.2-6.3L3 9.6l6.3-.8z"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_FAN'); ?></span><i id="mv-fFanN"></i></button>
 				<?php if ($this->commentsOn) : ?><button type="button" id="mv-fCom" hidden><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span><?php echo $t('COM_MAPAVIAJES_JS_COMMENTS_BTN'); ?></span></button><?php endif; ?>
 				<button type="button" id="mv-fCmSw" class="mv-fi-cmsw" hidden><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span></span></button>
+				<button type="button" id="mv-fRep" class="mv-fi-rep" hidden><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_REPORT'); ?></span></button>
 				<button type="button" id="mv-fDel" class="mv-fi-del" hidden><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_DELETE'); ?></span></button>
 			</div>
 			<p class="mv-v-msg mv-fi-msg" id="mv-fMsg" aria-live="polite"></p>
@@ -299,6 +300,11 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				</label>
 			</fieldset>
 			<?php endif; ?>
+
+			<label class="mv-check" for="mv-rights"><input type="checkbox" id="mv-rights">
+				<span><?php echo $t('COM_MAPAVIAJES_FIELD_RIGHTS'); ?><small><?php echo $t('COM_MAPAVIAJES_FIELD_RIGHTS_HELP'); ?></small></span>
+			</label>
+			<p class="mv-err" id="mv-rerr" role="alert"></p>
 
 			<div class="mv-sr" aria-hidden="true"><label for="mv-website">Website</label><input type="text" id="mv-website" tabindex="-1" autocomplete="off" value=""></div>
 
