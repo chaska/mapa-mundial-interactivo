@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.13.1 — 2026-10-16
+- **Arrastre del mapa: las chinchetas ya no se adelantan al mapa en ningún estilo.** El mapa y las chinchetas eran dos capas independientes que el navegador movía por separado; en «Pergamino» el papel con textura las unía en una sola superficie y por eso ahí no se notaba. Ahora el mapa, la textura y las chinchetas viven en UNA sola capa (`#mv-pan`) y arrastrar mueve solo esa, así que no pueden separarse. La prueba `99` comprueba la capa única.
+
 ## 1.13.0 — 2026-10-15 (cumplimiento: denunciar contenido, derechos de las fotos, remitente)
 Segunda pasada de la pre-auditoría legal (`docs/AUDITORIA-LEGAL-mapa-viajes-2026-10-15.md`).
 - **Botón «Denunciar» en la ficha de los viajes ajenos** (aviso y acción, DSA art. 16): ventana propia con motivo (contenido ilegal, fotos sin permiso, salgo yo sin permiso, se ve un menor, otro) y nota opcional. Una denuncia por persona y viaje, máximo 10 por hora, mismas puertas que el resto de escrituras (POST + cabecera AJAX + token + sesión). **No oculta nada sola**: avisa por correo (sin enlaces) a los moderadores y aparece en el administrador: filtro **«Denunciados»** con su recuento, etiqueta «N denuncias» en cada tarjeta y botón «Descartar denuncias». Se borran con el viaje, y la persona que denunció las ve en su exportación de datos y se borran al eliminar su cuenta. Nadie denuncia su propio viaje.

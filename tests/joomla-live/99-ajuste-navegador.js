@@ -32,12 +32,12 @@ const sphere = (page) => page.evaluate(() => { const b = document.getElementById
     await dp.goto(BASE + '/index.php?option=com_mapaviajes'); await dp.waitForSelector('#mv-svg path.mv-sphere[d]'); await dp.waitForTimeout(800);
     for (let i = 0; i < 3; i++) { await dp.click('#mv-zin'); await dp.waitForTimeout(250); }
     await dp.waitForTimeout(900);
-    const rects = () => dp.evaluate(() => { const s = document.getElementById('mv-sphere').getBoundingClientRect(), pin = document.querySelector('.mv-pin:not([hidden])'); const q = pin ? pin.getBoundingClientRect() : null; return { sx: s.left, sy: s.top, px: q ? q.left : null, py: q ? q.top : null, ts: document.getElementById('mv-svg').style.transform, tp: document.getElementById('mv-pins').style.transform }; });
+    const rects = () => dp.evaluate(() => { const s = document.getElementById('mv-sphere').getBoundingClientRect(), pin = document.querySelector('.mv-pin:not([hidden])'); const q = pin ? pin.getBoundingClientRect() : null; return { sx: s.left, sy: s.top, px: q ? q.left : null, py: q ? q.top : null, ts: document.getElementById('mv-pan').style.transform, tp: document.getElementById('mv-svg').style.transform + document.getElementById('mv-pins').style.transform }; });
     const before = await rects();
     afirma(before.px !== null, 'hay una chincheta visible para medir');
     await dp.mouse.move(600, 420); await dp.mouse.down(); await dp.mouse.move(660, 450, { steps: 3 }); await dp.mouse.move(720, 480, { steps: 3 });
     const during = await rects();
-    afirma(during.ts !== '' && during.ts === during.tp, 'durante el arrastre mapa y capa de chinchetas llevan EXACTAMENTE la misma transformacion (' + during.ts + ')');
+    afirma(during.ts !== '' && during.tp === '' && (await dp.evaluate(() => document.getElementById('mv-pan').contains(document.getElementById('mv-svg')) && document.getElementById('mv-pan').contains(document.getElementById('mv-pins')))), 'durante el arrastre mapa y chinchetas son UNA sola capa con una sola transformacion (' + during.ts + ')');
     const dMap = [during.sx - before.sx, during.sy - before.sy], dPin = [during.px - before.px, during.py - before.py];
     afirma(Math.abs(dMap[0] - dPin[0]) <= 1 && Math.abs(dMap[1] - dPin[1]) <= 1 && (Math.abs(dMap[0]) > 20 || Math.abs(dMap[1]) > 20), 'y se desplazan lo mismo en pantalla (mapa ' + dMap.map(Math.round) + ' / chincheta ' + dPin.map(Math.round) + ')');
     await dp.mouse.up(); await dp.waitForTimeout(200);

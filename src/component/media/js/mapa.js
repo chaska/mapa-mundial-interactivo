@@ -51,7 +51,7 @@
 	/* ---------------------------------------------------------------- state */
 	let TRIPS = [], ALL = [];
 	let FW = { keys: new Set(), seen: 0, digest: 0 }; // who I follow, when I last looked at the news, the weekly-mail switch
-	const stage = $('stage'), svg = $('svg'), worldG = $('world'), pinsEl = $('pins');
+	const stage = $('stage'), svg = $('svg'), worldG = $('world'), pinsEl = $('pins'), pan = $('pan');
 	const V = { k: 1, tx: 0, ty: 0 };
 	/* Dragging moves the map and the pins layer with ONE compositor transform each (same frame, no repaint of the vector map per move);
 	   the real view V is updated once, when the finger is lifted. PAD is the extra map drawn around the screen so no edge shows meanwhile. */
@@ -80,13 +80,13 @@
 	}
 	function foldDrag() {
 		if (!dragX && !dragY) { return; }
-		V.tx += dragX; V.ty += dragY; dragX = 0; dragY = 0; svg.style.transform = ''; pinsEl.style.transform = '';
+		V.tx += dragX; V.ty += dragY; dragX = 0; dragY = 0; pan.style.transform = '';
 	}
 	function dragBy(dx, dy) {
 		const t = clamp({ k: V.k, tx: V.tx + dragX + dx, ty: V.ty + dragY + dy });
 		dragX = t.tx - V.tx; dragY = t.ty - V.ty;
 		const s = 'translate(' + dragX + 'px,' + dragY + 'px)';
-		svg.style.transform = s; pinsEl.style.transform = s;
+		pan.style.transform = s;
 	}
 	function apply() {
 		foldDrag();

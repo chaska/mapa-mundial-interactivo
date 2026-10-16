@@ -40,6 +40,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 </svg>
 
 <main class="mv-stage" id="mv-stage" tabindex="0" aria-label="<?php echo $t('COM_MAPAVIAJES_MAP_LABEL'); ?>">
+	<div id="mv-pan">
 	<svg id="mv-svg" role="img" aria-label="<?php echo $t('COM_MAPAVIAJES_MAP_SVG'); ?>"><g id="mv-world">
 		<path class="mv-sphere" id="mv-sphere"/>
 		<path class="mv-grat" id="mv-grat"/>
@@ -49,6 +50,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	</g></svg>
 	<div class="mv-grain"></div>
 	<div id="mv-pins"></div>
+	</div>
 </main>
 
 <header class="mv-top mv-on-ocean<?php echo (string) ($this->album['logo'] ?? '') !== '' ? ' mv-has-logo' : ''; ?>">

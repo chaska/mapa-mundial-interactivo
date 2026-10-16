@@ -24,12 +24,14 @@ body{margin:0}
 .mv-stage{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:crosshair;background:
   radial-gradient(120% 90% at 30% 20%,#1a3ba6 0%,var(--ocean) 45%,var(--ocean-deep) 100%);user-select:none;-webkit-user-select:none}
 .mv-stage.mv-drag{cursor:grabbing}
-#mv-svg{position:absolute;left:-160px;top:-160px;width:calc(100% + 320px);height:calc(100% + 320px);display:block;will-change:transform}
+/* the map, the paper grain and the pins live in ONE layer: dragging moves that single layer, so pins can never travel ahead of the map */
+#mv-pan{position:absolute;inset:0;will-change:transform;isolation:isolate}
+#mv-svg{position:absolute;left:-160px;top:-160px;width:calc(100% + 320px);height:calc(100% + 320px);display:block}
 .mv-sphere{fill:var(--ocean)}
 .mv-grat{fill:none;stroke:var(--ocean-line);stroke-width:1;vector-effect:non-scaling-stroke}
 .mv-land path{fill:var(--land);stroke:var(--land-edge);stroke-width:.6;vector-effect:non-scaling-stroke;stroke-linejoin:round;transition:fill .25s}
 .mv-land path:hover{fill:var(--land-hover)}
-#mv-pins{position:absolute;inset:0;pointer-events:none;will-change:transform}
+#mv-pins{position:absolute;inset:0;pointer-events:none}
 
 .mv-pin{position:absolute;left:0;top:0;pointer-events:auto;background:none;border:0;padding:0;cursor:pointer;will-change:transform;line-height:0}
 .mv-pin-body{display:block;transform-origin:50% 100%;transition:transform .25s var(--ease);animation:mv-drop .5s var(--ease) both}
@@ -331,7 +333,7 @@ body{margin:0}
 .mv-root{background:#bfa56f}
 .mv-stage{background:radial-gradient(120% 95% at 50% 45%,#ead9ae 0%,#d9c28f 55%,#b8985f 100%)}
 .mv-stage::after{inset:9px;border:2px solid rgba(94,58,26,.55);border-radius:3px;box-shadow:inset 0 0 0 5px transparent,0 0 0 1px rgba(94,58,26,.0)}
-.mv-grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.55;background:
+.mv-grain{position:absolute;inset:-240px;pointer-events:none;mix-blend-mode:multiply;opacity:.55;background:
   radial-gradient(ellipse 85% 80% at 50% 48%,transparent 52%,rgba(100,55,15,.45) 100%),
   url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .42  0 0 0 0 .27  0 0 0 0 .1  0 0 0 .55 0'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>"),
   radial-gradient(circle at 18% 32%,rgba(120,70,20,.2),transparent 22%),radial-gradient(circle at 74% 68%,rgba(120,70,20,.17),transparent 26%),radial-gradient(circle at 56% 14%,rgba(120,70,20,.12),transparent 18%),radial-gradient(circle at 90% 20%,rgba(120,70,20,.14),transparent 16%)}
