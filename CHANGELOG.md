@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## 1.14.0 — 2026-10-17 (CSS propio y entradas extra en el menú)
+- **Opciones → Mapa → «CSS propio del mapa»**: un cuadro de texto para quitar o mover lo que otras extensiones (cookies, chat, accesibilidad…) ponen encima del mapa, p. ej. `.nexusconsent-revoke-fab{display:none!important}`. Solo se aplica en la pantalla del mapa; se limita a 5000 caracteres y se le quitan los signos `<` y `>` (no puede sacar etiquetas).
+- **Opciones → Mapa → «Entradas extra del menú ☰»**: una por línea, `Texto | qué hacer`. «Qué hacer» es una dirección (`https://…` o `/ruta`) o un **selector CSS**: la entrada pulsa ese elemento de la página aunque esté oculto con el CSS propio. Así se esconde el icono de otra extensión y se ofrece dentro del menú (`Cookies | .nexusconsent-revoke-fab`). Máximo 8; las de selector solo aparecen si el elemento existe; se descartan `javascript:`, `data:` y entradas vacías. Sirve para cualquier módulo, plugin o componente, sin tocar el código del mapa.
+- Prueba nueva: `110-css-menu-navegador.js` (8).
+
 ## 1.13.1 — 2026-10-16
 - **Arrastre del mapa: las chinchetas ya no se adelantan al mapa en ningún estilo.** El mapa y las chinchetas eran dos capas independientes que el navegador movía por separado; en «Pergamino» el papel con textura las unía en una sola superficie y por eso ahí no se notaba. Ahora el mapa, la textura y las chinchetas viven en UNA sola capa (`#mv-pan`) y arrastrar mueve solo esa, así que no pueden separarse. La prueba `99` comprueba la capa única.
 

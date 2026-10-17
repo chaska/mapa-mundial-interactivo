@@ -660,8 +660,10 @@
 	if ($('btnMenu') && $('menu')) {
 		const menu = $('menu'), mb = $('btnMenu');
 		const closeMenu = (back) => { if (!menu.hidden) { menu.hidden = true; mb.setAttribute('aria-expanded', 'false'); if (back) { mb.focus({ preventScroll: true }); } } };
-		mb.onclick = (ev) => { ev.stopPropagation(); if (!menu.hidden) { closeMenu(false); return; } menu.hidden = false; mb.setAttribute('aria-expanded', 'true'); const f = menu.querySelector('button, a, select'); if (f) { f.focus({ preventScroll: true }); } };
-		menu.addEventListener('click', (ev) => { if (ev.target instanceof Element && ev.target.closest('button, a')) { closeMenu(false); } });
+		/* extra entries: each one clicks an element of another extension (even one the site's CSS hides); it only shows while that element exists */
+		const xsel = (b) => { try { return document.querySelector(b.dataset.sel); } catch (_) { return null; } };
+		mb.onclick = (ev) => { ev.stopPropagation(); if (!menu.hidden) { closeMenu(false); return; } menu.querySelectorAll('button[data-sel]').forEach((b) => { b.hidden = !xsel(b); }); menu.hidden = false; mb.setAttribute('aria-expanded', 'true'); const f = menu.querySelector('button, a, select'); if (f) { f.focus({ preventScroll: true }); } };
+		menu.addEventListener('click', (ev) => { const xb = ev.target instanceof Element ? ev.target.closest('button[data-sel]') : null; if (xb) { const el = xsel(xb); if (el && typeof el.click === 'function') { setTimeout(() => el.click(), 0); } } if (ev.target instanceof Element && ev.target.closest('button, a')) { closeMenu(false); } });
 		document.addEventListener('click', (ev) => { if (!menu.hidden && ev.target instanceof Node && !menu.contains(ev.target) && !mb.contains(ev.target)) { closeMenu(false); } });
 		document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !menu.hidden) { closeMenu(true); } });
 	}

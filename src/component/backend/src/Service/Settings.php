@@ -39,6 +39,54 @@ final class Settings
 	public function perDay(): int         { return $this->int('trips_per_day', 10, 1, 200); }
 	public function reviewFirst(): bool   { return (int) $this->params->get('review_first', 1) === 1; }
 	public function commentsDefault(): bool { return (int) $this->params->get('comments_default', 1) === 1; }
+	/** The site's own CSS for the map page (hide or move what other extensions put on top of the map). No markup can get out of it. */
+	public function customCss(): string
+	{
+		$css = (string) $this->params->get('custom_css', '');
+
+		return trim(str_replace(['<', '>', "\0"], '', mb_substr($css, 0, 5000, 'UTF-8')));
+	}
+
+	/**
+	 * Extra entries for the map's menu, one per line: "Text | what to do". What to do is a web address (http, https or a path from the
+	 * site root) or a CSS selector: the entry then clicks that element of the page (even if the CSS hides it), so the site can move a
+	 * button of another extension (cookies, chat, accessibility...) into the menu.
+	 *
+	 * @return list<array{label: string, kind: string, value: string}>
+	 */
+	public function menuExtras(): array
+	{
+		$out = [];
+
+		foreach (preg_split('/\R/u', (string) $this->params->get('menu_extras', '')) ?: [] as $line)
+		{
+			$parts = explode('|', $line, 2);
+			$label = trim((string) preg_replace('/[\p{C}<>]+/u', ' ', $parts[0]));
+			$value = trim($parts[1] ?? '');
+
+			if ($label === '' || $value === '' || mb_strlen($label) > 40 || \strlen($value) > 200 || preg_match('/[<>"\x00-\x1f]/', $value) === 1)
+			{
+				continue;
+			}
+
+			if (preg_match('#^(https?://|/(?!/))#i', $value) === 1)
+			{
+				$out[] = ['label' => $label, 'kind' => 'url', 'value' => $value];
+			}
+			elseif (preg_match('/^(javascript|data|vbscript):/i', $value) !== 1)
+			{
+				$out[] = ['label' => $label, 'kind' => 'sel', 'value' => $value];
+			}
+
+			if (\count($out) >= 8)
+			{
+				break;
+			}
+		}
+
+		return $out;
+	}
+
 	/** The look of the map (a name from MapStyles; anything unknown falls back to the built-in parchment). */
 	public function mapStyle(): string
 	{

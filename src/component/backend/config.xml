@@ -15,6 +15,8 @@
 
 	<fieldset name="map" label="COM_MAPAVIAJES_CONFIG_MAP" description="COM_MAPAVIAJES_CONFIG_MAP_DESC">
 		<field name="map_style" type="Mapstyle" addfieldprefix="Chaska\Component\Mapaviajes\Administrator\Field" label="COM_MAPAVIAJES_CONFIG_MAP_STYLE" description="COM_MAPAVIAJES_CONFIG_MAP_STYLE_DESC" default="pergamino" filter="word" />
+		<field name="custom_css" type="textarea" label="COM_MAPAVIAJES_CONFIG_CUSTOM_CSS" description="COM_MAPAVIAJES_CONFIG_CUSTOM_CSS_DESC" default="" rows="6" cols="60" filter="raw" hint=".nexusconsent-revoke-fab{display:none!important}" />
+		<field name="menu_extras" type="textarea" label="COM_MAPAVIAJES_CONFIG_MENU_EXTRAS" description="COM_MAPAVIAJES_CONFIG_MENU_EXTRAS_DESC" default="" rows="4" cols="60" filter="raw" hint="Cookies | .nexusconsent-revoke-fab" />
 		<field name="map_user_choice" type="radio" layout="joomla.form.field.radio.switcher" label="COM_MAPAVIAJES_CONFIG_MAP_CHOICE" description="COM_MAPAVIAJES_CONFIG_MAP_CHOICE_DESC" default="0" filter="integer">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>

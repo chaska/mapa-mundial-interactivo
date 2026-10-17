@@ -101,6 +101,13 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 		<a class="mv-btn mv-btn-soft mv-exit" href="<?php echo $e(Uri::root(true) ?: '/'); ?>" aria-label="<?php echo $t('COM_MAPAVIAJES_BACK_TO_SITE'); ?>">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span><?php echo $t('COM_MAPAVIAJES_BACK_TO_SITE'); ?></span>
 		</a>
+		<?php foreach ($this->menuExtras as $x) : ?>
+			<?php if ($x['kind'] === 'url') : ?>
+			<a class="mv-btn mv-btn-soft mv-xmenu" href="<?php echo $e($x['value']); ?>" rel="noopener"><span><?php echo $e($x['label']); ?></span></a>
+			<?php else : ?>
+			<button class="mv-btn mv-btn-soft mv-xmenu" type="button" data-sel="<?php echo $e($x['value']); ?>" hidden><span><?php echo $e($x['label']); ?></span></button>
+			<?php endif; ?>
+		<?php endforeach; ?>
 		</div>
 	</div>
 </header>

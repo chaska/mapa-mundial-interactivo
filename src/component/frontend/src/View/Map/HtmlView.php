@@ -37,6 +37,9 @@ class HtmlView extends BaseHtmlView
 	protected string $mapStyle = 'pergamino';
 	protected bool $mapChoice = false;
 
+	/** @var list<array{label: string, kind: string, value: string}> */
+	protected array $menuExtras = [];
+
 	/** @var array<string, array{label: string, water: string, land: string}> */
 	protected array $mapStyles = [];
 	protected int $maxPhotos = 5;
@@ -103,6 +106,7 @@ class HtmlView extends BaseHtmlView
 		$this->selfReact = $settings->canSelfReact($user);
 		$this->mapStyle  = $settings->mapStyle();
 		$this->mapChoice = $settings->mapUserChoice();
+		$this->menuExtras = $settings->menuExtras();
 		$this->mapStyles = \Chaska\Component\Mapaviajes\Administrator\Service\MapStyles::all();
 		$this->canSubmit = $this->album !== null && $user->authorise('mapaviajes.submit', 'com_mapaviajes') && ImageProcessor::isSupported();
 
@@ -168,6 +172,11 @@ class HtmlView extends BaseHtmlView
 		$wa->registerAndUseStyle('com_mapaviajes.fonts', 'com_mapaviajes/fonts.css', ['version' => 'auto'])
 			->registerAndUseStyle('com_mapaviajes.map', 'com_mapaviajes/mapa.css', ['version' => 'auto'], [], ['com_mapaviajes.fonts'])
 			->registerAndUseScript('com_mapaviajes.map', 'com_mapaviajes/mapa.js', ['version' => 'auto'], ['defer' => true], ['core']);
+
+		if (($css = $settings->customCss()) !== '')
+		{
+			$wa->addInlineStyle($css, [], [], ['com_mapaviajes.map']);
+		}
 
 		// Only the looks that can be shown: the chosen one, or all of them when each person may pick (each file is a few kilobytes)
 		foreach (array_keys($this->mapStyles) as $id)
