@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.14.2 — 2026-10-22
+- **Corregido: el correo de «viaje nuevo» a los moderadores llegaba con los textos sin traducir** (`COM_MAPAVIAJES_MAIL_ADMIN_NEW` y `COM_MAPAVIAJES_MAIL_ADMIN_BODY` en lugar del asunto y el cuerpo). El asunto y el cuerpo se componían con el idioma de la página del visitante, que no tiene los textos de los correos. Ahora los compone el propio sistema de correos, con los textos del sitio, igual que el resto de avisos. La prueba `108` comprueba que no quede ninguna clave `COM_MAPAVIAJES_` a la vista.
+
 ## 1.14.1 — 2026-10-21 (islas)
 - **Islas Canarias, Baleares, Madeira y Azores en TODOS los mapas** (los seis estilos comparten el mismo dibujo). El mapa venía de Natural Earth 1:110m, que se deja esas islas fuera. Se han añadido desde Natural Earth 1:10m (dominio público): 8 islas Canarias, 5 Baleares, 5 de Madeira (con Porto Santo y las Desertas) y las 9 de las Azores. Cada archipiélago cuenta como parte de España o de Portugal, así que un álbum en Tenerife o en Funchal se agrupa con su país igual que uno en la península. El archivo crece unos 14 KB. Herramienta: `tools/add-islands.mjs`.
 - Prueba nueva: `112-islas.js`.

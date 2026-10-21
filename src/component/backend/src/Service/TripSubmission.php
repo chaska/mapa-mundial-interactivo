@@ -15,7 +15,6 @@ use Chaska\Component\Mapaviajes\Administrator\Security\ImageProcessor;
 use Chaska\Component\Mapaviajes\Administrator\Security\SanitizeException;
 use Chaska\Component\Mapaviajes\Administrator\Security\TextSanitizer;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\User\User;
 use Joomla\Database\DatabaseInterface;
@@ -498,14 +497,7 @@ final class TripSubmission
 			return;
 		}
 
-		$flat = static fn (string $s): string => trim(preg_replace('/[\r\n\t]+/', ' ', $s) ?? '');
-		$site = $flat((string) Factory::getApplication()->get('sitename', 'Site'));
-
-		(new Notifier($this->db, $this->settings))->administrators(
-			array_values($to),
-			'[' . $site . '] ' . Text::_($needsReview ? 'COM_MAPAVIAJES_MAIL_ADMIN_REVIEW' : 'COM_MAPAVIAJES_MAIL_ADMIN_NEW'),
-			sprintf(Text::_('COM_MAPAVIAJES_MAIL_ADMIN_BODY'), $flat($album), $flat($title), $flat((string) $author->username), $photos)
-		);
+		(new Notifier($this->db, $this->settings))->newTrip(array_values($to), $album, $title, (string) $author->username, $photos, $needsReview);
 	}
 
 	private function intField(mixed $v): int

@@ -182,19 +182,37 @@ final class Notifier
 	/** The mail to the people who run the site (a new trip arrived): same look, in the site's language, no link. @param list<string> $to */
 	public function administrators(array $to, string $subject, string $body): void
 	{
-		$tag  = (string) Factory::getApplication()->get('language', 'en-GB');
-		$lang = Language::getInstance(preg_match('/^[a-z]{2,3}-[A-Z]{2}$/', $tag) === 1 ? $tag : 'en-GB');
-		$lang->load('com_mapaviajes', JPATH_ADMINISTRATOR, null, true);
-		$this->send($to, $subject, $body, $lang);
+		$this->send($to, $subject, $body, $this->siteLanguage());
 	}
 
-	/** A trip was reported: the moderators hear about it, in the site's language, without a link. @param list<string> $to */
-	public function reported(array $to, int $tripId, string $title, string $reason): void
+	/** A new trip arrived: the moderators hear about it, in the site's language (the mail's own strings, never the visitor's page language). @param list<string> $to */
+	public function newTrip(array $to, string $album, string $title, string $username, int $photos, bool $needsReview): void
+	{
+		$lang = $this->siteLanguage();
+		$site = $this->oneLine((string) Factory::getApplication()->get('sitename', 'Site'));
+		$this->send(
+			$to,
+			'[' . $site . '] ' . $lang->_($needsReview ? 'COM_MAPAVIAJES_MAIL_ADMIN_REVIEW' : 'COM_MAPAVIAJES_MAIL_ADMIN_NEW'),
+			sprintf($lang->_('COM_MAPAVIAJES_MAIL_ADMIN_BODY'), $this->oneLine($album), $this->oneLine($title), $this->oneLine($username), $photos),
+			$lang
+		);
+	}
+
+	/** The component's strings in the site's default language, with the administrator file loaded (the mails' texts live there). */
+	private function siteLanguage(): Language
 	{
 		$tag  = (string) Factory::getApplication()->get('language', 'en-GB');
 		$lang = Language::getInstance(preg_match('/^[a-z]{2,3}-[A-Z]{2}$/', $tag) === 1 ? $tag : 'en-GB');
 		$lang->load('com_mapaviajes', JPATH_ADMINISTRATOR, null, true);
 		$lang->load('com_mapaviajes', JPATH_SITE, null, true);
+
+		return $lang;
+	}
+
+	/** A trip was reported: the moderators hear about it, in the site's language, without a link. @param list<string> $to */
+	public function reported(array $to, int $tripId, string $title, string $reason): void
+	{
+		$lang = $this->siteLanguage();
 		$site = $this->oneLine((string) Factory::getApplication()->get('sitename', 'Site'));
 		$this->send(
 			$to,

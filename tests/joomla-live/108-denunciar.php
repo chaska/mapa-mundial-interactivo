@@ -33,10 +33,13 @@ $r = $send($f + ['rights' => '0']); afirma($r['code'] === 422, 'rights=0: 422');
 $r = $send($f + ['rights' => '1']); $idA = (int) (json_decode($r['body'], true)['id'] ?? 0);
 afirma($r['code'] === 201 && $idA > 0, 'con la casilla: 201');
 $f['title'] = 'Del otro'; $f[$ob['token']] = '1'; unset($f[$oa['token']]);
+$flush();
 $ct = ''; $body = multipart($f + ['album_id' => (string) $ob['albumId'], 'rights' => '1'], [['field' => 'photos[]', 'filename' => 'a.jpg', 'type' => 'image/jpeg', 'data' => jpegBytes(900, 600)]], $ct);
 $r = $beto->post('/index.php?option=com_mapaviajes&task=trip.submit&format=json', $body, ['X-Requested-With: XMLHttpRequest', "Content-Type: $ct"]);
 $idB = (int) (json_decode($r['body'], true)['id'] ?? 0);
 afirma($idB > 0, 'beto tiene su viaje');
+usleep(400000); $files = $mails(); $raw = $files ? (string) file_get_contents($files[0]) : ''; $body = correoTexto($raw);
+afirma(count($files) === 1 && !str_contains($raw . $body, 'COM_MAPAVIAJES') && str_contains($body, 'Del otro') && str_contains($body, 'beto'), 'el aviso de viaje nuevo a los moderadores sale con sus textos de verdad (ninguna clave COM_MAPAVIAJES_ a la vista)');
 
 seccion('Puertas de la denuncia');
 $url = '/index.php?option=com_mapaviajes&task=trip.report&format=json'; $xhr = ['X-Requested-With: XMLHttpRequest'];
