@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.14.1 — 2026-10-21 (islas)
+- **Islas Canarias, Baleares, Madeira y Azores en TODOS los mapas** (los seis estilos comparten el mismo dibujo). El mapa venía de Natural Earth 1:110m, que se deja esas islas fuera. Se han añadido desde Natural Earth 1:10m (dominio público): 8 islas Canarias, 5 Baleares, 5 de Madeira (con Porto Santo y las Desertas) y las 9 de las Azores. Cada archipiélago cuenta como parte de España o de Portugal, así que un álbum en Tenerife o en Funchal se agrupa con su país igual que uno en la península. El archivo crece unos 14 KB. Herramienta: `tools/add-islands.mjs`.
+- Prueba nueva: `112-islas.js`.
+
 ## 1.14.0 — 2026-10-17 (CSS propio y entradas extra en el menú)
 - **Opciones → Mapa → «CSS propio del mapa»**: un cuadro de texto para quitar o mover lo que otras extensiones (cookies, chat, accesibilidad…) ponen encima del mapa, p. ej. `.nexusconsent-revoke-fab{display:none!important}`. Solo se aplica en la pantalla del mapa; se limita a 5000 caracteres y se le quitan los signos `<` y `>` (no puede sacar etiquetas).
 - **Opciones → Mapa → «Entradas extra del menú ☰»**: una por línea, `Texto | qué hacer`. «Qué hacer» es una dirección (`https://…` o `/ruta`) o un **selector CSS**: la entrada pulsa ese elemento de la página aunque esté oculto con el CSS propio. Así se esconde el icono de otra extensión y se ofrece dentro del menú (`Cookies | .nexusconsent-revoke-fab`). Máximo 8; las de selector solo aparecen si el elemento existe; se descartan `javascript:`, `data:` y entradas vacías. Sirve para cualquier módulo, plugin o componente, sin tocar el código del mapa.
