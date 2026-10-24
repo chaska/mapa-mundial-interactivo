@@ -13,6 +13,7 @@ const login = async (p, user, pass) => {
 (async () => {
   if (!process.env.MV_PSQL) { console.log('Falta MV_PSQL'); process.exit(2); }
   psql("DELETE FROM jt_mapaviajes_friends"); psql("DELETE FROM jt_mapaviajes_blocks");
+  psql("DELETE FROM jt_mapaviajes_photos WHERE state=0"); // leftovers of other tests (photos still waiting for a moderator)
   psql("UPDATE jt_mapaviajes_albums SET access=2");
   const trip = psql("SELECT t.id FROM jt_mapaviajes_trips t WHERE t.user_id=(SELECT id FROM jt_users WHERE username='ana') AND t.published=1 AND (SELECT COUNT(*) FROM jt_mapaviajes_photos p WHERE p.trip_id=t.id AND p.state=1)>=2 ORDER BY t.id DESC LIMIT 1");
   afirma(!!trip, 'ana tiene un viaje con 2 fotos o mas (' + trip + ')');
