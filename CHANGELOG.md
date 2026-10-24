@@ -1,5 +1,14 @@
 # Registro de cambios
 
+## 1.15.2 — 2026-10-25
+- **La edición de un álbum permite cambiar la ciudad, el año y el título** (antes solo las fotos). El lugar se cambia igual que al crear: escribiendo el nombre o las coordenadas (también `40°22′14″N 2°48′41″O`) o pinchando el mapa. Si el sitio revisa antes de publicar, cambiar el **título** (texto libre) o poner un **nombre de lugar escrito a mano** devuelve el álbum a revisión; el panel avisa antes de guardar. Cambiar a una ciudad de la lista, a coordenadas o a un punto del mapa no lo necesita.
+- **La Antártida ya está dibujada** en todos los mapas (la primera versión del dibujo del mundo la dejaba fuera). Herramienta: `tools/add-antarctica.mjs`.
+- **Auditoría de seguridad** (`docs/AUDITORIA-SEGURIDAD-1.15.md`; skills security-audit y seguridad-zero-trust; batería de pruebas en vivo). Sin hallazgos críticos ni altos. Corregido:
+  - Rechazar o retirar una solicitud de amistad borraba la fila, así que se podía volver a pedir al instante y cada vez salía un correo a la víctima. Ahora: rechazada = 30 días sin poder volver a pedir (respuesta neutra) y una solicitud retirada no vuelve a mandar correo en 7 días; una solicitud rechazada no se convierte en amistad si luego la pide la otra persona.
+  - Un nombre de lugar falsificado en la edición se publicaba sin revisión (ver arriba).
+  - Dos guardados simultáneos de la edición de fotos podían dejar un álbum sin foto pública: las reglas se comprueban de nuevo con el bloqueo de la persona cogido.
+- Pruebas nuevas: `113` ampliada (93), `112` con la Antártida (24).
+
 ## 1.15.1 — 2026-10-25
 - **Editar las fotos de un álbum ya publicado usa la MISMA pantalla que crearlo**: el panel de «Añadir mi viaje», con las mismas tarjetas de foto, la misma casilla «Solo amigos», la misma zona para soltar fotos y los mismos botones. Solo se ocultan lugar, año, título y comentarios, que no cambian después de publicar, y los pies de foto ya publicados salen bloqueados. **Nada se guarda hasta pulsar «Guardar cambios»**; entonces se aplica todo junto (quitar, cambiar «solo amigos» y añadir) y el servidor comprueba el resultado final: máximo de fotos, al menos una y al menos una pública, sea cual sea el orden en que se hicieron las cosas en pantalla. La declaración de derechos solo se pide si hay fotos nuevas. Sustituye a la ventanita anterior y a sus tres envíos sueltos por uno solo (`trip.photos`).
 - **El cuadro del lugar entiende las coordenadas de Google Maps**: `40°22′14″N 2°48′41″O` (grados, minutos y segundos; N/S/E/W y también O de oeste; letras delante o detrás; comillas rectas o tipográficas), además de los decimales de siempre (`40.41, -3.70`, `40.3706 N, 2.8114 W`). Latitud o longitud imposibles, o minutos y segundos de 60 o más, se rechazan. El navegador solo saca dos números del texto; el servidor los vuelve a validar y los guarda como parámetros.
