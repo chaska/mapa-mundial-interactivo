@@ -38,34 +38,116 @@ final class PhotoEditor
 	}
 
 	/**
-	 * @param   array<int, array<string, mixed>>  $files     flattened uploads, in the order sent
-	 * @param   array<int, mixed>                 $captions  one per file
-	 * @param   array<int, mixed>                 $priv      "1" = friends only, one per file
+	 * One save of the edit screen: photos to delete, "friends only" switches of the photos that stay, and new photos. The final
+	 * state is checked as a whole (at most the album maximum, at least one photo, at least one live public photo) before anything
+	 * is written, so the order in which the person did things on screen never matters.
 	 *
-	 * @return  array{added: int, pending: bool}
+	 * @param   list<int>             $delete    ids of the photos to delete
+	 * @param   array<int, int>       $priv      existing photo id => 1 friends only | 0 public
+	 * @param   array<int, array<string, mixed>>  $files     flattened uploads of the new photos, in the order sent
+	 * @param   array<int, mixed>     $captions  one per new file
+	 * @param   array<int, mixed>     $newPriv   "1" = friends only, one per new file
+	 *
+	 * @return  array{added: int, removed: int, changed: int, pending: bool}
 	 * @throws  SubmissionException
 	 */
-	public function add(User $user, int $tripId, array $files, array $captions, array $priv): array
+	public function apply(User $user, int $tripId, array $delete, array $priv, array $files, array $captions, array $newPriv): array
 	{
 		$userId = (int) $user->id;
 		$trip   = $this->ownTrip($userId, $tripId);
 		$max    = $this->settings->maxPhotos();
-		$n      = \count($files);
+		$have   = $this->photosOf((int) $trip['id']);
+		$byId   = [];
 
-		if ($n < 1)
+		foreach ($have as $p)
 		{
-			throw new SubmissionException('photos_required', 422);
+			$byId[(int) $p['id']] = $p;
 		}
 
-		$this->reserve($userId);
+		$delete = array_values(array_unique(array_map('intval', $delete)));
 
-		if ($this->countPhotos((int) $trip['id']) + $n > $max)
+		foreach ($delete as $id)
+		{
+			if (!isset($byId[$id]))
+			{
+				throw new SubmissionException('trip', 404);
+			}
+		}
+
+		$change = [];
+
+		foreach ($priv as $id => $v)
+		{
+			$id = (int) $id;
+
+			if (!isset($byId[$id]) || ($v !== 0 && $v !== 1) || \in_array($id, $delete, true))
+			{
+				continue;
+			}
+
+			if ((int) $byId[$id]['friends_only'] !== $v)
+			{
+				$change[$id] = $v;
+			}
+		}
+
+		$n     = \count($files);
+		$live  = (int) $trip['published'] === 1 && $this->settings->reviewFirst() && !$user->authorise('core.admin');
+		$state = $live ? 0 : 1; // already on the map under review: new photos wait; a trip still under review is reviewed as a whole
+
+		// the final state, checked as a whole
+		$left = 0;
+		$livePublic = 0;
+
+		foreach ($byId as $id => $p)
+		{
+			if (\in_array($id, $delete, true))
+			{
+				continue;
+			}
+
+			$left++;
+			$fo = $change[$id] ?? (int) $p['friends_only'];
+
+			if ((int) $p['state'] === 1 && $fo === 0)
+			{
+				$livePublic++;
+			}
+		}
+
+		$flags = [];
+
+		foreach (array_values($files) as $i => $unused)
+		{
+			$flags[$i] = (($newPriv[$i] ?? '0') === '1') ? 1 : 0;
+
+			if ($state === 1 && $flags[$i] === 0)
+			{
+				$livePublic++;
+			}
+		}
+
+		if ($left + $n > $max)
 		{
 			throw new SubmissionException('photos_too_many', 422, ['max' => $max]);
 		}
 
+		if ($left + $n < 1)
+		{
+			throw new SubmissionException('photo_last', 422);
+		}
+
+		if ($livePublic < 1)
+		{
+			throw new SubmissionException('photo_public', 422);
+		}
+
+		if ($delete === [] && $change === [] && $n === 0)
+		{
+			return ['added' => 0, 'removed' => 0, 'changed' => 0, 'pending' => false];
+		}
+
 		$clean = [];
-		$flags = [];
 
 		foreach (array_values($files) as $i => $unused)
 		{
@@ -79,71 +161,75 @@ final class PhotoEditor
 				EventLog::add($this->db, $userId, 'reject_text', 'caption:' . $e->getReason());
 				throw new SubmissionException($e->getReason(), 422, ['photo' => $i + 1]);
 			}
-
-			$flags[$i] = (($priv[$i] ?? '0') === '1') ? 1 : 0;
 		}
 
 		$storage = $this->settings->storage();
+		$names   = [];
+		$meta    = [];
 
-		try
+		if ($n > 0)
 		{
-			$storage->prepare();
-			$storage->sweep();
-		}
-		catch (\Throwable $e)
-		{
-			throw new SubmissionException('server', 500);
-		}
+			$this->reserve($userId);
 
-		$logo        = $this->albumLogo((int) $trip['album_id']);
-		$watermark   = $logo !== '' ? $storage->pathFor($logo) : null;
-		$temporaries = [];
-		$meta        = [];
-
-		try
-		{
-			foreach (array_values($files) as $i => $file)
+			try
 			{
-				$tmp = $storage->newTemporaryPath();
+				$storage->prepare();
+				$storage->sweep();
+			}
+			catch (\Throwable $e)
+			{
+				throw new SubmissionException('server', 500);
+			}
 
-				try
+			$logo        = $this->albumLogo((int) $trip['album_id']);
+			$watermark   = $logo !== '' ? $storage->pathFor($logo) : null;
+			$temporaries = [];
+
+			try
+			{
+				foreach (array_values($files) as $i => $file)
 				{
-					$meta[$i] = $this->processor->process($file, $tmp, $watermark);
+					$tmp = $storage->newTemporaryPath();
+
+					try
+					{
+						$meta[$i] = $this->processor->process($file, $tmp, $watermark);
+					}
+					catch (SanitizeException $e)
+					{
+						EventLog::add($this->db, $userId, 'reject_image', 'photo' . ($i + 1) . ':' . $e->getReason());
+						throw new SubmissionException($e->getReason(), 422, ['photo' => $i + 1]);
+					}
+
+					$temporaries[$i] = $tmp;
 				}
-				catch (SanitizeException $e)
+
+				foreach ($temporaries as $i => $tmp)
 				{
-					EventLog::add($this->db, $userId, 'reject_image', 'photo' . ($i + 1) . ':' . $e->getReason());
-					throw new SubmissionException($e->getReason(), 422, ['photo' => $i + 1]);
+					$names[$i] = $storage->commit($tmp, $userId, (int) $trip['trip_year'], \count($have) + $i + 1);
+				}
+			}
+			catch (\Throwable $e)
+			{
+				foreach ($names as $name)
+				{
+					$storage->delete($name);
 				}
 
-				$temporaries[$i] = $tmp;
+				foreach ($temporaries as $tmp)
+				{
+					$storage->discard($tmp);
+				}
+
+				throw $e;
 			}
 		}
-		catch (\Throwable $e)
-		{
-			foreach ($temporaries as $tmp)
-			{
-				$storage->discard($tmp);
-			}
 
-			throw $e;
-		}
-
-		$names = [];
-		$year  = (int) $trip['trip_year'];
-		$live  = (int) $trip['published'] === 1 && $this->settings->reviewFirst() && !$user->authorise('core.admin');
-		$state = $live ? 0 : 1; // already on the map under review: new photos wait; a trip still under review is reviewed as a whole
+		$gone = [];
 
 		try
 		{
-			$base = $this->countPhotos((int) $trip['id']);
-
-			foreach ($temporaries as $i => $tmp)
-			{
-				$names[$i] = $storage->commit($tmp, $userId, $year, $base + $i + 1);
-			}
-
-			$this->insertRows((int) $trip['id'], $userId, $max, $names, $meta, $clean, $flags, $state);
+			$gone = $this->write((int) $trip['id'], $userId, $max, $delete, $change, $names, $meta, $clean, $flags, $state);
 		}
 		catch (\Throwable $e)
 		{
@@ -152,67 +238,29 @@ final class PhotoEditor
 				$storage->delete($name);
 			}
 
-			foreach ($temporaries as $tmp)
-			{
-				$storage->discard($tmp);
-			}
-
 			if ($e instanceof SubmissionException)
 			{
 				throw $e;
 			}
 
-			Log::add('mapaviajes photo add failed: ' . \get_class($e) . ': ' . $e->getMessage(), Log::ERROR, 'com_mapaviajes');
+			Log::add('mapaviajes photo edit failed: ' . \get_class($e) . ': ' . $e->getMessage(), Log::ERROR, 'com_mapaviajes');
 
 			throw new SubmissionException('server', 500);
 		}
 
-		if ($state === 0)
+		foreach ($gone as $name)
 		{
-			$this->tellModerators((string) $trip['title'], (string) $user->username, \count($names));
+			$storage->delete($name);
 		}
 
-		return ['added' => \count($names), 'pending' => $state === 0];
-	}
+		EventLog::add($this->db, $userId, 'photos_edited');
 
-	/** @throws SubmissionException 404 not yours, 422 the trip would have no public photo */
-	public function setPrivacy(User $user, int $photoId, bool $friendsOnly): void
-	{
-		$photo = $this->ownPhoto((int) $user->id, $photoId);
-
-		if ($friendsOnly && !$this->otherPublicLive((int) $photo['trip_id'], (int) $photo['id']))
+		if ($n > 0 && $state === 0)
 		{
-			throw new SubmissionException('photo_public', 422);
+			$this->tellModerators((string) $trip['title'], (string) $user->username, $n);
 		}
 
-		$fo = $friendsOnly ? 1 : 0;
-		$id = (int) $photo['id'];
-		$this->db->setQuery($this->db->getQuery(true)->update($this->db->quoteName('#__mapaviajes_photos'))->set($this->db->quoteName('friends_only') . ' = :f')->where($this->db->quoteName('id') . ' = :i')
-			->bind(':f', $fo, ParameterType::INTEGER)->bind(':i', $id, ParameterType::INTEGER))->execute();
-		EventLog::add($this->db, (int) $user->id, 'photo_privacy', $friendsOnly ? 'friends' : 'public');
-	}
-
-	/** @throws SubmissionException 404 not yours, 422 it is the only photo or the only public one */
-	public function remove(User $user, int $photoId): void
-	{
-		$photo = $this->ownPhoto((int) $user->id, $photoId);
-		$trip  = (int) $photo['trip_id'];
-
-		if ($this->countPhotos($trip) <= 1)
-		{
-			throw new SubmissionException('photo_last', 422);
-		}
-
-		if ((int) $photo['friends_only'] === 0 && (int) $photo['state'] === 1 && !$this->otherPublicLive($trip, (int) $photo['id']))
-		{
-			throw new SubmissionException('photo_public', 422);
-		}
-
-		$id = (int) $photo['id'];
-		$this->db->setQuery($this->db->getQuery(true)->delete($this->db->quoteName('#__mapaviajes_photos'))->where($this->db->quoteName('id') . ' = :i')->bind(':i', $id, ParameterType::INTEGER))->execute();
-		$this->settings->storage()->delete((string) $photo['filename']);
-		self::recount($this->db, [$trip]);
-		EventLog::add($this->db, (int) $user->id, 'photo_removed');
+		return ['added' => $n, 'removed' => \count($delete), 'changed' => \count($change), 'pending' => $n > 0 && $state === 0];
 	}
 
 	/** Moderators: the photos added later of these trips go live. */
@@ -283,43 +331,6 @@ final class PhotoEditor
 		return $row;
 	}
 
-	/** @return array<string, mixed> */
-	private function ownPhoto(int $userId, int $photoId): array
-	{
-		if ($userId <= 0)
-		{
-			throw new SubmissionException('login', 403);
-		}
-
-		$p   = $photoId;
-		$row = $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName(['p.id', 'p.trip_id', 'p.filename', 'p.friends_only', 'p.state', 't.user_id', 't.published']))->from($this->db->quoteName('#__mapaviajes_photos', 'p'))
-			->join('INNER', $this->db->quoteName('#__mapaviajes_trips', 't') . ' ON t.id = p.trip_id')->where($this->db->quoteName('p.id') . ' = :p')->bind(':p', $p, ParameterType::INTEGER))->loadAssoc();
-
-		if (!$row || (int) $row['user_id'] !== $userId || !\in_array((int) $row['published'], [0, 1], true))
-		{
-			throw new SubmissionException('trip', 404);
-		}
-
-		return $row;
-	}
-
-	private function countPhotos(int $tripId): int
-	{
-		$t = $tripId;
-
-		return (int) $this->db->setQuery($this->db->getQuery(true)->select('COUNT(*)')->from($this->db->quoteName('#__mapaviajes_photos'))->where($this->db->quoteName('trip_id') . ' = :t')->bind(':t', $t, ParameterType::INTEGER))->loadResult();
-	}
-
-	/** Is there a live public photo in the trip besides this one? */
-	private function otherPublicLive(int $tripId, int $exceptId): bool
-	{
-		$t = $tripId;
-		$e = $exceptId;
-
-		return (int) $this->db->setQuery($this->db->getQuery(true)->select('COUNT(*)')->from($this->db->quoteName('#__mapaviajes_photos'))->where($this->db->quoteName('trip_id') . ' = :t')->where($this->db->quoteName('id') . ' <> :e')
-			->where($this->db->quoteName('friends_only') . ' = 0')->where($this->db->quoteName('state') . ' = 1')->bind(':t', $t, ParameterType::INTEGER)->bind(':e', $e, ParameterType::INTEGER))->loadResult() > 0;
-	}
-
 	private function albumLogo(int $albumId): string
 	{
 		$a = $albumId;
@@ -358,9 +369,13 @@ final class PhotoEditor
 	}
 
 	/**
-	 * @param array<int, string> $names @param array<int, array{width: int, height: int, bytes: int}> $meta @param array<int, string> $captions @param array<int, int> $flags
+	 * Everything of one save in a single transaction (under the person's row lock). Returns the file names to delete once it is committed.
+	 *
+	 * @param list<int> $delete @param array<int, int> $change @param array<int, string> $names
+	 * @param array<int, array{width: int, height: int, bytes: int}> $meta @param array<int, string> $captions @param array<int, int> $flags
+	 * @return list<string>
 	 */
-	private function insertRows(int $tripId, int $userId, int $max, array $names, array $meta, array $captions, array $flags, int $state): void
+	private function write(int $tripId, int $userId, int $max, array $delete, array $change, array $names, array $meta, array $captions, array $flags, int $state): array
 	{
 		$db  = $this->db;
 		$now = Factory::getDate()->toSql();
@@ -369,15 +384,51 @@ final class PhotoEditor
 		try
 		{
 			UserLock::take($db, $userId);
-			$have = $this->countPhotos($tripId);
+			$have = $this->photosOf($tripId); // re-read under the lock: parallel requests queue here
+			$ids  = array_map(static fn (array $p): int => (int) $p['id'], $have);
 
-			if ($have + \count($names) > $max)
+			foreach ($delete as $id)
+			{
+				if (!\in_array($id, $ids, true))
+				{
+					throw new SubmissionException('trip', 404);
+				}
+			}
+
+			if (\count($have) - \count($delete) + \count($names) > $max)
 			{
 				throw new SubmissionException('photos_too_many', 422, ['max' => $max]);
 			}
 
-			$t   = $tripId;
-			$ord = (int) $db->setQuery($db->getQuery(true)->select('COALESCE(MAX(' . $db->quoteName('ordering') . '), 0)')->from($db->quoteName('#__mapaviajes_photos'))->where($db->quoteName('trip_id') . ' = :t')->bind(':t', $t, ParameterType::INTEGER))->loadResult();
+			$gone = [];
+
+			foreach ($have as $p)
+			{
+				if (\in_array((int) $p['id'], $delete, true))
+				{
+					$gone[] = (string) $p['filename'];
+				}
+			}
+
+			foreach ($change as $id => $fo)
+			{
+				$i = (int) $id;
+				$f = (int) $fo;
+				$db->setQuery($db->getQuery(true)->update($db->quoteName('#__mapaviajes_photos'))->set($db->quoteName('friends_only') . ' = :f')->where($db->quoteName('id') . ' = :i')->where($db->quoteName('trip_id') . ' = :t')
+					->bind(':f', $f, ParameterType::INTEGER)->bind(':i', $i, ParameterType::INTEGER)->bind(':t', $tripId, ParameterType::INTEGER))->execute();
+			}
+
+			if ($delete !== [])
+			{
+				$db->setQuery($db->getQuery(true)->delete($db->quoteName('#__mapaviajes_photos'))->where($db->quoteName('trip_id') . ' = ' . (int) $tripId)->whereIn($db->quoteName('id'), $delete))->execute();
+			}
+
+			$ord = 0;
+
+			foreach ($have as $p)
+			{
+				$ord = max($ord, (int) $p['ordering']);
+			}
 
 			foreach ($names as $i => $name)
 			{
@@ -405,6 +456,16 @@ final class PhotoEditor
 
 			throw $e;
 		}
+
+		return $gone;
+	}
+
+	/** @return list<array<string, mixed>> */
+	private function photosOf(int $tripId): array
+	{
+		$t = $tripId;
+
+		return $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName(['id', 'filename', 'friends_only', 'state', 'ordering']))->from($this->db->quoteName('#__mapaviajes_photos'))->where($this->db->quoteName('trip_id') . ' = :t')->order($this->db->quoteName('ordering'))->bind(':t', $t, ParameterType::INTEGER))->loadAssocList() ?: [];
 	}
 
 	private function tellModerators(string $title, string $username, int $photos): void

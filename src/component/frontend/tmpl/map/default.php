@@ -259,9 +259,10 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<form id="mv-form" method="post" action="<?php echo $e(Route::_('index.php?option=com_mapaviajes&task=trip.submit&format=json', false)); ?>" enctype="multipart/form-data" novalidate autocomplete="off">
 		<div class="mv-panel-body" id="mv-body">
 			<noscript><p class="mv-err"><?php echo $t('COM_MAPAVIAJES_NEEDS_JS'); ?></p></noscript>
-			<p class="mv-intro"><?php echo $t('COM_MAPAVIAJES_FORM_INTRO'); ?></p>
+			<p class="mv-intro mv-only-new"><?php echo $t('COM_MAPAVIAJES_FORM_INTRO'); ?></p>
+			<p class="mv-intro mv-only-edit" id="mv-edIntro" hidden></p>
 
-			<div class="mv-field">
+			<div class="mv-field mv-only-new">
 				<label for="mv-q"><?php echo $t('COM_MAPAVIAJES_FIELD_PLACE'); ?></label>
 				<div class="mv-combo">
 					<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -273,7 +274,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<p class="mv-err" id="mv-qerr" role="alert"></p>
 			</div>
 
-			<div class="mv-field">
+			<div class="mv-field mv-only-new">
 				<label for="mv-year"><?php echo $t('COM_MAPAVIAJES_FIELD_YEAR'); ?></label>
 				<select class="mv-input" id="mv-year" aria-describedby="mv-yerr">
 					<option value=""><?php echo $t('COM_MAPAVIAJES_FIELD_YEAR_PH'); ?></option>
@@ -284,7 +285,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<p class="mv-err" id="mv-yerr" role="alert"></p>
 			</div>
 
-			<div class="mv-field">
+			<div class="mv-field mv-only-new">
 				<label for="mv-title"><?php echo $t('COM_MAPAVIAJES_FIELD_TITLE'); ?></label>
 				<input class="mv-input" id="mv-title" type="text" maxlength="80" placeholder="<?php echo $t('COM_MAPAVIAJES_FIELD_TITLE_PH'); ?>" aria-describedby="mv-terr">
 				<p class="mv-err" id="mv-terr" role="alert"></p>
@@ -304,7 +305,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			</fieldset>
 
 			<?php if ($this->album['allow_comments']) : ?>
-			<fieldset class="mv-field">
+			<fieldset class="mv-field mv-only-new">
 				<legend><?php echo $t('COM_MAPAVIAJES_FIELD_COMMENTS'); ?></legend>
 				<?php if ($this->rankOn) : ?><p class="mv-help"><?php echo $t('COM_MAPAVIAJES_FIELD_COMMENTS_RANK'); ?></p><?php endif; ?>
 				<div class="mv-seg">
@@ -317,10 +318,10 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			</fieldset>
 			<?php endif; ?>
 
-			<label class="mv-check" for="mv-rights"><input type="checkbox" id="mv-rights">
+			<div id="mv-rightsRow"><label class="mv-check" for="mv-rights"><input type="checkbox" id="mv-rights">
 				<span><?php echo $t('COM_MAPAVIAJES_FIELD_RIGHTS'); ?><small><?php echo $t('COM_MAPAVIAJES_FIELD_RIGHTS_HELP'); ?></small></span>
 			</label>
-			<p class="mv-err" id="mv-rerr" role="alert"></p>
+			<p class="mv-err" id="mv-rerr" role="alert"></p></div>
 
 			<div class="mv-sr" aria-hidden="true"><label for="mv-website">Website</label><input type="text" id="mv-website" tabindex="-1" autocomplete="off" value=""></div>
 

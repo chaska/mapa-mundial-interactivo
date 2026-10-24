@@ -50,30 +50,35 @@ const login = async (p, user, pass) => {
   afirma(checked >= 1 && checked < before + 1 && (await beto.locator('#mv-pplList li').count()) > checked, '«Solo amigos» deja marcados a los amigos (y a ti) y desmarca al resto (' + before + ' → ' + checked + ')');
   afirma((await beto.locator('#mv-chip').isVisible()), 'aparece la etiqueta de filtro activa');
 
-  // editing my own photos
+  // editing my own photos: the SAME screen as the new-album one, with what cannot change hidden
   await open(ana, trip);
   afirma(await ana.locator('#mv-fEdit').isVisible() && await ana.locator('#mv-fFriend').isHidden(), 'ana ve «Editar fotos» en su viaje');
-  await ana.click('#mv-fEdit'); await ana.waitForSelector('dialog.mv-dlg[open] .mv-ed-li');
-  const rows = await ana.locator('dialog .mv-ed-list .mv-ed-li').count();
-  afirma(rows === 1 + nPriv, 'el editor lista las ' + rows + ' fotos');
-  const first = ana.locator('dialog .mv-ed-list .mv-ed-li').first().locator('input[type=checkbox]');
-  await first.check(); await ana.waitForTimeout(800);
-  afirma(/El|At least|Al menos|public/i.test(await ana.locator('dialog .mv-dlg-msg').textContent()) && psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '1', 'esconder la unica foto publica: avisa y no cambia nada');
-  const second = ana.locator('dialog .mv-ed-list .mv-ed-li').nth(1).locator('input[type=checkbox]');
-  await second.uncheck(); await ana.waitForTimeout(800);
-  afirma(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '2', 'hacer publica otra foto: se guarda al momento');
-  await second.check(); await ana.waitForTimeout(600);
-  const room = 5 - rows;
-  if (room > 0 && process.env.MV_P1) {
-    await ana.setInputFiles('dialog .mv-ed-file', [process.env.MV_P1]); await ana.waitForTimeout(400);
-    await ana.click('dialog dialog, dialog button.mv-btn-primary').catch(() => {});
-    afirma(await ana.locator('dialog .mv-ed-new .mv-ed-li').count() === 1, 'al elegir una foto sale su fila con pie y «Solo amigos»');
-    await ana.click('dialog button.mv-btn-primary'); await ana.waitForTimeout(500);
-    afirma(/permiso|confirm|tick|Marca/i.test(await ana.locator('dialog .mv-dlg-msg').textContent()), 'sin marcar los derechos no se sube');
-    await ana.check('#mv-ed-rights'); await ana.click('dialog button.mv-btn-primary'); await ana.waitForTimeout(3500);
-    afirma(Number(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE trip_id=" + trip)) === rows + 1, 'la foto nueva se sube y el album tiene ' + (rows + 1));
-    afirma(await ana.locator('dialog[open]').count() === 0, 'el editor se cierra y la ficha se refresca');
-  } else { await ana.click('dialog .mv-dlg-row button'); }
+  await ana.click('#mv-fEdit'); await ana.waitForSelector('#mv-panel.mv-open.mv-editing'); await ana.waitForTimeout(500);
+  const rows = await ana.locator('#mv-photos .mv-photo').count();
+  afirma(rows === 1 + nPriv && /Edit the photos|Editar las fotos/.test(await ana.locator('#mv-panelTitle').textContent()), 'la pantalla de edicion es el panel de crear: ' + rows + ' tarjetas de foto con su titulo');
+  afirma(await ana.locator('#mv-q').isHidden() && await ana.locator('#mv-title').isHidden() && await ana.locator('#mv-year').isHidden() && await ana.locator('#mv-drop').isVisible() && await ana.locator('#mv-pv0').isVisible(), 'sin lugar, ano ni titulo (no se pueden cambiar) pero con la zona de subir y las casillas «Solo amigos»');
+  afirma((await ana.locator('#mv-btnSend').textContent()).trim().length > 0 && /Save|Guardar/.test(await ana.locator('#mv-btnSend').textContent()), 'el boton dice «Guardar cambios»');
+  afirma(await ana.locator('#mv-rightsRow').isHidden(), 'sin fotos nuevas no pide la declaracion de derechos');
+  await ana.check('#mv-pv0'); await ana.click('#mv-btnSend'); await ana.waitForTimeout(500);
+  afirma(/p[uú]blica|public/i.test(await ana.locator('#mv-perr').textContent()) && psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '1', 'esconder la unica foto publica: avisa y no guarda');
+  await ana.uncheck('#mv-pv0'); await ana.uncheck('#mv-pv1'); await ana.waitForTimeout(300);
+  afirma(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '1', 'los cambios NO se guardan hasta pulsar Guardar');
+  await ana.click('#mv-btnSend'); await ana.waitForSelector('#mv-panel:not(.mv-open)', { state: 'attached' }); await ana.waitForTimeout(1500);
+  afirma(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '2' && await ana.locator('#mv-fi:not([hidden])').count() === 1, 'al guardar se aplica y vuelve a la ficha del viaje');
+  await ana.click('#mv-fEdit'); await ana.waitForSelector('#mv-panel.mv-open.mv-editing'); await ana.waitForTimeout(400);
+  await ana.locator('#mv-photos .mv-photo').last().locator('.mv-rm').click(); await ana.waitForTimeout(300);
+  afirma(await ana.locator('#mv-photos .mv-photo').count() === rows - 1 && Number(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE trip_id=" + trip)) === rows, '«Quitar» saca la foto de la lista pero no la borra hasta guardar');
+  if (process.env.MV_P1) {
+    await ana.setInputFiles('#mv-files', [process.env.MV_P1]); await ana.waitForTimeout(500);
+    afirma(await ana.locator('#mv-photos .mv-photo').count() === rows && await ana.locator('#mv-rightsRow').isVisible(), 'la foto nueva sale como las del formulario de crear (pie, «Solo amigos») y pide los derechos');
+    await ana.click('#mv-btnSend'); await ana.waitForTimeout(500);
+    afirma(/permiso|confirm|tick|Marca|publish/i.test(await ana.locator('#mv-rerr').textContent()), 'sin marcar los derechos no se guarda');
+    await ana.check('#mv-rights'); await ana.click('#mv-btnSend'); await ana.waitForSelector('#mv-panel:not(.mv-open)', { state: 'attached' }); await ana.waitForTimeout(2500);
+    afirma(Number(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE trip_id=" + trip)) === rows, 'se borra la quitada y se sube la nueva en un solo guardado (' + rows + ' fotos)');
+  } else { await ana.click('#mv-btnCancel'); }
+  await ana.goto(BASE + '/index.php?option=com_mapaviajes'); await ana.waitForSelector('#mv-svg path.mv-sphere[d]'); await ana.click('#mv-btnAdd'); await ana.waitForTimeout(600);
+  afirma(await ana.locator('#mv-q').isVisible() && !(await ana.locator('#mv-panel.mv-editing').count()), 'el boton «Añadir mi viaje» sigue abriendo el formulario completo de siempre');
+  await ana.click('#mv-btnCancel'); await ana.waitForTimeout(300);
 
   // new-album form: at least one public photo
   await ana.goto(BASE + '/index.php?option=com_mapaviajes'); await ana.waitForSelector('#mv-svg path.mv-sphere[d]');

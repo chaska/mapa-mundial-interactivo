@@ -28,6 +28,14 @@ $send = function (Cliente $c, array $o, string $title, array $priv, int $n = 0) 
 	return $c->post('/index.php?option=com_mapaviajes&task=trip.submit&format=json', $body, ['X-Requested-With: XMLHttpRequest', "Content-Type: $ct"]);
 };
 
+$edit = function (Cliente $c, array $o, int $trip, array $delete = [], array $ep = [], int $n = 0, array $newPriv = [], bool $rights = true, bool $x = true, bool $t = true) {
+	$f = ['id' => (string) $trip, 'delete' => array_map('strval', $delete)] + ($n ? ['captions' => array_fill(0, $n, 'Otra'), 'priv' => $newPriv ?: array_fill(0, $n, '0')] : []) + ($t ? [$o['token'] => '1'] : []) + ($rights ? ['rights' => '1'] : []);
+	foreach ($ep as $pid => $v) { $f['ep[' . $pid . ']'] = (string) $v; }
+	$files = []; for ($i = 0; $i < $n; $i++) { $files[] = ['field' => 'photos[]', 'filename' => "n$i.jpg", 'type' => 'image/jpeg', 'data' => jpegBytes(640 + $i * 7, 480)]; }
+	$ct = ''; $body = multipart($f, $files, $ct);
+	return $c->post('/index.php?option=com_mapaviajes&task=trip.photos&format=json', $body, ($x ? ['X-Requested-With: XMLHttpRequest'] : []) + [1 => "Content-Type: $ct"]);
+};
+
 seccion('Al menos una foto publica');
 $r = $send($ana, $oa, 'Todo privado', ['1', '1']);
 afirma($r['code'] === 422 && (int) $db->uno("SELECT COUNT(*) FROM $T WHERE title = 'Todo privado'") === 0, 'todas las fotos «solo amigos»: 422 y no se crea nada');
@@ -105,7 +113,7 @@ afirma((int) $db->uno("SELECT COUNT(*) FROM $B") === 0 && $fr($beto, $ob, 'reque
 $fr($ana, $oa, 'respond', ['u' => $ubKey, 'action' => 'decline']);
 
 seccion('Editar el album: cambiar quien ve cada foto');
-$pp = fn (Cliente $c, array $o, int $photo, string $fo, bool $x = true, bool $t = true) => $c->post('/index.php?option=com_mapaviajes&task=trip.photoprivacy&format=json', http_build_query(['photo' => $photo, 'fo' => $fo] + ($t ? [$o['token'] => '1'] : [])), $x ? $xhr : []);
+$pp = fn (Cliente $c, array $o, int $photo, string $fo, bool $x = true, bool $t = true) => $GLOBALS['edit']($c, $o, $GLOBALS['idA'], [], [$photo => $fo], 0, [], true, $x, $t);
 afirma($pp($beto, $ob, $priv1, '0')['code'] === 404, 'beto no puede cambiar las fotos de ana: 404');
 afirma($pp($ana, $oa, $priv1, '0', false)['code'] === 403 && $pp($ana, $oa, $priv1, '0', true, false)['code'] === 403, 'sin AJAX o sin token: 403');
 afirma($pp($ana, $oa, $pub, '1')['code'] === 422 && (int) $db->uno("SELECT friends_only FROM $P WHERE id = :i", [':i' => $pub]) === 0, 'no se puede esconder la unica foto publica: 422');
@@ -120,25 +128,35 @@ afirma($ta['ph'][0]['id'] === $priv1 && count($ta['ph']) === 3, 'tambien para la
 $pp($ana, $oa, $pub, '0'); $pp($ana, $oa, $priv1, '1');
 
 seccion('Borrar fotos y anadir hasta 5');
-$rm = fn (Cliente $c, array $o, int $photo) => $c->post('/index.php?option=com_mapaviajes&task=trip.photoremove&format=json', http_build_query(['photo' => $photo, $o['token'] => '1']), $xhr);
+$rm = fn (Cliente $c, array $o, int $photo) => $GLOBALS['edit']($c, $o, $GLOBALS['idA'], [$photo]);
 afirma($rm($beto, $ob, $priv2)['code'] === 404, 'beto no puede borrar fotos de ana: 404');
 afirma($rm($ana, $oa, $priv2)['code'] === 200 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 2 && (int) $db->uno("SELECT photo_count FROM $T WHERE id = :t", [':t' => $idA]) === 2, 'ana borra una foto: quedan 2 y el contador se actualiza');
 afirma($rm($ana, $oa, $pub)['code'] === 422, 'no puede borrar la unica publica mientras haya otras');
 afirma($rm($ana, $oa, $priv1)['code'] === 200 && $rm($ana, $oa, $pub)['code'] === 422 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 1, 'tampoco la ultima foto del album');
-$add = function (Cliente $c, array $o, int $trip, int $n, array $priv = [], bool $rights = true) {
-	$f = ['id' => (string) $trip, 'captions' => array_fill(0, $n, 'Otra'), 'priv' => $priv ?: array_fill(0, $n, '0'), $o['token'] => '1'] + ($rights ? ['rights' => '1'] : []);
-	$files = []; for ($i = 0; $i < $n; $i++) { $files[] = ['field' => 'photos[]', 'filename' => "n$i.jpg", 'type' => 'image/jpeg', 'data' => jpegBytes(640 + $i * 7, 480)]; }
-	$ct = ''; $body = multipart($f, $files, $ct);
-	return $c->post('/index.php?option=com_mapaviajes&task=trip.photos&format=json', $body, ['X-Requested-With: XMLHttpRequest', "Content-Type: $ct"]);
-};
+$add = fn (Cliente $c, array $o, int $trip, int $n, array $priv = [], bool $rights = true) => $GLOBALS['edit']($c, $o, $trip, [], [], $n, $priv, $rights);
 afirma($add($ana, $oa, $idA, 2, [], false)['code'] === 422, 'anadir fotos sin la casilla de derechos: 422');
 afirma($add($beto, $ob, $idA, 1)['code'] === 404, 'beto no puede anadir fotos al album de ana: 404');
 $r = $add($ana, $oa, $idA, 2, ['1', '1']); $j = json_decode($r['body'], true);
-afirma($r['code'] === 201 && ($j['added'] ?? 0) === 2 && ($j['pending'] ?? true) === false && (int) $db->uno("SELECT photo_count FROM $T WHERE id = :t", [':t' => $idA]) === 3, 'ana anade 2 fotos privadas (con la publica que ya tiene): 3 fotos');
+afirma($r['code'] === 200 && ($j['added'] ?? 0) === 2 && ($j['pending'] ?? true) === false && (int) $db->uno("SELECT photo_count FROM $T WHERE id = :t", [':t' => $idA]) === 3, 'ana anade 2 fotos privadas (con la publica que ya tiene): 3 fotos');
 $r = $add($ana, $oa, $idA, 3);
 afirma($r['code'] === 422 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 3, 'con 3 fotos no caben 3 mas (max 5): 422 y no se guarda nada');
-$r = $add($ana, $oa, $idA, 2); afirma($r['code'] === 201 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 5, 'hasta llegar a 5');
+$r = $add($ana, $oa, $idA, 2); afirma($r['code'] === 200 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 5, 'hasta llegar a 5');
 afirma($add($ana, $oa, $idA, 1)['code'] === 422, 'la sexta no entra');
+
+seccion('Un solo guardado: borrar + cambiar + anadir a la vez');
+$cur = array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t ORDER BY id", [':t' => $idA]), 'id');
+$flip = 1 - (int) $db->uno("SELECT friends_only FROM $P WHERE id = :i", [':i' => (int) $cur[2]]);
+$r = $edit($ana, $oa, $idA, [(int) $cur[0]], [(int) $cur[2] => $flip], 1, ['0']);
+$j = json_decode($r['body'], true);
+afirma($r['code'] === 200 && ($j['removed'] ?? 0) === 1 && ($j['changed'] ?? 0) === 1 && ($j['added'] ?? 0) === 1 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === count($cur), 'con el album lleno: borrar una, esconder otra y anadir una en UN guardado (el orden en pantalla no importa)');
+afirma($edit($ana, $oa, $idA, array_map('intval', array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t", [':t' => $idA]), 'id')))['code'] === 422, 'no se pueden borrar todas a la vez: 422 (queda el album como estaba)');
+$todas = array_map('intval', array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t", [':t' => $idA]), 'id'));
+afirma($edit($ana, $oa, $idA, [], array_fill_keys($todas, 1))['code'] === 422, 'ni esconder todas a la vez: 422');
+afirma($edit($ana, $oa, $idA, [999999999])['code'] === 404, 'una foto que no es del album: 404');
+afirma($edit($ana, $oa, $idA)['code'] === 200, 'guardar sin cambios no hace nada y no falla');
+$db->exec("UPDATE $P SET friends_only = 0 WHERE trip_id = :t", [':t' => $idA]);
+$sob = array_map('intval', array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t ORDER BY id", [':t' => $idA]), 'id'));
+foreach (array_slice($sob, 2) as $pid) { $rm($ana, $oa, $pid); }
 
 seccion('Fotos nuevas con revision previa');
 $ids5 = array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t ORDER BY id", [':t' => $idA]), 'id');
@@ -146,7 +164,7 @@ foreach (array_slice($ids5, 2) as $pid) { $rm($ana, $oa, (int) $pid); }
 $db->setParams(['review_first' => 1, 'notify_admin' => 1, 'notify_emails' => 'moderacion@example.test']); $flush();
 $r = $add($ana, $oa, $idA, 1); $j = json_decode($r['body'], true);
 $newId = (int) $db->uno("SELECT id FROM $P WHERE trip_id = :t AND state = 0", [':t' => $idA]);
-afirma($r['code'] === 201 && ($j['pending'] ?? false) === true && $newId > 0 && (int) $db->uno("SELECT photo_count FROM $T WHERE id = :t", [':t' => $idA]) === 2, 'con la revision activada la foto nueva queda pendiente y no cuenta todavia');
+afirma($r['code'] === 200 && ($j['pending'] ?? false) === true && $newId > 0 && (int) $db->uno("SELECT photo_count FROM $T WHERE id = :t", [':t' => $idA]) === 2, 'con la revision activada la foto nueva queda pendiente y no cuenta todavia');
 usleep(500000); $files = $mails(); $raw = $files ? (string) file_get_contents($files[0]) : ''; $body = correoTexto($raw);
 afirma(count($files) === 1 && str_contains($raw, 'moderacion@example.test') && !str_contains($raw . $body, 'COM_MAPAVIAJES') && !preg_match('#https?://#i', $body), 'los moderadores reciben un correo (sin claves sin traducir, sin enlaces)');
 $ta = $tripIn($dataOf($ana), $idA); $pend = array_values(array_filter($ta['ph'], fn ($p) => $p['pd'] === 1));

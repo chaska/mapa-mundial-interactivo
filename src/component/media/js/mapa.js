@@ -502,78 +502,6 @@
 		fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending)); syncCmSwitch();
 		$('fiX').focus({ preventScroll: true });
 	}
-	/* edit the photos of my own trip: add (until the album is full), mark "friends only", delete; each change is saved at once */
-	function openEdit(t) {
-		if (!t || !t.mine || typeof HTMLDialogElement !== 'function') { return; }
-		const dlg = document.createElement('dialog'); dlg.className = 'mv-dlg mv-dlg-wide';
-		const msg = h('p', { class: 'mv-dlg-msg', role: 'alert' });
-		const list = h('ul', { class: 'mv-ed-list' }), addBox = h('div', { class: 'mv-ed-add' });
-		const close = h('button', { type: 'button', class: 'mv-btn mv-btn-soft', text: T('COM_MAPAVIAJES_JS_ED_CLOSE') });
-		const fresh = () => ALL.find((x) => x.id === t.id) || t;
-		const say = (text) => { msg.textContent = text || ''; };
-		const errOf = (j) => (j && typeof j.error === 'string' && j.error) || T('COM_MAPAVIAJES_JS_ED_ERR');
-		const done = async () => { try { dlg.close(); } catch (_) { /* already closed */ } dlg.remove(); await refreshTrips(); };
-		const draw = () => {
-			const cur = fresh(); list.replaceChildren(...cur.ph.map((p) => {
-				const cb = h('input', { type: 'checkbox' }); cb.checked = !!p.fo;
-				cb.addEventListener('change', async () => {
-					cb.disabled = true; say('');
-					const { ok, j } = await postJ(O.photoPrivacyUrl, { photo: p.id, fo: cb.checked ? '1' : '0' });
-					if (!ok) { cb.checked = !cb.checked; say(errOf(j)); } else { p.fo = cb.checked ? 1 : 0; }
-					cb.disabled = false;
-				});
-				let sure = false; const del = h('button', { type: 'button', class: 'mv-fr-b mv-bad', text: T('COM_MAPAVIAJES_JS_ED_DEL') });
-				del.onclick = async () => {
-					if (!sure) { sure = true; del.textContent = T('COM_MAPAVIAJES_JS_ED_SURE'); setTimeout(() => { sure = false; del.textContent = T('COM_MAPAVIAJES_JS_ED_DEL'); }, 3500); return; }
-					del.disabled = true; say('');
-					const { ok, j } = await postJ(O.photoRemoveUrl, { photo: p.id });
-					if (!ok) { say(errOf(j)); del.disabled = false; return; }
-					cur.ph = cur.ph.filter((x) => x.id !== p.id); await loadTrips(); draw();
-				};
-				return h('li', { class: 'mv-ed-li' }, h('img', { alt: '', src: photoSrc(p.id), width: '64', height: '64' }),
-					h('label', { class: 'mv-ed-fo' }, cb, h('span', { text: T('COM_MAPAVIAJES_JS_FO') })), p.pd ? h('em', { class: 'mv-pdtag', text: T('COM_MAPAVIAJES_JS_PD_BADGE') }) : null, del);
-			}));
-			addBox.replaceChildren(); const room = O.maxPhotos - cur.ph.length;
-			if (room <= 0) { addBox.append(h('p', { class: 'mv-help', text: T('COM_MAPAVIAJES_JS_ED_FULL') })); return; }
-			const pick = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: '', class: 'mv-ed-file', 'aria-label': T('COM_MAPAVIAJES_JS_ED_ADD') });
-			const rows = h('ul', { class: 'mv-ed-new' }); let files = [];
-			const rights = h('input', { type: 'checkbox', id: 'mv-ed-rights' });
-			const up = h('button', { type: 'button', class: 'mv-btn mv-btn-primary', text: T('COM_MAPAVIAJES_JS_ED_UPLOAD'), hidden: '' });
-			const redraw = () => {
-				rows.replaceChildren(...files.map((f, i) => {
-					const cap = h('input', { type: 'text', class: 'mv-input', maxlength: '2500', placeholder: T('COM_MAPAVIAJES_JS_CAPTION_PH'), 'aria-label': T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }); cap.value = f.cap; cap.addEventListener('input', () => { f.cap = cap.value; });
-					const cb = h('input', { type: 'checkbox' }); cb.checked = f.priv; cb.addEventListener('change', () => { f.priv = cb.checked; });
-					const rm = h('button', { type: 'button', class: 'mv-fr-b', text: '×', 'aria-label': T('COM_MAPAVIAJES_JS_REMOVE'), onclick: () => { URL.revokeObjectURL(f.url); files.splice(i, 1); redraw(); } });
-					return h('li', { class: 'mv-ed-li' }, h('img', { alt: '', src: f.url, width: '64', height: '64' }), h('div', { class: 'mv-ed-nf' }, cap, h('label', { class: 'mv-ed-fo' }, cb, h('span', { text: T('COM_MAPAVIAJES_JS_FO') }))), rm);
-				}));
-				up.hidden = !files.length; rightsRow.hidden = !files.length;
-			};
-			const rightsRow = h('label', { class: 'mv-check', for: 'mv-ed-rights', hidden: '' }, rights, h('span', { text: T('COM_MAPAVIAJES_JS_ED_RIGHTS') }));
-			pick.addEventListener('change', () => {
-				for (const f of pick.files) { if (files.length < room && /^image\/(jpeg|png|webp)$/.test(f.type)) { files.push({ file: f, url: URL.createObjectURL(f), cap: '', priv: false }); } }
-				pick.value = ''; say(''); redraw();
-			});
-			up.onclick = async () => {
-				say(''); if (!rights.checked) { say(T('COM_MAPAVIAJES_JS_E_RIGHTS')); return; }
-				if (files.every((f) => f.priv) && !fresh().ph.some((p) => !p.fo && !p.pd)) { say(T('COM_MAPAVIAJES_JS_E_PUBLIC')); return; }
-				up.disabled = true; up.textContent = T('COM_MAPAVIAJES_JS_ED_UPLOADING');
-				try {
-					const fd = new FormData(); fd.append(O.token, '1'); fd.append('id', String(t.id)); fd.append('rights', '1');
-					for (const [i, f] of files.entries()) { const b = prepareImg ? await prepareImg(f.file) : f.file; fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', f.cap); fd.append('priv[]', f.priv ? '1' : '0'); }
-					const r = await fetch(O.photosUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
-					const j = await r.json().catch(() => ({}));
-					if (!r.ok || !j.ok) { say(errOf(j)); up.disabled = false; up.textContent = T('COM_MAPAVIAJES_JS_ED_UPLOAD'); return; }
-					for (const f of files) { URL.revokeObjectURL(f.url); }
-					toast(String(j.message || ''), 6500); await done();
-				} catch (_) { say(T('COM_MAPAVIAJES_JS_ED_ERR')); up.disabled = false; up.textContent = T('COM_MAPAVIAJES_JS_ED_UPLOAD'); }
-			};
-			addBox.append(h('strong', { text: T('COM_MAPAVIAJES_JS_ED_ADD') }), pick, rows, rightsRow, up);
-		};
-		draw();
-		dlg.append(h('strong', { text: T('COM_MAPAVIAJES_JS_ED_TITLE') }), h('p', { class: 'mv-help', text: fmt(T('COM_MAPAVIAJES_JS_ED_HELP'), O.maxPhotos) }), list, addBox, msg, h('div', { class: 'mv-dlg-row' }, close));
-		document.body.append(dlg); close.onclick = done;
-		dlg.addEventListener('cancel', (ev) => { ev.preventDefault(); done(); }); dlg.showModal(); close.focus();
-	}
 	if ($('fEdit')) { $('fEdit').onclick = () => openEdit(VWR.t); }
 	/* delete a trip for good (its author, or an administrator): our own confirmation window, then the server decides */
 	function askDelete() {
@@ -1024,7 +952,7 @@
 	})();
 
 	/* ---------------------------------------------------------------- form (only when the user may add trips) */
-	const F = { pt: null, titleTouched: false, photos: [], busy: false };
+	const F = { pt: null, titleTouched: false, photos: [], busy: false, edit: null, removed: [] };
 	let renderPhotos = () => {}, syncSub = () => {}; // replaced below when the user may add trips
 	let draftEl = null, lastFocus = null;
 	const panel = $('panel');
@@ -1061,14 +989,26 @@
 		placeDraft();
 		if (fly) { flyTo(viewFor(pt.x, pt.y, Math.max(V.k, KMIN * 5))); } else { const b = visibleBox(), sx = V.tx + pt.x * V.k; if (sx > b.w - 60 || sx < 60) { flyTo(viewFor(pt.x, pt.y, V.k), 600); } }
 	}
+	/* the edit screen IS the new-album screen: same cards, same switches, same buttons; only what cannot change after publishing is hidden */
+	function openEdit(t) {
+		if (!panel || !t || !t.mine) { return; }
+		closeFi(); resetForm(); F.edit = t;
+		F.photos = t.ph.map((p) => ({ id: p.id, existing: true, url: photoSrc(p.id), cap: p.cap || '', priv: !!p.fo, pd: !!p.pd }));
+		panel.classList.add('mv-editing'); $('panelTitle').textContent = fmt(T('COM_MAPAVIAJES_JS_ED_PANEL'), t.t); $('btnSend').textContent = T('COM_MAPAVIAJES_JS_ED_SAVE');
+		$('edIntro').textContent = fmt(T('COM_MAPAVIAJES_JS_ED_HELP'), O.maxPhotos); $('edIntro').hidden = false;
+		renderPhotos(); openPanel();
+	}
 	function openPanel() {
 		if (!panel) { return; }
 		lastFocus = document.activeElement; closePop(); closeDrawer(); panel.classList.add('mv-open'); $('hint').classList.add('mv-off');
-		setTimeout(() => $('q').focus({ preventScroll: true }), 350);
+		setTimeout(() => (F.edit ? $('panelTitle') : $('q')).focus({ preventScroll: true }), 350);
 		if (F.pt) { flyTo(viewFor(F.pt.x, F.pt.y, Math.max(V.k, KMIN * 4))); }
 	}
 	function closePanel(reset) { if (!panel) { return; } panel.classList.remove('mv-open'); if (reset) { resetForm(); } if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); } placeDraft(); }
+	const PANEL_TITLE = panel ? $('panelTitle').textContent : '', SEND_LABEL = panel ? $('btnSend').textContent : '';
 	function resetForm() {
+		if (F.edit) { panel.classList.remove('mv-editing'); $('panelTitle').textContent = PANEL_TITLE; $('btnSend').textContent = SEND_LABEL; $('edIntro').hidden = true; F.edit = null; }
+		F.removed = [];
 		F.pt = null; F.titleTouched = false; for (const p of F.photos) { URL.revokeObjectURL(p.url); } F.photos = [];
 		$('form').reset(); $('yerr').textContent = ''; $('year').removeAttribute('aria-invalid'); $('q').value = ''; $('title').value = ''; $('where').hidden = true;
 		for (const id of ['qerr', 'terr', 'perr', 'summary']) { $(id).textContent = ''; }
@@ -1076,7 +1016,7 @@
 	}
 
 	if (panel) {
-		$('btnAdd').onclick = openPanel; $('btnClose').onclick = () => closePanel(false); $('btnCancel').onclick = () => { if (!F.busy) { closePanel(true); } };
+		$('btnAdd').onclick = () => { if (F.edit) { resetForm(); } openPanel(); }; $('btnClose').onclick = () => closePanel(!!F.edit); $('btnCancel').onclick = () => { if (!F.busy) { closePanel(true); } };
 
 		/* place search: our own list, no third party ever sees what the user types */
 		const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -1133,17 +1073,19 @@
 			const ul = $('photos'); ul.replaceChildren();
 			F.photos.forEach((p, i) => {
 				const ta = h('textarea', { id: 'mv-cap' + i, rows: '3', placeholder: T('COM_MAPAVIAJES_JS_CAPTION_PH'), 'aria-describedby': 'mv-cc' + i, maxlength: '2500' });
-				ta.value = p.cap;
-				const n = h('span'), row = h('div', { class: 'mv-prow', id: 'mv-cc' + i }, n, h('button', { class: 'mv-rm', type: 'button', onclick: () => { URL.revokeObjectURL(p.url); F.photos.splice(i, 1); renderPhotos(); $('files').focus(); } }, T('COM_MAPAVIAJES_JS_REMOVE')));
+				ta.value = p.cap; if (p.existing) { ta.disabled = true; ta.title = T('COM_MAPAVIAJES_JS_ED_CAP_FIXED'); }
+				const n = h('span', { text: p.existing ? (p.pd ? T('COM_MAPAVIAJES_JS_PD_BADGE') : '') : '' });
+				const row = h('div', { class: 'mv-prow', id: 'mv-cc' + i }, n, h('button', { class: 'mv-rm', type: 'button', onclick: () => { if (p.existing) { F.removed.push(p.id); } else { URL.revokeObjectURL(p.url); } F.photos.splice(i, 1); renderPhotos(); $('files').focus(); } }, T('COM_MAPAVIAJES_JS_REMOVE')));
 				const pcb = h('input', { type: 'checkbox', id: 'mv-pv' + i }); pcb.checked = !!p.priv; pcb.disabled = F.photos.length < 2 && !p.priv;
 				pcb.addEventListener('change', () => { p.priv = pcb.checked; $('perr').textContent = ''; });
 				const pv = h('label', { class: 'mv-check mv-pv', for: 'mv-pv' + i }, pcb, h('span', {}, T('COM_MAPAVIAJES_JS_FO'), h('small', { text: T('COM_MAPAVIAJES_JS_FO_HELP') })));
-				const upd = () => { const c = words(ta.value).length; n.textContent = fmt(T('COM_MAPAVIAJES_JS_WORDS'), c, O.maxWords); row.classList.toggle('mv-warn', c >= O.maxWords); };
+				const upd = () => { if (p.existing) { return; } const c = words(ta.value).length; n.textContent = fmt(T('COM_MAPAVIAJES_JS_WORDS'), c, O.maxWords); row.classList.toggle('mv-warn', c >= O.maxWords); };
 				ta.addEventListener('input', () => { const w = words(ta.value); if (w.length > O.maxWords) { ta.value = w.slice(0, O.maxWords).join(' '); } p.cap = ta.value; upd(); });
 				upd();
-				ul.appendChild(h('li', { class: 'mv-photo' }, h('div', { class: 'mv-th' }, h('img', { alt: '', src: p.url }), h('em', { text: i + 1 })), h('div', {}, h('label', { class: 'mv-sr', for: 'mv-cap' + i, text: T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }), ta, row, pv)));
+				ul.appendChild(h('li', { class: 'mv-photo' }, h('div', { class: 'mv-th' }, h('img', { alt: '', src: p.url }), h('em', { text: i + 1 })), h('div', {}, h('label', { class: 'mv-sr', for: 'mv-cap' + i, text: T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }), (p.existing && !p.cap) ? null : ta, row, pv)));
 			});
 			$('pcount').textContent = fmt(T('COM_MAPAVIAJES_JS_PHOTOS_OF'), F.photos.length, O.maxPhotos); $('drop').hidden = F.photos.length >= O.maxPhotos;
+			$('rightsRow').hidden = !!F.edit && !F.photos.some((p) => !p.existing);
 		};
 		$('files').addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
 		const drop = $('drop');
@@ -1182,14 +1124,14 @@
 		}
 
 		/* submit */
-		function setBusy(on, label) { F.busy = on; $('btnSend').disabled = on; $('btnSend').textContent = on ? label : T('COM_MAPAVIAJES_JS_SEND'); $('progress').hidden = !on; if (!on) { $('progressBar').style.width = '0'; } }
+		function setBusy(on, label) { F.busy = on; $('btnSend').disabled = on; $('btnSend').textContent = on ? label : T(F.edit ? 'COM_MAPAVIAJES_JS_ED_SAVE' : 'COM_MAPAVIAJES_JS_SEND'); $('progress').hidden = !on; if (!on) { $('progressBar').style.width = '0'; } }
 		function showErrors() {
 			const errs = [];
-			if (!F.pt) { $('qerr').textContent = T('COM_MAPAVIAJES_JS_E_PLACE'); $('q').setAttribute('aria-invalid', 'true'); errs.push($('q')); }
-			if (!$('year').value) { $('yerr').textContent = T('COM_MAPAVIAJES_JS_E_YEAR'); $('year').setAttribute('aria-invalid', 'true'); errs.push($('year')); }
-			if (!$('title').value.trim()) { $('terr').textContent = T('COM_MAPAVIAJES_JS_E_TITLE'); $('title').setAttribute('aria-invalid', 'true'); errs.push($('title')); }
-			if (!F.photos.length) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PHOTOS'); errs.push($('files')); } else if (F.photos.every((p) => p.priv)) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PUBLIC'); errs.push($('files')); }
-			$('rerr').textContent = ''; if (!$('rights').checked) { $('rerr').textContent = T('COM_MAPAVIAJES_JS_E_RIGHTS'); errs.push($('rights')); }
+			if (!F.edit && !F.pt) { $('qerr').textContent = T('COM_MAPAVIAJES_JS_E_PLACE'); $('q').setAttribute('aria-invalid', 'true'); errs.push($('q')); }
+			if (!F.edit && !$('year').value) { $('yerr').textContent = T('COM_MAPAVIAJES_JS_E_YEAR'); $('year').setAttribute('aria-invalid', 'true'); errs.push($('year')); }
+			if (!F.edit && !$('title').value.trim()) { $('terr').textContent = T('COM_MAPAVIAJES_JS_E_TITLE'); $('title').setAttribute('aria-invalid', 'true'); errs.push($('title')); }
+			if (!F.photos.length) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PHOTOS'); errs.push($('files')); } else if (!F.photos.some((p) => !p.priv && !p.pd)) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PUBLIC'); errs.push($('files')); }
+			$('rerr').textContent = ''; if (!$('rightsRow').hidden && !$('rights').checked) { $('rerr').textContent = T('COM_MAPAVIAJES_JS_E_RIGHTS'); errs.push($('rights')); }
 			$('summary').textContent = errs.length ? T('COM_MAPAVIAJES_JS_E_MISSING') : '';
 			if (errs.length) { const f = errs[0]; (f.id === 'mv-files' ? $('drop') : f).scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); if (f.id !== 'mv-files') { f.focus({ preventScroll: true }); } }
 			return errs.length === 0;
@@ -1198,23 +1140,31 @@
 			e.preventDefault();
 			if (F.busy || !showErrors()) { return; }
 			setBusy(true, T('COM_MAPAVIAJES_JS_PREPARING'));
-			let blobs;
-			try { blobs = await Promise.all(F.photos.map((p) => prepare(p.file))); } catch (_) { setBusy(false); $('perr').textContent = fmt(T('COM_MAPAVIAJES_JS_E_SIZE'), ''); return; }
+			const fresh = F.photos.filter((p) => !p.existing); let blobs;
+			try { blobs = await Promise.all(fresh.map((p) => prepare(p.file))); } catch (_) { setBusy(false); $('perr').textContent = fmt(T('COM_MAPAVIAJES_JS_E_SIZE'), ''); return; }
 			const fd = new FormData();
+			if (F.edit) {
+				fd.append(O.token, '1'); fd.append('id', String(F.edit.id)); if (fresh.length) { fd.append('rights', '1'); }
+				for (const id of F.removed) { fd.append('delete[]', String(id)); }
+				for (const p of F.photos) { if (p.existing) { fd.append('ep[' + p.id + ']', p.priv ? '1' : '0'); } }
+				blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', fresh[i].cap); fd.append('priv[]', fresh[i].priv ? '1' : '0'); });
+			} else {
 			fd.append(O.token, '1'); fd.append('album_id', String(O.albumId)); fd.append('title', $('title').value); fd.append('trip_year', $('year').value); fd.append('place', F.pt.label);
 			fd.append('lat', F.pt.la.toFixed(6)); fd.append('lon', F.pt.lo.toFixed(6)); fd.append('website', $('website').value); fd.append('rights', $('rights').checked ? '1' : '0');
 			const r = document.querySelector('input[name="mv-comments"]:checked'), allow = r ? r.value === '1' : false;
 			fd.append('allow_comments', allow ? '1' : '0'); fd.append('notify', allow && $('sub') && $('sub').checked ? '1' : '0');
 			blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', F.photos[i].cap); fd.append('priv[]', F.photos[i].priv ? '1' : '0'); });
+			}
 			setBusy(true, T('COM_MAPAVIAJES_JS_SENDING'));
 			const xhr = new XMLHttpRequest();
-			xhr.open('POST', O.submitUrl); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Accept', 'application/json');
+			xhr.open('POST', F.edit ? O.photosUrl : O.submitUrl); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Accept', 'application/json');
 			xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) { $('progressBar').style.width = Math.round(ev.loaded / ev.total * 100) + '%'; } };
 			xhr.onerror = xhr.ontimeout = () => { setBusy(false); $('summary').textContent = T('COM_MAPAVIAJES_JS_E_NET'); };
 			xhr.timeout = 120000;
 			xhr.onload = async () => {
 				let j = null; try { j = JSON.parse(xhr.responseText); } catch (_) { /* not JSON */ }
 				setBusy(false);
+				if (j && j.ok && F.edit) { const id = F.edit.id; toast(String(j.message || ''), 6500); closePanel(true); await loadTrips(); const t = ALL.find((x) => x.id === id); if (t) { openViewer(t); } return; }
 				if (j && j.ok) { toast(String(j.message || ''), 6500); closePanel(true); await loadTrips(); const t = TRIPS.find((x) => x.id === j.id); if (t) { flyTo(viewFor(t.x, t.y, Math.max(V.k, KMIN * 6))); } return; }
 				const msg = (j && typeof j.error === 'string') ? j.error : T('COM_MAPAVIAJES_JS_E_NET');
 				$('summary').textContent = msg;
