@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS "#__mapaviajes_blocks";
+DROP TABLE IF EXISTS "#__mapaviajes_friends";
 DROP TABLE IF EXISTS "#__mapaviajes_reports";
 DROP TABLE IF EXISTS "#__mapaviajes_follows";
 DROP TABLE IF EXISTS "#__mapaviajes_prefs";

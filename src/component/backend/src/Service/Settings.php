@@ -112,6 +112,7 @@ final class Settings
 		return [
 			'trip'    => $this->int('rank_w_trip', 20, 0, 1000),
 			'photo'   => $this->int('rank_w_photo', 3, 0, 1000),
+			'photo_private' => $this->int('rank_w_photo_private', 1, 0, 1000),
 			'like'    => $this->int('rank_w_like', 1, 0, 1000),
 			'comment' => $this->int('rank_w_comment', 2, 0, 1000),
 		];
@@ -122,6 +123,12 @@ final class Settings
 	public function rankEnabled(): bool   { return (int) $this->params->get('rank_enabled', 1) === 1; }
 	/** E-mail the author when a moderator publishes or rejects their trip. */
 	public function notifyAuthor(): bool  { return (int) $this->params->get('notify_author', 1) === 1; }
+	/** Moderators may see every photo, friends only or not, and approve the photos added to live trips (administrators and Super Users). */
+	public static function isModerator(\Joomla\CMS\User\User $user): bool
+	{
+		return !$user->guest && ($user->authorise('core.admin') || $user->authorise('core.edit.state', 'com_mapaviajes'));
+	}
+
 	/** Where people can write to flag content (shown in the map's report window); empty = not shown. */
 	public function contactEmail(): string
 	{

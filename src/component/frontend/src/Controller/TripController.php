@@ -13,6 +13,7 @@ defined('_JEXEC') || die;
 
 use Chaska\Component\Mapaviajes\Administrator\Security\ImageProcessor;
 use Chaska\Component\Mapaviajes\Administrator\Service\EventLog;
+use Chaska\Component\Mapaviajes\Administrator\Service\PhotoEditor;
 use Chaska\Component\Mapaviajes\Administrator\Service\ReportService;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Chaska\Component\Mapaviajes\Administrator\Service\SubmissionException;
@@ -163,6 +164,104 @@ class TripController extends BaseController
 		$this->json(['ok' => true, 'id' => $id, 'message' => Text::_('COM_MAPAVIAJES_REMOVED')], 200);
 	}
 
+	/** Adds photos to a trip of yours that is already on the map. POST multipart: id, photos[], captions[], priv[]. */
+	public function photos(): void
+	{
+		if ($_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0)
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_REQUEST_TOO_BIG')], 413);
+		}
+
+		$user = $this->writeGate();
+
+		if (!$user->authorise('mapaviajes.submit', 'com_mapaviajes'))
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_FORBIDDEN')], 403);
+		}
+
+		if (!ImageProcessor::isSupported())
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_IMAGE_SERVER')], 500);
+		}
+
+		if (($_POST['rights'] ?? '') !== '1')
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_RIGHTS')], 422);
+		}
+
+		$raw = $_POST['id'] ?? '';
+		$id  = (\is_string($raw) && preg_match('/^\d{1,9}$/', $raw) === 1) ? (int) $raw : 0;
+		$db  = Factory::getContainer()->get(DatabaseInterface::class);
+
+		try
+		{
+			$result = (new PhotoEditor($db, new Settings()))->add($user, $id, $this->uploads(), \is_array($_POST['captions'] ?? null) ? $_POST['captions'] : [], \is_array($_POST['priv'] ?? null) ? $_POST['priv'] : []);
+		}
+		catch (SubmissionException $e)
+		{
+			$this->refuse($e);
+		}
+		catch (\Throwable $e)
+		{
+			EventLog::add($db, (int) $user->id, 'error', 'photos');
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
+		}
+
+		$this->json(['ok' => true, 'added' => $result['added'], 'pending' => $result['pending'], 'message' => Text::_($result['pending'] ? 'COM_MAPAVIAJES_PHOTOS_ADDED_REVIEW' : 'COM_MAPAVIAJES_PHOTOS_ADDED')], 201);
+	}
+
+	/** Marks one of your photos "friends only" (fo = 1) or public again (fo = 0). POST: photo, fo. */
+	public function photoprivacy(): void
+	{
+		$user = $this->writeGate();
+		$raw  = $_POST['photo'] ?? '';
+		$id   = (\is_string($raw) && preg_match('/^\d{1,9}$/', $raw) === 1) ? (int) $raw : 0;
+		$fo   = $_POST['fo'] ?? '';
+
+		if ($fo !== '0' && $fo !== '1')
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_GENERIC')], 400);
+		}
+
+		try
+		{
+			(new PhotoEditor(Factory::getContainer()->get(DatabaseInterface::class), new Settings()))->setPrivacy($user, $id, $fo === '1');
+		}
+		catch (SubmissionException $e)
+		{
+			$this->refuse($e);
+		}
+		catch (\Throwable $e)
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
+		}
+
+		$this->json(['ok' => true]);
+	}
+
+	/** Deletes one of your photos (the trip keeps at least one, and one public). POST: photo. */
+	public function photoremove(): void
+	{
+		$user = $this->writeGate();
+		$raw  = $_POST['photo'] ?? '';
+		$id   = (\is_string($raw) && preg_match('/^\d{1,9}$/', $raw) === 1) ? (int) $raw : 0;
+
+		try
+		{
+			(new PhotoEditor(Factory::getContainer()->get(DatabaseInterface::class), new Settings()))->remove($user, $id);
+		}
+		catch (SubmissionException $e)
+		{
+			$this->refuse($e);
+		}
+		catch (\Throwable $e)
+		{
+			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
+		}
+
+		$this->json(['ok' => true]);
+	}
+
 	/** Flags a trip for the moderators (notice-and-action). POST: id, reason, note. Same gates as the other writes. */
 	public function report(): void
 	{
@@ -273,6 +372,7 @@ class TripController extends BaseController
 		}
 
 		$out['captions'] = $_POST['captions'] ?? [];
+		$out['priv']     = $_POST['priv'] ?? [];
 
 		return $out;
 	}

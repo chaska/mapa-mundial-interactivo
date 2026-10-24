@@ -388,6 +388,7 @@
 		for (const tb of document.querySelectorAll('#mv-drawer [role=tab]')) { tb.setAttribute('aria-selected', String(tb.dataset.tab === dtab)); }
 		$('favN').textContent = favs.length ? String(favs.length) : ''; $('favN').hidden = !favs.length;
 		body.setAttribute('aria-labelledby', 'mv-tab-' + dtab);
+		if (dtab === 'fri') { renderFriends(body); return; }
 		if (dtab === 'fol') { renderFollowing(body); return; }
 		if (dtab === 'fav') {
 			body.replaceChildren(...[favs.length ? h('p', { class: 'mv-d-sub', text: T('COM_MAPAVIAJES_JS_FAV_HELP') }) : null,
@@ -405,6 +406,9 @@
 	function openDrawer() { closePop(); if (panelOpen()) { closePanel(false); } renderDrawer(); $('drawer').classList.add('mv-open'); $('hint').classList.add('mv-off'); setTimeout(() => $('dTitle').focus({ preventScroll: true }), 300); }
 	function closeDrawer() { $('drawer').classList.remove('mv-open'); }
 	$('btnDisc').onclick = () => (drawerOpen() ? closeDrawer() : openDrawer());
+	if ($('btnFri')) { $('btnFri').onclick = () => { dtab = 'fri'; openDrawer(); }; }
+	if ($('fFriend')) { $('fFriend').onclick = () => { const t = VWR.t; if (t) { friendClick(t.u, t.by); } }; }
+	if ($('fiLockBtn')) { $('fiLockBtn').onclick = () => { const t = VWR.t; if (t) { friendClick(t.u, t.by); } }; }
 	$('dClose').onclick = () => { closeDrawer(); $('btnDisc').focus({ preventScroll: true }); };
 
 	/* ---------------------------------------------------------------- photo viewer */
@@ -446,7 +450,7 @@
 		img.style.transition = 'none'; img.style.opacity = dir ? 0 : 1; img.style.transform = dir ? 'translateX(' + dir * 40 + 'px)' : 'none';
 		img.src = photoSrc(p.id); img.alt = p.cap || fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n);
 		requestAnimationFrame(() => requestAnimationFrame(() => { img.style.transition = ''; img.style.opacity = 1; img.style.transform = 'none'; }));
-		$('fiCnt').textContent = (VWR.i + 1) + ' / ' + n; $('fiCnt').hidden = n < 2;
+		$('fiCnt').textContent = (n > 1 ? (VWR.i + 1) + ' / ' + n : '') + (p.fo ? (n > 1 ? ' · ' : '') + T('COM_MAPAVIAJES_JS_FO_BADGE') : '') + (p.pd ? ' · ' + T('COM_MAPAVIAJES_JS_PD_BADGE') : ''); $('fiCnt').hidden = n < 2 && !p.fo && !p.pd;
 		$('fiCap').textContent = p.cap || ''; $('fiCap').hidden = !p.cap;
 		for (const [k, b] of [...$('fiTh').children].entries()) { b.classList.toggle('mv-on', k === VWR.i); b.setAttribute('aria-current', String(k === VWR.i)); }
 		$('fiLive').textContent = n > 1 ? fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), VWR.i + 1, n) : '';
@@ -483,20 +487,94 @@
 			b.disabled = false;
 		};
 	}
-	function openViewer(t) {
+	function openViewer(t, again) {
 		if (!t || !t.ph.length) { return; }
-		closePop(); VWR.t = t; VWR.i = 0; VWR.opener = document.activeElement;
+		closePop(); VWR.t = t; VWR.i = 0; if (!again) { VWR.opener = document.activeElement; }
 		$('fiT').textContent = t.t;
 		$('fiS').textContent = [t.p, t.yr > 0 ? String(t.yr) : '', t.by ? fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) : ''].filter(Boolean).join(' · ');
 		$('fiPend').hidden = !t.pending;
 		$('fDel').hidden = !(t.mine || O.canDelete);
 		if ($('fRep')) { $('fRep').hidden = !!t.mine || !!t.pending; }
-		const th = $('fiTh'); th.replaceChildren(...(t.ph.length > 1 ? t.ph.map((p, k) => h('button', { type: 'button', class: 'mv-th', 'aria-label': fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), k + 1, t.ph.length), onclick: () => fiShow(k, k > VWR.i ? 1 : -1) }, h('img', { alt: '', src: photoSrc(p.id) }))) : []));
+		if ($('fEdit')) { $('fEdit').hidden = !t.mine; }
+		const th = $('fiTh'); th.replaceChildren(...(t.ph.length > 1 ? t.ph.map((p, k) => h('button', { type: 'button', class: 'mv-th' + (p.fo ? ' mv-fo' : '') + (p.pd ? ' mv-pd' : ''), 'aria-label': fmt(T('COM_MAPAVIAJES_JS_PHOTO_X_OF_Y'), k + 1, t.ph.length) + (p.fo ? ' · ' + T('COM_MAPAVIAJES_JS_FO_BADGE') : ''), onclick: () => fiShow(k, k > VWR.i ? 1 : -1) }, h('img', { alt: '', src: photoSrc(p.id) }))) : []));
 		for (const id of ['fiPrev', 'fiNext']) { $(id).hidden = t.ph.length < 2; }
-		fi.hidden = false; syncFollow(); $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
+		fi.hidden = false; syncFollow(); syncFriends(); $('fiBody').scrollTop = 0; fiShow(0, 0); syncReact(); $('fMsg').textContent = ''; $('fMsg').classList.remove('mv-show');
 		fiComments(!!(O.commentsOn && O.allowComments && t.cm && !t.pending)); syncCmSwitch();
 		$('fiX').focus({ preventScroll: true });
 	}
+	/* edit the photos of my own trip: add (until the album is full), mark "friends only", delete; each change is saved at once */
+	function openEdit(t) {
+		if (!t || !t.mine || typeof HTMLDialogElement !== 'function') { return; }
+		const dlg = document.createElement('dialog'); dlg.className = 'mv-dlg mv-dlg-wide';
+		const msg = h('p', { class: 'mv-dlg-msg', role: 'alert' });
+		const list = h('ul', { class: 'mv-ed-list' }), addBox = h('div', { class: 'mv-ed-add' });
+		const close = h('button', { type: 'button', class: 'mv-btn mv-btn-soft', text: T('COM_MAPAVIAJES_JS_ED_CLOSE') });
+		const fresh = () => ALL.find((x) => x.id === t.id) || t;
+		const say = (text) => { msg.textContent = text || ''; };
+		const errOf = (j) => (j && typeof j.error === 'string' && j.error) || T('COM_MAPAVIAJES_JS_ED_ERR');
+		const done = async () => { try { dlg.close(); } catch (_) { /* already closed */ } dlg.remove(); await refreshTrips(); };
+		const draw = () => {
+			const cur = fresh(); list.replaceChildren(...cur.ph.map((p) => {
+				const cb = h('input', { type: 'checkbox' }); cb.checked = !!p.fo;
+				cb.addEventListener('change', async () => {
+					cb.disabled = true; say('');
+					const { ok, j } = await postJ(O.photoPrivacyUrl, { photo: p.id, fo: cb.checked ? '1' : '0' });
+					if (!ok) { cb.checked = !cb.checked; say(errOf(j)); } else { p.fo = cb.checked ? 1 : 0; }
+					cb.disabled = false;
+				});
+				let sure = false; const del = h('button', { type: 'button', class: 'mv-fr-b mv-bad', text: T('COM_MAPAVIAJES_JS_ED_DEL') });
+				del.onclick = async () => {
+					if (!sure) { sure = true; del.textContent = T('COM_MAPAVIAJES_JS_ED_SURE'); setTimeout(() => { sure = false; del.textContent = T('COM_MAPAVIAJES_JS_ED_DEL'); }, 3500); return; }
+					del.disabled = true; say('');
+					const { ok, j } = await postJ(O.photoRemoveUrl, { photo: p.id });
+					if (!ok) { say(errOf(j)); del.disabled = false; return; }
+					cur.ph = cur.ph.filter((x) => x.id !== p.id); await loadTrips(); draw();
+				};
+				return h('li', { class: 'mv-ed-li' }, h('img', { alt: '', src: photoSrc(p.id), width: '64', height: '64' }),
+					h('label', { class: 'mv-ed-fo' }, cb, h('span', { text: T('COM_MAPAVIAJES_JS_FO') })), p.pd ? h('em', { class: 'mv-pdtag', text: T('COM_MAPAVIAJES_JS_PD_BADGE') }) : null, del);
+			}));
+			addBox.replaceChildren(); const room = O.maxPhotos - cur.ph.length;
+			if (room <= 0) { addBox.append(h('p', { class: 'mv-help', text: T('COM_MAPAVIAJES_JS_ED_FULL') })); return; }
+			const pick = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: '', class: 'mv-ed-file', 'aria-label': T('COM_MAPAVIAJES_JS_ED_ADD') });
+			const rows = h('ul', { class: 'mv-ed-new' }); let files = [];
+			const rights = h('input', { type: 'checkbox', id: 'mv-ed-rights' });
+			const up = h('button', { type: 'button', class: 'mv-btn mv-btn-primary', text: T('COM_MAPAVIAJES_JS_ED_UPLOAD'), hidden: '' });
+			const redraw = () => {
+				rows.replaceChildren(...files.map((f, i) => {
+					const cap = h('input', { type: 'text', class: 'mv-input', maxlength: '2500', placeholder: T('COM_MAPAVIAJES_JS_CAPTION_PH'), 'aria-label': T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }); cap.value = f.cap; cap.addEventListener('input', () => { f.cap = cap.value; });
+					const cb = h('input', { type: 'checkbox' }); cb.checked = f.priv; cb.addEventListener('change', () => { f.priv = cb.checked; });
+					const rm = h('button', { type: 'button', class: 'mv-fr-b', text: '×', 'aria-label': T('COM_MAPAVIAJES_JS_REMOVE'), onclick: () => { URL.revokeObjectURL(f.url); files.splice(i, 1); redraw(); } });
+					return h('li', { class: 'mv-ed-li' }, h('img', { alt: '', src: f.url, width: '64', height: '64' }), h('div', { class: 'mv-ed-nf' }, cap, h('label', { class: 'mv-ed-fo' }, cb, h('span', { text: T('COM_MAPAVIAJES_JS_FO') }))), rm);
+				}));
+				up.hidden = !files.length; rightsRow.hidden = !files.length;
+			};
+			const rightsRow = h('label', { class: 'mv-check', for: 'mv-ed-rights', hidden: '' }, rights, h('span', { text: T('COM_MAPAVIAJES_JS_ED_RIGHTS') }));
+			pick.addEventListener('change', () => {
+				for (const f of pick.files) { if (files.length < room && /^image\/(jpeg|png|webp)$/.test(f.type)) { files.push({ file: f, url: URL.createObjectURL(f), cap: '', priv: false }); } }
+				pick.value = ''; say(''); redraw();
+			});
+			up.onclick = async () => {
+				say(''); if (!rights.checked) { say(T('COM_MAPAVIAJES_JS_E_RIGHTS')); return; }
+				if (files.every((f) => f.priv) && !fresh().ph.some((p) => !p.fo && !p.pd)) { say(T('COM_MAPAVIAJES_JS_E_PUBLIC')); return; }
+				up.disabled = true; up.textContent = T('COM_MAPAVIAJES_JS_ED_UPLOADING');
+				try {
+					const fd = new FormData(); fd.append(O.token, '1'); fd.append('id', String(t.id)); fd.append('rights', '1');
+					for (const [i, f] of files.entries()) { const b = prepareImg ? await prepareImg(f.file) : f.file; fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', f.cap); fd.append('priv[]', f.priv ? '1' : '0'); }
+					const r = await fetch(O.photosUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
+					const j = await r.json().catch(() => ({}));
+					if (!r.ok || !j.ok) { say(errOf(j)); up.disabled = false; up.textContent = T('COM_MAPAVIAJES_JS_ED_UPLOAD'); return; }
+					for (const f of files) { URL.revokeObjectURL(f.url); }
+					toast(String(j.message || ''), 6500); await done();
+				} catch (_) { say(T('COM_MAPAVIAJES_JS_ED_ERR')); up.disabled = false; up.textContent = T('COM_MAPAVIAJES_JS_ED_UPLOAD'); }
+			};
+			addBox.append(h('strong', { text: T('COM_MAPAVIAJES_JS_ED_ADD') }), pick, rows, rightsRow, up);
+		};
+		draw();
+		dlg.append(h('strong', { text: T('COM_MAPAVIAJES_JS_ED_TITLE') }), h('p', { class: 'mv-help', text: fmt(T('COM_MAPAVIAJES_JS_ED_HELP'), O.maxPhotos) }), list, addBox, msg, h('div', { class: 'mv-dlg-row' }, close));
+		document.body.append(dlg); close.onclick = done;
+		dlg.addEventListener('cancel', (ev) => { ev.preventDefault(); done(); }); dlg.showModal(); close.focus();
+	}
+	if ($('fEdit')) { $('fEdit').onclick = () => openEdit(VWR.t); }
 	/* delete a trip for good (its author, or an administrator): our own confirmation window, then the server decides */
 	function askDelete() {
 		const t = VWR.t; if (!t || typeof HTMLDialogElement !== 'function') { return; }
@@ -654,6 +732,7 @@
 		$('pplX').onclick = () => { closePeople(); $('zppl').focus({ preventScroll: true }); };
 		$('pplAll').onclick = () => { HIDE = new Set(); refilter(); };
 		$('pplNone').onclick = () => { HIDE = new Set(peopleList().map((p) => p.u)); refilter(); };
+		if ($('pplFri')) { $('pplFri').onclick = () => { HIDE = new Set(peopleList().filter((p) => !isMe(p.u) && !frHas(FR.friends, p.u)).map((p) => p.u)); refilter(); }; }
 	}
 
 	/* ---- header menu (three bars): opens a list with the secondary buttons ---- */
@@ -701,6 +780,72 @@
 	/* ---- follow a traveller: a button in the trip card and in the people list; the news are in the "Following" tab ---- */
 	const NEWIDS = new Set();
 	const isMe = (u) => ALL.some((t) => t.mine && t.u === u);
+	/* ---- friends: asked / accepted / blocked, kept by the server; the names come with the keys (nobody sees another person's friends) ---- */
+	let prepareImg = null; // set by the new-album form: shrinks a photo in the browser before it is sent
+	let FR = { friends: [], incoming: [], outgoing: [], blocked: [] };
+	const frHas = (list, u) => list.some((x) => x.k === u);
+	const frState = (u) => (frHas(FR.friends, u) ? 'friends' : frHas(FR.outgoing, u) ? 'out' : frHas(FR.incoming, u) ? 'in' : 'none');
+	function setFriend(f) {
+		f = f || {}; const arr = (a) => (Array.isArray(a) ? a.filter((x) => x && typeof x.k === 'string') : []);
+		FR = { friends: arr(f.friends), incoming: arr(f.incoming), outgoing: arr(f.outgoing), blocked: arr(f.blocked) };
+		syncFriends();
+	}
+	async function postJ(url, fields) {
+		const fd = new FormData(); fd.append(O.token, '1'); for (const [k, v] of Object.entries(fields)) { fd.append(k, v); }
+		try {
+			const r = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' } });
+			const j = await r.json().catch(() => ({})); return { ok: r.ok && j.ok === true, j };
+		} catch (_) { return { ok: false, j: {} }; }
+	}
+	let frBusy = false;
+	async function friendDo(action, u, name, fields) {
+		if (frBusy || !u) { return false; } frBusy = true;
+		const { ok, j } = await postJ(O.friendUrl + action + '&format=json', { u, ...(fields || {}) });
+		frBusy = false;
+		if (!ok) { toast((j && typeof j.error === 'string' && j.error) || T('COM_MAPAVIAJES_JS_FR_ERR')); return false; }
+		setFriend(j.friend); await refreshTrips();
+		return j.result || true;
+	}
+	/* our own confirmation window (the same look as the delete one) */
+	function confirmBox(title, text, okText, danger, onOk) {
+		if (typeof HTMLDialogElement !== 'function') { return; }
+		const dlg = document.createElement('dialog'); dlg.className = 'mv-dlg';
+		const no = h('button', { type: 'button', class: 'mv-btn mv-btn-soft', text: T('COM_MAPAVIAJES_JS_FR_NO') });
+		const ok = h('button', { type: 'button', class: 'mv-btn ' + (danger ? 'mv-btn-danger' : 'mv-btn-primary'), text: okText });
+		dlg.append(h('strong', { text: title }), h('p', { text }), h('div', { class: 'mv-dlg-row' }, no, ok)); document.body.append(dlg);
+		const done = () => { try { dlg.close(); } catch (_) { /* already closed */ } dlg.remove(); };
+		no.onclick = done; ok.onclick = () => { done(); onOk(); };
+		dlg.addEventListener('cancel', () => dlg.remove()); dlg.showModal(); no.focus();
+	}
+	async function friendClick(u, name) {
+		const st = frState(u);
+		if (st === 'none') { const r = await friendDo('request', u, name); if (r === 'friends') { toast(T('COM_MAPAVIAJES_JS_FR_NOW')); } else if (r) { toast(fmt(T('COM_MAPAVIAJES_JS_FR_SENT'), name || '—')); } }
+		else if (st === 'in') { if (await friendDo('respond', u, name, { action: 'accept' })) { toast(T('COM_MAPAVIAJES_JS_FR_NOW')); } }
+		else if (st === 'out') { if (await friendDo('cancel', u, name)) { toast(T('COM_MAPAVIAJES_JS_FR_GONE')); } }
+		else { confirmBox(name || '—', fmt(T('COM_MAPAVIAJES_JS_FR_REMOVE_CONFIRM'), name || '—'), T('COM_MAPAVIAJES_JS_FR_REMOVE'), true, async () => { if (await friendDo('cancel', u, name)) { toast(T('COM_MAPAVIAJES_JS_FR_GONE')); } }); }
+	}
+	/* reload the map's data (the photos each person may see depend on who their friends are) and keep the open card in sync */
+	async function refreshTrips() { const id = VWR && VWR.t ? VWR.t.id : 0, open = !fi.hidden; await loadTrips(); if (open && id) { const t = ALL.find((x) => x.id === id); if (t) { VWR.t = t; VWR.i = 0; openViewer(t, true); } } }
+	function syncFriends() {
+		const inN = FR.incoming.length;
+		if ($('friN')) { $('friN').textContent = inN ? String(inN) : ''; $('friN').hidden = !inN; }
+		syncFollow();
+		const t = VWR && VWR.t, b = $('fFriend');
+		if (b) {
+			const show = !!(t && !t.mine && t.u && !fi.hidden && !frHas(FR.blocked, t.u));
+			b.hidden = !show;
+			if (show) { const st = frState(t.u); b.classList.toggle('mv-on', st === 'friends'); b.setAttribute('aria-pressed', String(st === 'friends')); b.querySelector('span').textContent = T(st === 'friends' ? 'COM_MAPAVIAJES_JS_FR_OK' : st === 'out' ? 'COM_MAPAVIAJES_JS_FR_OUT' : st === 'in' ? 'COM_MAPAVIAJES_JS_FR_IN' : 'COM_MAPAVIAJES_JS_FR_ASK'); }
+		}
+		const lk = $('fiLock');
+		if (lk) {
+			const n = t && !t.mine ? (t.lk2 || 0) : 0; lk.hidden = fi.hidden || n === 0;
+			if (n) {
+				const st = frState(t.u); $('fiLockT').textContent = fmt(T(n === 1 ? 'COM_MAPAVIAJES_JS_LOCK_1' : 'COM_MAPAVIAJES_JS_LOCK_N'), n);
+				const lb = $('fiLockBtn'); lb.hidden = st === 'friends'; lb.textContent = T(st === 'out' ? 'COM_MAPAVIAJES_JS_FR_OUT' : st === 'in' ? 'COM_MAPAVIAJES_JS_FR_IN' : 'COM_MAPAVIAJES_JS_FR_ASK');
+			}
+		}
+		if (drawerOpen() && dtab === 'fri') { renderDrawer(); }
+	}
 	const nameOf = (u) => { const t = ALL.find((x) => x.u === u); return t ? (t.by || '—') : '—'; };
 	const newTrips = () => ALL.filter((t) => FW.keys.has(t.u) && !t.mine && !t.pending && t.ts > FW.seen);
 	function followIcon() {
@@ -709,7 +854,7 @@
 	}
 	function syncFollow() {
 		const n = newTrips().length;
-		for (const id of ['btnMenu', 'btnDisc']) { if ($(id)) { $(id).classList.toggle('mv-dot', n > 0); } }
+		for (const id of ['btnMenu', 'btnDisc']) { if ($(id)) { $(id).classList.toggle('mv-dot', n > 0 || (id === 'btnMenu' && FR.incoming.length > 0)); } }
 		const total = ALL.filter((t) => FW.keys.has(t.u) && !t.mine && !t.pending).length;
 		if ($('folN')) { $('folN').textContent = n > 0 ? String(n) : ''; $('folN').hidden = n === 0; }
 		const t = VWR && VWR.t, b = $('fFollow');
@@ -736,6 +881,21 @@
 			if (drawerOpen() && dtab === 'fol') { renderDrawer(); }
 		} catch (_) { toast(T('COM_MAPAVIAJES_JS_FOL_ERR')); }
 		followBusy = false;
+	}
+	function renderFriends(body) {
+		const person = (p, ...btns) => h('li', { class: 'mv-fr-li' }, h('span', { class: 'mv-fr-n', text: p.n || '—' }), h('span', { class: 'mv-fr-acts' }, btns));
+		const btn = (label, cls, fn) => h('button', { type: 'button', class: 'mv-fr-b ' + cls, text: label, onclick: fn });
+		const sec = (title, items) => (items.length ? [h('h3', { class: 'mv-fr-h', text: title }), h('ul', { class: 'mv-fr-list' }, items)] : []);
+		const inc = FR.incoming.map((p) => person(p, btn(T('COM_MAPAVIAJES_JS_FR_ACCEPT'), 'mv-yes', async () => { if (await friendDo('respond', p.k, p.n, { action: 'accept' })) { toast(T('COM_MAPAVIAJES_JS_FR_NOW')); } }),
+			btn(T('COM_MAPAVIAJES_JS_FR_DECLINE'), '', () => friendDo('respond', p.k, p.n, { action: 'decline' })),
+			btn(T('COM_MAPAVIAJES_JS_FR_BLOCK'), 'mv-bad', () => confirmBox(p.n, fmt(T('COM_MAPAVIAJES_JS_FR_BLOCK_CONFIRM'), p.n), T('COM_MAPAVIAJES_JS_FR_BLOCK'), true, () => friendDo('respond', p.k, p.n, { action: 'block' })))));
+		const fr = FR.friends.map((p) => person(p, btn(T('COM_MAPAVIAJES_JS_FR_REMOVE'), 'mv-bad', () => confirmBox(p.n, fmt(T('COM_MAPAVIAJES_JS_FR_REMOVE_CONFIRM'), p.n), T('COM_MAPAVIAJES_JS_FR_REMOVE'), true, () => friendDo('cancel', p.k, p.n)))));
+		const out = FR.outgoing.map((p) => person(p, btn(T('COM_MAPAVIAJES_JS_FR_CANCEL'), '', () => friendDo('cancel', p.k, p.n))));
+		const bl = FR.blocked.map((p) => person(p, btn(T('COM_MAPAVIAJES_JS_FR_UNBLOCK'), '', () => friendDo('unblock', p.k, p.n))));
+		const any = inc.length || fr.length || out.length || bl.length;
+		body.replaceChildren(...sec(T('COM_MAPAVIAJES_JS_FR_H_IN'), inc), ...sec(T('COM_MAPAVIAJES_JS_FR_H_FRIENDS'), fr), ...sec(T('COM_MAPAVIAJES_JS_FR_H_OUT'), out), ...sec(T('COM_MAPAVIAJES_JS_FR_H_BLOCKED'), bl),
+			...(fr.length || inc.length ? [] : [h('div', { class: 'mv-empty-fav' }, h('strong', { text: T('COM_MAPAVIAJES_JS_FR_EMPTY') }), h('span', { text: T('COM_MAPAVIAJES_JS_FR_EMPTY_HELP') }))]));
+		void any;
 	}
 	function renderFollowing(body) {
 		const mine = ALL.filter((t) => FW.keys.has(t.u) && !t.mine && !t.pending).sort((a, b) => b.ts - a.ts);
@@ -788,7 +948,7 @@
 				h('p', { class: 'mv-pmine', text: kind === 'all' ? (mine ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_ALL'), mine.s, mine.w) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) : (kind === 'week' && mine ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_N'), mine.pos, mine.s) : kind === 'last' ? (rows.find((r) => r.me) ? fmt(T('COM_MAPAVIAJES_JS_POD_MINE_N'), rows.find((r) => r.me).pos, rows.find((r) => r.me).s) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) : T('COM_MAPAVIAJES_JS_POD_MINE_NONE')) }));
 			const w = d.weights || {};
 			pg.append(h('details', { class: 'mv-phow', open: '' }, h('summary', { text: T('COM_MAPAVIAJES_JS_POD_HOW') }), h('ul', {},
-				h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_TRIP'), w.trip || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_PHOTO'), w.photo || 0) }),
+				h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_TRIP'), w.trip || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_PHOTO'), w.photo || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_PHOTO_PRIV'), w.photo_private || 0) }),
 				h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_LIKE'), (d.caps || {}).likes || 0, w.like || 0) }), h('li', { text: fmt(T('COM_MAPAVIAJES_JS_POD_HOW_COMMENT'), (d.caps || {}).comments || 0, w.comment || 0) })),
 				h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_CAP') }), h('p', { text: T('COM_MAPAVIAJES_JS_POD_HOW_WEEK') }),
 				h('ul', {}, ['S1', 'S2', 'S3', 'S4'].map((k) => h('li', { text: T('COM_MAPAVIAJES_JS_POD_HOW_' + k) })))));
@@ -964,7 +1124,7 @@
 			for (const f of list) {
 				if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { errs.push(fmt(T('COM_MAPAVIAJES_JS_E_TYPE'), f.name.slice(0, 40))); continue; }
 				if (F.photos.length >= O.maxPhotos) { skipped++; continue; }
-				F.photos.push({ file: f, url: URL.createObjectURL(f), cap: '' });
+				F.photos.push({ file: f, url: URL.createObjectURL(f), cap: '', priv: false });
 			}
 			if (skipped) { errs.push(fmt(T('COM_MAPAVIAJES_JS_E_MAX'), O.maxPhotos)); }
 			$('perr').textContent = errs.join(' '); renderPhotos();
@@ -975,10 +1135,13 @@
 				const ta = h('textarea', { id: 'mv-cap' + i, rows: '3', placeholder: T('COM_MAPAVIAJES_JS_CAPTION_PH'), 'aria-describedby': 'mv-cc' + i, maxlength: '2500' });
 				ta.value = p.cap;
 				const n = h('span'), row = h('div', { class: 'mv-prow', id: 'mv-cc' + i }, n, h('button', { class: 'mv-rm', type: 'button', onclick: () => { URL.revokeObjectURL(p.url); F.photos.splice(i, 1); renderPhotos(); $('files').focus(); } }, T('COM_MAPAVIAJES_JS_REMOVE')));
+				const pcb = h('input', { type: 'checkbox', id: 'mv-pv' + i }); pcb.checked = !!p.priv; pcb.disabled = F.photos.length < 2 && !p.priv;
+				pcb.addEventListener('change', () => { p.priv = pcb.checked; $('perr').textContent = ''; });
+				const pv = h('label', { class: 'mv-check mv-pv', for: 'mv-pv' + i }, pcb, h('span', {}, T('COM_MAPAVIAJES_JS_FO'), h('small', { text: T('COM_MAPAVIAJES_JS_FO_HELP') })));
 				const upd = () => { const c = words(ta.value).length; n.textContent = fmt(T('COM_MAPAVIAJES_JS_WORDS'), c, O.maxWords); row.classList.toggle('mv-warn', c >= O.maxWords); };
 				ta.addEventListener('input', () => { const w = words(ta.value); if (w.length > O.maxWords) { ta.value = w.slice(0, O.maxWords).join(' '); } p.cap = ta.value; upd(); });
 				upd();
-				ul.appendChild(h('li', { class: 'mv-photo' }, h('div', { class: 'mv-th' }, h('img', { alt: '', src: p.url }), h('em', { text: i + 1 })), h('div', {}, h('label', { class: 'mv-sr', for: 'mv-cap' + i, text: T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }), ta, row)));
+				ul.appendChild(h('li', { class: 'mv-photo' }, h('div', { class: 'mv-th' }, h('img', { alt: '', src: p.url }), h('em', { text: i + 1 })), h('div', {}, h('label', { class: 'mv-sr', for: 'mv-cap' + i, text: T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }), ta, row, pv)));
 			});
 			$('pcount').textContent = fmt(T('COM_MAPAVIAJES_JS_PHOTOS_OF'), F.photos.length, O.maxPhotos); $('drop').hidden = F.photos.length >= O.maxPhotos;
 		};
@@ -998,6 +1161,7 @@
 
 		/* Shrink every photo in the browser first: a phone photo is 3 to 10 MB and a mobile connection should not carry it.
 		 * The server still treats the result as hostile and re-encodes it. */
+		prepareImg = prepare;
 		async function prepare(file) {
 			const MAXPX = 1800;
 			try {
@@ -1024,7 +1188,7 @@
 			if (!F.pt) { $('qerr').textContent = T('COM_MAPAVIAJES_JS_E_PLACE'); $('q').setAttribute('aria-invalid', 'true'); errs.push($('q')); }
 			if (!$('year').value) { $('yerr').textContent = T('COM_MAPAVIAJES_JS_E_YEAR'); $('year').setAttribute('aria-invalid', 'true'); errs.push($('year')); }
 			if (!$('title').value.trim()) { $('terr').textContent = T('COM_MAPAVIAJES_JS_E_TITLE'); $('title').setAttribute('aria-invalid', 'true'); errs.push($('title')); }
-			if (!F.photos.length) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PHOTOS'); errs.push($('files')); }
+			if (!F.photos.length) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PHOTOS'); errs.push($('files')); } else if (F.photos.every((p) => p.priv)) { $('perr').textContent = T('COM_MAPAVIAJES_JS_E_PUBLIC'); errs.push($('files')); }
 			$('rerr').textContent = ''; if (!$('rights').checked) { $('rerr').textContent = T('COM_MAPAVIAJES_JS_E_RIGHTS'); errs.push($('rights')); }
 			$('summary').textContent = errs.length ? T('COM_MAPAVIAJES_JS_E_MISSING') : '';
 			if (errs.length) { const f = errs[0]; (f.id === 'mv-files' ? $('drop') : f).scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); if (f.id !== 'mv-files') { f.focus({ preventScroll: true }); } }
@@ -1041,7 +1205,7 @@
 			fd.append('lat', F.pt.la.toFixed(6)); fd.append('lon', F.pt.lo.toFixed(6)); fd.append('website', $('website').value); fd.append('rights', $('rights').checked ? '1' : '0');
 			const r = document.querySelector('input[name="mv-comments"]:checked'), allow = r ? r.value === '1' : false;
 			fd.append('allow_comments', allow ? '1' : '0'); fd.append('notify', allow && $('sub') && $('sub').checked ? '1' : '0');
-			blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', F.photos[i].cap); });
+			blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', F.photos[i].cap); fd.append('priv[]', F.photos[i].priv ? '1' : '0'); });
 			setBusy(true, T('COM_MAPAVIAJES_JS_SENDING'));
 			const xhr = new XMLHttpRequest();
 			xhr.open('POST', O.submitUrl); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Accept', 'application/json');
@@ -1091,7 +1255,7 @@
 			if (res.status === 403) { toast(T('COM_MAPAVIAJES_JS_SESSION')); return; }
 			const j = await res.json();
 			ALL = (j.trips || []).map((t) => { const [x, y] = project(t.lo, t.la); return { ...t, x, y }; });
-			FW = { keys: new Set((j.follow && j.follow.keys) || []), seen: Number(j.follow && j.follow.seen) || 0, digest: Number(j.follow && j.follow.digest) || 0 }; syncFollow();
+			FW = { keys: new Set((j.follow && j.follow.keys) || []), seen: Number(j.follow && j.follow.seen) || 0, digest: Number(j.follow && j.follow.digest) || 0 }; syncFollow(); setFriend(j.friend);
 			TRIPS = visibleTrips();
 			syncChip();
 			for (const k of [...pinEls.keys()]) { pinEls.get(k).remove(); pinEls.delete(k); }

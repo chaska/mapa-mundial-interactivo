@@ -18,7 +18,7 @@ use Joomla\Database\ParameterType;
  * The weekly podium.
  *
  * A week is Monday 00:00 to Sunday 24:00 UTC. Per person and week:
- *   base       = w_trip * published trips with photos + w_photo * photos on those trips
+ *   base       = w_trip * published trips with photos + w_photo * public photos on those trips + w_photo_private * friends-only photos (worth less)
  *   engagement = w_like * min(reactions given to OTHER people's published trips, like cap)
  *              + w_comment * min(published comments left on OTHER people's trips, comment cap)
  *   score      = base + min(engagement, base)
@@ -77,8 +77,8 @@ final class RankingService
 			$to
 		);
 		$photos = $this->perUser(
-			'SELECT t.user_id AS uid, COUNT(p.id) AS n FROM ' . $this->t('trips') . ' t JOIN ' . $this->t('photos') . ' p ON p.trip_id = t.id'
-			. ' WHERE t.published = 1 AND t.created >= :f AND t.created < :t GROUP BY t.user_id',
+			'SELECT t.user_id AS uid, SUM(CASE WHEN p.friends_only = 0 THEN 1 ELSE 0 END) AS n, SUM(CASE WHEN p.friends_only = 1 THEN 1 ELSE 0 END) AS np FROM ' . $this->t('trips') . ' t JOIN ' . $this->t('photos') . ' p ON p.trip_id = t.id'
+			. ' WHERE t.published = 1 AND p.state = 1 AND t.created >= :f AND t.created < :t GROUP BY t.user_id',
 			$from,
 			$to
 		);
@@ -116,7 +116,8 @@ final class RankingService
 			$nPhotos   = (int) ($photos[$uid]['n'] ?? 0);
 			$nLikes    = min((int) ($likes[$uid]['n'] ?? 0), $this->settings->rankLikeCap());
 			$nComments = min((int) ($comments[$uid]['n'] ?? 0), $this->settings->rankCommentCap());
-			$base      = $w['trip'] * $nTrips + $w['photo'] * $nPhotos;
+			$nPrivate  = (int) ($photos[$uid]['np'] ?? 0);
+			$base      = $w['trip'] * $nTrips + $w['photo'] * $nPhotos + $w['photo_private'] * $nPrivate;
 			$engage    = $w['like'] * $nLikes + $w['comment'] * $nComments;
 			$score     = $base + min($engage, $base);
 
@@ -127,7 +128,7 @@ final class RankingService
 
 			$rows[] = [
 				'user_id'  => $uid, 'username' => $people[$uid]['username'], 'name' => $people[$uid]['name'],
-				'score'    => $score, 'trips' => $nTrips, 'photos' => $nPhotos, 'likes' => $nLikes, 'comments' => $nComments,
+				'score'    => $score, 'trips' => $nTrips, 'photos' => $nPhotos + $nPrivate, 'likes' => $nLikes, 'comments' => $nComments,
 				'first'    => (string) $trips[$uid]['first'],
 			];
 		}

@@ -11,6 +11,7 @@ namespace Chaska\Component\Mapaviajes\Site\Controller;
 
 defined('_JEXEC') || die;
 
+use Chaska\Component\Mapaviajes\Administrator\Service\FriendService;
 use Chaska\Component\Mapaviajes\Administrator\Service\PhotoServer;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Joomla\CMS\Factory;
@@ -33,9 +34,35 @@ class PhotoController extends BaseController
 			Factory::getContainer()->get(DatabaseInterface::class),
 			new Settings(),
 			$user->guest ? 0 : $id,
-			static fn (array $g): bool => (int) $g['album_published'] === 1
-				&& \in_array((int) $g['album_access'], $levels, true)
-				&& ((int) $g['trip_published'] === 1 || ((int) $g['trip_user'] === $uid && (int) $g['trip_published'] === 0))
+			static function (array $g) use ($levels, $uid, $user): bool {
+				if ((int) $g['album_published'] !== 1 || !\in_array((int) $g['album_access'], $levels, true))
+				{
+					return false;
+				}
+
+				$owner = (int) $g['trip_user'] === $uid;
+				$mod   = Settings::isModerator($user);
+
+				if (!((int) $g['trip_published'] === 1 || ($owner && (int) $g['trip_published'] === 0) || ($mod && (int) $g['trip_published'] === 0)))
+				{
+					return false;
+				}
+
+				// a photo added later waits for a moderator: only its author and the moderators see it
+				if ((int) $g['photo_state'] !== 1 && !$owner && !$mod)
+				{
+					return false;
+				}
+
+				// "friends only": the author, the moderators and the author's friends
+				if ((int) $g['friends_only'] === 1 && !$owner && !$mod)
+				{
+					return (new FriendService(Factory::getContainer()->get(DatabaseInterface::class)))->areFriends($uid, (int) $g['trip_user'])
+						&& !(new FriendService(Factory::getContainer()->get(DatabaseInterface::class)))->blockedBetween($uid, (int) $g['trip_user']);
+				}
+
+				return true;
+			}
 		);
 	}
 

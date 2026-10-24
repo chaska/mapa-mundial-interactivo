@@ -664,3 +664,27 @@ html,body{overscroll-behavior:none}
 .mv-fi-cmsw{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid #c4a982;background:#fffaf0;color:var(--ink);font:600 .9375rem var(--text);cursor:pointer}
 .mv-fi-cmsw[hidden]{display:none}.mv-fi-cmsw svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .mv-fi-cmsw.mv-on{background:#1f6f78;border-color:#1f6f78;color:#fff}
+
+/* ---------- friends, "friends only" photos, editing the photos of a trip ---------- */
+.mv-friendbtn{margin-right:8px}
+.mv-fi-lock{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:10px 0 0;padding:10px 14px;border-radius:12px;background:#f4ead6;border:1.5px dashed #c4a982;color:var(--ink);font:600 .9375rem var(--text)}
+.mv-fi-lock[hidden]{display:none}.mv-fi-lock::before{content:"";width:18px;height:18px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='11' width='14' height='9' rx='2'/><path d='M8 11V8a4 4 0 0 1 8 0v3'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='11' width='14' height='9' rx='2'/><path d='M8 11V8a4 4 0 0 1 8 0v3'/></svg>") center/contain no-repeat}
+.mv-fi-lock button{min-height:36px;padding:0 14px;border-radius:999px;border:1.5px solid #1f6f78;background:#fff;color:#1f6f78;font:700 .875rem var(--text);cursor:pointer}.mv-fi-lock button[hidden]{display:none}
+.mv-th.mv-fo::after,.mv-th.mv-pd::after{content:"";position:absolute;right:4px;bottom:4px;width:18px;height:18px;border-radius:50%;background:#2d1b10 center/11px no-repeat;opacity:.92}
+.mv-th.mv-fo::after{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><rect x='5' y='11' width='14' height='9' rx='2'/><path d='M8 11V8a4 4 0 0 1 8 0v3'/></svg>")}
+.mv-th.mv-pd::after{background-color:#a05a1a}.mv-th.mv-pd{outline:2px dashed #a05a1a;outline-offset:-2px}
+.mv-pv{margin-top:8px}.mv-pv small{display:block;font-weight:400;color:var(--ink-2)}
+/* the friends tab */
+.mv-fr-h{margin:16px 0 6px;font:800 1rem var(--display)}.mv-fr-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.mv-fr-li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:#fff;border:1.5px solid #e4d3ba}
+.mv-fr-n{flex:1 1 120px;min-width:0;font-weight:700;overflow-wrap:anywhere}.mv-fr-acts{display:flex;flex-wrap:wrap;gap:6px}
+.mv-fr-b{min-height:36px;padding:0 12px;border-radius:999px;border:1.5px solid #c4a982;background:#fffaf0;color:var(--ink);font:600 .8125rem var(--text);cursor:pointer}
+.mv-fr-b.mv-yes{background:#1f6f78;border-color:#1f6f78;color:#fff}.mv-fr-b.mv-bad{border-color:#c9a8a3;background:#fbefed;color:#8f2a1b}.mv-fr-b:disabled{opacity:.55;cursor:default}
+/* editing photos */
+.mv-dlg-wide{max-width:min(560px,calc(100vw - 24px));width:100%;max-height:calc(100dvh - 24px);overflow-y:auto}
+.mv-ed-list,.mv-ed-new{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.mv-ed-li{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px;border-radius:12px;background:#fff;border:1.5px solid #e4d3ba}
+.mv-ed-li img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none}.mv-ed-nf{flex:1 1 180px;min-width:0}
+.mv-ed-fo{display:inline-flex;align-items:center;gap:8px;font:600 .875rem var(--text);cursor:pointer;flex:1 1 120px}.mv-ed-fo input{width:22px;height:22px;accent-color:var(--ink)}
+.mv-pdtag{font:700 .75rem var(--text);font-style:normal;color:#a05a1a;background:#f8e6d0;padding:2px 8px;border-radius:999px}
+.mv-ed-add{display:grid;gap:8px;margin:0 0 8px}.mv-ed-file{max-width:100%}

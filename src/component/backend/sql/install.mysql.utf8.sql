@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS `#__mapaviajes_photos` (
   `height` smallint unsigned NOT NULL,
   `bytes` int unsigned NOT NULL,
   `caption` text NULL,
+  `friends_only` tinyint NOT NULL DEFAULT 0,
+  `state` tinyint NOT NULL DEFAULT 1,
   `created` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_filename` (`filename`),
@@ -133,4 +135,24 @@ CREATE TABLE IF NOT EXISTS `#__mapaviajes_reports` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_report` (`trip_id`, `reporter_id`),
   KEY `idx_reporter` (`reporter_id`, `created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__mapaviajes_friends` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `requester_id` int unsigned NOT NULL,
+  `addressee_id` int unsigned NOT NULL,
+  `status` tinyint NOT NULL DEFAULT 0,
+  `created` datetime NOT NULL,
+  `answered` datetime NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_friend` (`requester_id`, `addressee_id`),
+  KEY `idx_addressee` (`addressee_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `#__mapaviajes_blocks` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `blocker_id` int unsigned NOT NULL,
+  `blocked_id` int unsigned NOT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_block` (`blocker_id`, `blocked_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;

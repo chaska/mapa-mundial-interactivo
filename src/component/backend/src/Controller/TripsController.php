@@ -34,6 +34,56 @@ class TripsController extends AdminController
 		return parent::getModel($name, $prefix, $config);
 	}
 
+	/** Photos that people added to a live trip: the moderator approves them (they go live) ... */
+	public function approvephotos(): void
+	{
+		$this->photosDecision(true);
+	}
+
+	/** ... or refuses them (rows and files are deleted). */
+	public function rejectphotos(): void
+	{
+		$this->photosDecision(false);
+	}
+
+	private function photosDecision(bool $approve): void
+	{
+		$this->checkToken();
+		$back = Route::_('index.php?option=com_mapaviajes&view=trips', false);
+
+		if (!$this->app->getIdentity()->authorise('core.edit.state', 'com_mapaviajes'))
+		{
+			$this->app->enqueueMessage(Text::_('JERROR_ALERTNOAUTHOR'), 'error');
+			$this->setRedirect($back);
+
+			return;
+		}
+
+		$ids = array_values(array_filter(array_map('intval', (array) $this->input->get('cid', [], 'array'))));
+
+		if ($ids === [])
+		{
+			$this->app->enqueueMessage(Text::_('JERROR_NO_ITEMS_SELECTED'), 'warning');
+		}
+		else
+		{
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+
+			if ($approve)
+			{
+				\Chaska\Component\Mapaviajes\Administrator\Service\PhotoEditor::approve($db, $ids);
+			}
+			else
+			{
+				\Chaska\Component\Mapaviajes\Administrator\Service\PhotoEditor::reject($db, new \Chaska\Component\Mapaviajes\Administrator\Service\Settings(), $ids);
+			}
+
+			$this->app->enqueueMessage(Text::_($approve ? 'COM_MAPAVIAJES_NEWPHOTOS_APPROVED' : 'COM_MAPAVIAJES_NEWPHOTOS_REJECTED'));
+		}
+
+		$this->setRedirect($back);
+	}
+
 	/** A moderator looked at the reports of the selected trips and leaves them as they are: the reports are cleared. */
 	public function dismissreports(): void
 	{

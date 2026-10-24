@@ -24,6 +24,7 @@ $e   = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTE
 $map = [1 => ['ok', 'JPUBLISHED'], 0 => ['w', 'COM_MAPAVIAJES_STATE_PENDING'], 2 => ['n', 'COM_MAPAVIAJES_STATE_HIDDEN'], -2 => ['b', 'JTRASHED']];
 $cur = (string) $this->state->get('filter.published');
 $rep = (string) $this->state->get('filter.reported') === '1';
+$np  = (string) $this->state->get('filter.newphotos') === '1';
 $c   = $this->counts;
 $chips = [
 	['', 'COM_MAPAVIAJES_CHIP_ALL', ($c[0] ?? 0) + ($c[1] ?? 0) + ($c[2] ?? 0)],
@@ -32,7 +33,7 @@ $chips = [
 	['2', 'COM_MAPAVIAJES_STATE_HIDDEN', $c[2] ?? 0],
 	['-2', 'JTRASHED', $c[-2] ?? 0],
 ];
-$chipUrl = static fn (string $val): string => 'index.php?option=com_mapaviajes&view=trips&filter[published]=' . $val . '&filter[reported]=';
+$chipUrl = static fn (string $val): string => 'index.php?option=com_mapaviajes&view=trips&filter[published]=' . $val . '&filter[reported]=&filter[newphotos]=';
 $canState = $this->getCurrentUser()->authorise('core.edit.state', 'com_mapaviajes');
 $photo = static fn (int $id): string => Route::_('index.php?option=com_mapaviajes&task=photo.view&id=' . $id);
 $canDelete = $this->getCurrentUser()->authorise('core.delete', 'com_mapaviajes');
@@ -51,10 +52,11 @@ $ok = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.500 4.500 4.50
 			<div class="alert alert-warning" role="alert"><?php echo $e($w); ?></div>
 		<?php endforeach; ?>
 		<nav class="mvA-chips" aria-label="<?php echo $e(Text::_('JSTATUS')); ?>">
-			<?php foreach ($chips as [$val, $label, $n]) : $on = !$rep && $cur === $val; ?>
+			<?php foreach ($chips as [$val, $label, $n]) : $on = !$rep && !$np && $cur === $val; ?>
 				<a class="mvA-chip<?php echo $on ? ' on' : ''; ?>" href="<?php echo $e(Route::_($chipUrl($val), false)); ?>"<?php echo $on ? ' aria-current="true"' : ''; ?>><?php echo Text::_($label); ?><b><?php echo (int) $n; ?></b></a>
 			<?php endforeach; ?>
-			<a class="mvA-chip<?php echo $rep ? ' on' : ''; ?>" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=trips&filter[published]=*&filter[reported]=1', false)); ?>"<?php echo $rep ? ' aria-current="true"' : ''; ?>><?php echo Text::_('COM_MAPAVIAJES_CHIP_REPORTED'); ?><b><?php echo (int) $this->reported; ?></b></a>
+			<a class="mvA-chip<?php echo $np ? ' on' : ''; ?>" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=trips&filter[published]=*&filter[reported]=&filter[newphotos]=1', false)); ?>"<?php echo $np ? ' aria-current="true"' : ''; ?>><?php echo Text::_('COM_MAPAVIAJES_CHIP_NEWPHOTOS'); ?><b><?php echo (int) $this->newPhotos; ?></b></a>
+			<a class="mvA-chip<?php echo $rep ? ' on' : ''; ?>" href="<?php echo $e(Route::_('index.php?option=com_mapaviajes&view=trips&filter[published]=*&filter[reported]=1&filter[newphotos]=', false)); ?>"<?php echo $rep ? ' aria-current="true"' : ''; ?>><?php echo Text::_('COM_MAPAVIAJES_CHIP_REPORTED'); ?><b><?php echo (int) $this->reported; ?></b></a>
 		</nav>
 		<?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
 		<?php if (empty($this->items)) : ?>
@@ -72,12 +74,14 @@ $ok = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.500 4.500 4.50
 						<div class="m"><?php echo $e($item->place); ?> · <?php echo (int) $item->photo_count; ?> <?php echo Text::_('COM_MAPAVIAJES_COL_PHOTOS'); ?> · #<?php echo (int) $item->id; ?></div></div>
 					<div class="mvA-who"><span class="mvA-av" aria-hidden="true"><?php echo $e(mb_strtoupper(mb_substr($name, 0, 2))); ?></span><?php echo $e($name); ?> · <?php echo HTMLHelper::_('date', $item->created, Text::_('DATE_FORMAT_LC4')); ?>
 						<span class="mvA-pill <?php echo $cls; ?>"><?php echo Text::_($label); ?></span></div>
+					<?php if ((int) $item->new_photos > 0) : ?><div class="mvA-who"><span class="mvA-pill w"><?php echo Text::plural('COM_MAPAVIAJES_N_NEWPHOTOS', (int) $item->new_photos); ?></span></div><?php endif; ?>
 					<?php if ((int) $item->report_count > 0) : ?><div class="mvA-who"><span class="mvA-pill b"><?php echo Text::plural('COM_MAPAVIAJES_N_REPORTS', (int) $item->report_count); ?></span></div><?php endif; ?>
 					<?php if ($canState) : ?>
 					<div class="mvA-acts">
 						<?php if ($st === 0 || $st === 2) : ?><button type="button" class="mvA-btn p s" data-mv-task="trips.publish" data-mv-cb="cb<?php echo $i; ?>"><span class="icon-publish" aria-hidden="true"></span><?php echo Text::_('COM_MAPAVIAJES_ACT_PUBLISH'); ?></button><?php endif; ?>
 						<?php if ($st === 1) : ?><button type="button" class="mvA-btn s" data-mv-task="trips.archive" data-mv-cb="cb<?php echo $i; ?>"><span class="icon-eye-close" aria-hidden="true"></span><?php echo Text::_('COM_MAPAVIAJES_BTN_HIDE'); ?></button><?php endif; ?>
 						<?php if ($st === -2) : ?><button type="button" class="mvA-btn t s" data-mv-task="trips.unpublish" data-mv-cb="cb<?php echo $i; ?>"><?php echo Text::_('COM_MAPAVIAJES_ACT_RESTORE'); ?></button><?php endif; ?>
+						<?php if ((int) $item->new_photos > 0) : ?><button type="button" class="mvA-btn p s" data-mv-task="trips.approvephotos" data-mv-cb="cb<?php echo $i; ?>"><?php echo Text::_('COM_MAPAVIAJES_NEWPHOTOS_APPROVE'); ?></button><button type="button" class="mvA-btn d s" data-mv-task="trips.rejectphotos" data-mv-cb="cb<?php echo $i; ?>" data-mv-confirm="<?php echo $e(Text::_('COM_MAPAVIAJES_NEWPHOTOS_REJECT_CONFIRM')); ?>" data-mv-ok="<?php echo $e(Text::_('COM_MAPAVIAJES_NEWPHOTOS_REJECT')); ?>" data-mv-no="<?php echo $e(Text::_('JCANCEL')); ?>"><?php echo Text::_('COM_MAPAVIAJES_NEWPHOTOS_REJECT'); ?></button><?php endif; ?>
 						<?php if ((int) $item->report_count > 0) : ?><button type="button" class="mvA-btn s" data-mv-task="trips.dismissreports" data-mv-cb="cb<?php echo $i; ?>"><?php echo Text::_('COM_MAPAVIAJES_REPORTS_CLEAR'); ?></button><?php endif; ?>
 						<?php if ($st !== -2) : ?><button type="button" class="mvA-btn g d s" data-mv-task="trips.trash" data-mv-cb="cb<?php echo $i; ?>" aria-label="<?php echo $e(Text::_('JTOOLBAR_TRASH')); ?>"><span class="icon-trash" aria-hidden="true"></span></button><?php endif; ?>
 					</div>

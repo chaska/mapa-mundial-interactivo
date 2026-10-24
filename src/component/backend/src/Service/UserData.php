@@ -38,11 +38,13 @@ final class UserData
 
 		return [
 			'trips'     => $this->rows('SELECT id, album_id, title, place, lat, lon, allow_comments, published, photo_count, created FROM #__mapaviajes_trips WHERE user_id = :u ORDER BY id', $userId),
-			'photos'    => $this->rows('SELECT p.id, p.trip_id, p.ordering, p.width, p.height, p.bytes, p.caption, p.created FROM #__mapaviajes_photos p JOIN #__mapaviajes_trips t ON t.id = p.trip_id WHERE t.user_id = :u ORDER BY p.id', $userId),
+			'photos'    => $this->rows('SELECT p.id, p.trip_id, p.ordering, p.width, p.height, p.bytes, p.caption, p.friends_only, p.state, p.created FROM #__mapaviajes_photos p JOIN #__mapaviajes_trips t ON t.id = p.trip_id WHERE t.user_id = :u ORDER BY p.id', $userId),
 			'reactions' => $this->rows('SELECT id, trip_id, kind, active, created FROM #__mapaviajes_reactions WHERE user_id = :u ORDER BY id', $userId),
 			'ranking'   => $this->rows('SELECT week_start, position, score, trips, photos, likes, comments, stars, points FROM #__mapaviajes_ranking WHERE user_id = :u ORDER BY week_start', $userId),
 			'settings'  => $this->rows('SELECT hide_ranking, digest, follows_seen FROM #__mapaviajes_prefs WHERE user_id = :u', $userId),
 			'following' => $this->rows('SELECT followed_id, created FROM #__mapaviajes_follows WHERE follower_id = :u ORDER BY id', $userId),
+			'friends'   => $this->rows('SELECT requester_id, addressee_id, status, created, answered FROM #__mapaviajes_friends WHERE requester_id = :u OR addressee_id = :u ORDER BY id', $userId),
+			'blocks'    => $this->rows('SELECT blocked_id, created FROM #__mapaviajes_blocks WHERE blocker_id = :u ORDER BY id', $userId),
 			'reports'   => $this->rows('SELECT trip_id, reason, note, created FROM #__mapaviajes_reports WHERE reporter_id = :u ORDER BY id', $userId),
 			'events'    => $this->rows('SELECT event, detail, created FROM #__mapaviajes_events WHERE user_id = :u ORDER BY id', $userId),
 		];
@@ -87,6 +89,15 @@ final class UserData
 		{
 			$fu = $userId;
 			$this->db->setQuery($this->db->getQuery(true)->delete($this->db->quoteName('#__mapaviajes_follows'))->where($this->db->quoteName($col) . ' = :f')->bind(':f', $fu, ParameterType::INTEGER))->execute();
+		}
+
+		foreach (['#__mapaviajes_friends' => ['requester_id', 'addressee_id'], '#__mapaviajes_blocks' => ['blocker_id', 'blocked_id']] as $table => $cols)
+		{
+			foreach ($cols as $col)
+			{
+				$fx = $userId;
+				$this->db->setQuery($this->db->getQuery(true)->delete($this->db->quoteName($table))->where($this->db->quoteName($col) . ' = :f')->bind(':f', $fx, ParameterType::INTEGER))->execute();
+			}
 		}
 
 		$ru = $userId;

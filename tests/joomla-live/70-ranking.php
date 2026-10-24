@@ -127,6 +127,14 @@ $allB = array_values(array_filter($all, fn ($r) => $r['username'] === 'rk_b'))[0
 afirma((int) ($allB['points'] ?? 0) === 10 + 6 + 1 && (int) ($allB['podiums'] ?? 0) === 2 && (int) ($allB['best'] ?? 9) === 1, 'b: 6 + 10 + 1 = 17 puntos, 2 podios, mejor puesto 1 (' . json_encode($allB) . ')');
 afirma(array_column($all, 'username')[0] === 'rk_b', 'orden por puntos: b (17) antes que a (16)');
 
+seccion('Fotos «solo amigos» y fotos pendientes valen menos / nada');
+$pu = $mkUser('p'); $tp = $trip($pu, $at(5), 4);
+$db->exec("UPDATE $P SET friends_only = 1 WHERE id IN (SELECT id FROM $P WHERE trip_id = :t ORDER BY id LIMIT 2)", [':t' => $tp]);
+$db->exec("INSERT INTO $P (trip_id, ordering, filename, width, height, bytes, state, created) VALUES (:t, 9, :f, 10, 10, 1, 0, now())", [':t' => $tp, ':f' => 'rkpend' . bin2hex(random_bytes(4)) . '.webp']);
+$by = []; foreach ($svc->compute($week) as $r) { $by[$r['username']] = $r; }
+afirma(($by['rk_p']['score'] ?? 0) === 20 + 3 * 2 + 1 * 2, 'un viaje con 2 fotos publicas, 2 «solo amigos» y 1 pendiente suma 20 + 3*2 + 1*2 = 28 (la pendiente no cuenta): ' . ($by['rk_p']['score'] ?? '-'));
+afirma(($by['rk_p']['photos'] ?? 0) === 4, 'las estadisticas cuentan 4 fotos');
+
 // tidy
 foreach ([$K, $W, $R, $EC, $PF] as $t) { $db->exec("DELETE FROM $t"); }
 $db->exec("DELETE FROM $P WHERE trip_id IN (SELECT id FROM $T WHERE user_id IN (SELECT id FROM $U WHERE username LIKE 'rk_%'))");

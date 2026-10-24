@@ -41,7 +41,7 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
   await open('&view=trips&filter[published]=1');
   const total = await p.locator('article.mvA-trip').count();
   afirma(total > 3, 'viajes: se pintan como tarjetas (' + total + ')');
-  afirma((await p.locator('.mvA-chip').count()) === 6 && (await p.locator('.mvA-chip.on').count()) === 1, 'viajes: 6 filtros en «chips», uno activo');
+  afirma((await p.locator('.mvA-chip').count()) === 7 && (await p.locator('.mvA-chip.on').count()) === 1, 'viajes: 7 filtros en «chips», uno activo');
   const publ0 = await chipN('Published'), hid0 = await chipN('Hidden');
   afirma(!(await p.locator('#mvA-bulk.on').count()), 'viajes: la barra flotante no se ve sin seleccion');
   await p.locator('.mvA-pick').nth(0).click(); await p.locator('.mvA-pick').nth(1).click(); await p.waitForTimeout(200);

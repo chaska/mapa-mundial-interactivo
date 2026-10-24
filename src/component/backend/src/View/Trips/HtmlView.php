@@ -36,6 +36,9 @@ class HtmlView extends BaseHtmlView
 	/** @var int trips with at least one open report */
 	protected int $reported = 0;
 
+	/** @var int trips with photos added later that wait for a moderator */
+	protected int $newPhotos = 0;
+
 	public function display($tpl = null): void
 	{
 		$model = $this->getModel();
@@ -55,6 +58,8 @@ class HtmlView extends BaseHtmlView
 		}
 
 		$this->reported = (int) $db->setQuery('SELECT COUNT(DISTINCT ' . $db->quoteName('trip_id') . ') FROM ' . $db->quoteName('#__mapaviajes_reports'))->loadResult();
+
+		$this->newPhotos = (int) $db->setQuery('SELECT COUNT(DISTINCT ' . $db->quoteName('trip_id') . ') FROM ' . $db->quoteName('#__mapaviajes_photos') . ' WHERE ' . $db->quoteName('state') . ' = 0')->loadResult();
 
 		if (version_compare(JVERSION, '6.0.0', '>=') ? version_compare(JVERSION, '6.1.4', '<') : version_compare(JVERSION, '5.4.9', '<'))
 		{

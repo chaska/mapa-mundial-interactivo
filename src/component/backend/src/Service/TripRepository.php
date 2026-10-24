@@ -71,18 +71,65 @@ final class TripRepository
 		}
 
 		$ids = array_map(static fn (array $t): int => (int) $t['id'], $trips);
+		$friends = array_flip((new FriendService($this->db))->friendIds($uid));
+		$isMod   = Settings::isModerator($user);
+		$owners  = [];
+
+		foreach ($trips as $t)
+		{
+			$owners[(int) $t['id']] = (int) $t['user_id'];
+		}
+
 		$q   = $this->db->getQuery(true)
-			->select($this->db->quoteName(['id', 'trip_id', 'ordering', 'width', 'height', 'caption']))
+			->select($this->db->quoteName(['id', 'trip_id', 'ordering', 'width', 'height', 'caption', 'friends_only', 'state']))
 			->from($this->db->quoteName('#__mapaviajes_photos'))
 			->whereIn($this->db->quoteName('trip_id'), $ids)
 			->order($this->db->quoteName('trip_id') . ', ' . $this->db->quoteName('ordering'));
 		$photos = [];
 
+		$locked = [];
+		$thumb  = [];
+
 		foreach ($this->db->setQuery($q)->loadAssocList() ?: [] as $p)
 		{
-			$photos[(int) $p['trip_id']][] = [
+			$tid   = (int) $p['trip_id'];
+			$owner = $owners[$tid] ?? 0;
+			$all   = $isMod || $owner === $uid;                       // the author and the moderators see everything
+			$priv  = (int) $p['friends_only'] === 1;
+			$live  = (int) $p['state'] === 1;                         // 0 = added later and waiting for a moderator
+
+			if (!$live && !$all)
+			{
+				continue;
+			}
+
+			if ($priv && !$all && !isset($friends[$owner]))
+			{
+				$locked[$tid] = ($locked[$tid] ?? 0) + 1;            // the person only learns HOW MANY there are, never which
+
+				continue;
+			}
+
+			$photos[$tid][] = [
 				'id' => (int) $p['id'], 'w' => (int) $p['width'], 'h' => (int) $p['height'], 'cap' => (string) ($p['caption'] ?? ''),
+				'fo' => $priv ? 1 : 0, 'pd' => $live ? 0 : 1,
 			];
+
+			if (!$priv && $live && !isset($thumb[$tid]))
+			{
+				$thumb[$tid] = \count($photos[$tid]) - 1;           // the first public, approved photo is the thumbnail for everybody
+			}
+		}
+
+		// Thumbnails, lists and pins always use the first photo of the list: make that the public one
+		foreach ($thumb as $tid => $idx)
+		{
+			if ($idx > 0)
+			{
+				$first = $photos[$tid][$idx];
+				array_splice($photos[$tid], $idx, 1);
+				array_unshift($photos[$tid], $first);
+			}
 		}
 
 		// Reactions: counts for everyone, and which ones are mine (never who else reacted).
@@ -127,7 +174,7 @@ final class TripRepository
 				'ts' => strtotime((string) $t['created'] . ' UTC') ?: 0,
 				'lk' => $counts[$id]['like'] ?? 0, 'fn' => $counts[$id]['fan'] ?? 0,
 				'ml' => !empty($mine[$id]['like']), 'mf' => !empty($mine[$id]['fan']),
-				'ph' => $photos[$id] ?? [],
+				'ph' => $photos[$id] ?? [], 'lk2' => $locked[$id] ?? 0,
 			];
 		}
 
@@ -137,7 +184,7 @@ final class TripRepository
 	/**
 	 * What a photo request needs to decide: the file name and the state of its trip and album.
 	 *
-	 * @return array{filename: string, trip_published: int, trip_user: int, album_published: int, album_access: int}|null
+	 * @return array{filename: string, friends_only: int, photo_state: int, trip_published: int, trip_user: int, album_published: int, album_access: int}|null
 	 */
 	public function photoGate(int $photoId): ?array
 	{
@@ -148,7 +195,7 @@ final class TripRepository
 
 		$query = $this->db->getQuery(true)
 			->select([
-				$this->db->quoteName('p.filename'), $this->db->quoteName('t.published', 'trip_published'), $this->db->quoteName('t.user_id', 'trip_user'),
+				$this->db->quoteName('p.filename'), $this->db->quoteName('p.friends_only'), $this->db->quoteName('p.state', 'photo_state'), $this->db->quoteName('t.published', 'trip_published'), $this->db->quoteName('t.user_id', 'trip_user'),
 				$this->db->quoteName('a.published', 'album_published'), $this->db->quoteName('a.access', 'album_access'),
 			])
 			->from($this->db->quoteName('#__mapaviajes_photos', 'p'))
@@ -164,7 +211,7 @@ final class TripRepository
 		}
 
 		return [
-			'filename' => (string) $row['filename'], 'trip_published' => (int) $row['trip_published'], 'trip_user' => (int) $row['trip_user'],
+			'filename' => (string) $row['filename'], 'friends_only' => (int) $row['friends_only'], 'photo_state' => (int) $row['photo_state'], 'trip_published' => (int) $row['trip_published'], 'trip_user' => (int) $row['trip_user'],
 			'album_published' => (int) $row['album_published'], 'album_access' => (int) $row['album_access'],
 		];
 	}

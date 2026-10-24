@@ -142,6 +142,39 @@ final class Notifier
 		}
 	}
 
+	/** Somebody asked this person for friendship: one mail, no link (they open the map and answer from the menu). */
+	public function friendRequest(int $toUserId, string $fromName): void
+	{
+		$user = $this->recipient($toUserId);
+
+		if ($user === null)
+		{
+			return;
+		}
+
+		$lang = $this->language($user);
+		$from = $this->oneLine($fromName);
+		$this->send(
+			(string) $user->email,
+			sprintf($lang->_('COM_MAPAVIAJES_MAIL_FRIEND_SUBJECT'), $from),
+			sprintf($lang->_('COM_MAPAVIAJES_MAIL_FRIEND_BODY'), $this->oneLine((string) $user->name), $from),
+			$lang
+		);
+	}
+
+	/** Photos were added to a trip that is already live and wait for a moderator. @param list<string> $to */
+	public function photosPending(array $to, string $title, string $username, int $photos): void
+	{
+		$lang = $this->siteLanguage();
+		$site = $this->oneLine((string) Factory::getApplication()->get('sitename', 'Site'));
+		$this->send(
+			$to,
+			'[' . $site . '] ' . $lang->_('COM_MAPAVIAJES_MAIL_PHOTOS_SUBJECT'),
+			sprintf($lang->_('COM_MAPAVIAJES_MAIL_PHOTOS_BODY'), $this->oneLine($title), $this->oneLine($username), $photos),
+			$lang
+		);
+	}
+
 	private function recipient(int $userId): ?User
 	{
 		if ($userId <= 0)

@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS "#__mapaviajes_photos" (
   "height" integer NOT NULL,
   "bytes" bigint NOT NULL,
   "caption" text NULL,
+  "friends_only" smallint NOT NULL DEFAULT 0,
+  "state" smallint NOT NULL DEFAULT 1,
   "created" timestamp without time zone NOT NULL,
   PRIMARY KEY ("id")
 );
@@ -134,3 +136,23 @@ CREATE TABLE IF NOT EXISTS "#__mapaviajes_reports" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "#__mapaviajes_reports_uq" ON "#__mapaviajes_reports" ("trip_id", "reporter_id");
 CREATE INDEX IF NOT EXISTS "#__mapaviajes_reports_idx_reporter" ON "#__mapaviajes_reports" ("reporter_id", "created");
+
+CREATE TABLE IF NOT EXISTS "#__mapaviajes_friends" (
+  "id" serial NOT NULL,
+  "requester_id" bigint NOT NULL,
+  "addressee_id" bigint NOT NULL,
+  "status" smallint NOT NULL DEFAULT 0,
+  "created" timestamp without time zone NOT NULL,
+  "answered" timestamp without time zone NULL,
+  PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "#__mapaviajes_friends_uq" ON "#__mapaviajes_friends" ("requester_id", "addressee_id");
+CREATE INDEX IF NOT EXISTS "#__mapaviajes_friends_idx_addressee" ON "#__mapaviajes_friends" ("addressee_id", "status");
+CREATE TABLE IF NOT EXISTS "#__mapaviajes_blocks" (
+  "id" serial NOT NULL,
+  "blocker_id" bigint NOT NULL,
+  "blocked_id" bigint NOT NULL,
+  "created" timestamp without time zone NOT NULL,
+  PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "#__mapaviajes_blocks_uq" ON "#__mapaviajes_blocks" ("blocker_id", "blocked_id");

@@ -47,7 +47,7 @@ final class Mapaviajes extends PrivacyPlugin implements SubscriberInterface
 		}
 
 		$data   = (new UserData($this->getDatabase()))->export((int) $user->id);
-		$titles = ['trips' => 'Trips on the map', 'photos' => 'Photos of those trips (data about each photo, not the file)', 'reactions' => 'Hearts and stars given to trips', 'ranking' => 'Weekly ranking', 'settings' => 'Map settings', 'following' => 'People you follow', 'reports' => 'Reports you sent about trips', 'events' => 'Security log entries (codes only)'];
+		$titles = ['trips' => 'Trips on the map', 'photos' => 'Photos of those trips (data about each photo, not the file)', 'reactions' => 'Hearts and stars given to trips', 'ranking' => 'Weekly ranking', 'settings' => 'Map settings', 'following' => 'People you follow', 'reports' => 'Reports you sent about trips', 'friends' => 'Friend requests and friends', 'blocks' => 'People you blocked', 'events' => 'Security log entries (codes only)'];
 		$domains = [];
 
 		foreach ($data as $name => $rows)

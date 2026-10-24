@@ -30,7 +30,7 @@ class TripsModel extends ListModel
 
 	protected function getStoreId($id = '')
 	{
-		return parent::getStoreId($id . ':' . $this->getState('filter.search') . ':' . $this->getState('filter.published') . ':' . $this->getState('filter.album_id') . ':' . $this->getState('filter.reported'));
+		return parent::getStoreId($id . ':' . $this->getState('filter.search') . ':' . $this->getState('filter.published') . ':' . $this->getState('filter.album_id') . ':' . $this->getState('filter.reported') . ':' . $this->getState('filter.newphotos'));
 	}
 
 	protected function getListQuery()
@@ -41,6 +41,7 @@ class TripsModel extends ListModel
 		$query = $db->getQuery(true)
 			->select($db->quoteName(['a.id', 'a.title', 'a.place', 'a.published', 'a.created', 'a.photo_count', 'a.user_id', 'a.album_id']))
 			->select('(SELECT COUNT(*) FROM ' . $db->quoteName('#__mapaviajes_reports', 'r') . ' WHERE ' . $db->quoteName('r.trip_id') . ' = ' . $db->quoteName('a.id') . ') AS ' . $db->quoteName('report_count'))
+			->select('(SELECT COUNT(*) FROM ' . $db->quoteName('#__mapaviajes_photos', 'pp') . ' WHERE ' . $db->quoteName('pp.trip_id') . ' = ' . $db->quoteName('a.id') . ' AND ' . $db->quoteName('pp.state') . ' = 0) AS ' . $db->quoteName('new_photos'))
 			->select($db->quoteName('u.name', 'author_name') . ', ' . $db->quoteName('u.username', 'author_username') . ', ' . $db->quoteName('al.title', 'album_title') . ', (' . $sub . ') AS ' . $db->quoteName('first_photo'))
 			->from($db->quoteName('#__mapaviajes_trips', 'a'))
 			->join('LEFT', $db->quoteName('#__users', 'u') . ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('a.user_id'))
@@ -61,6 +62,11 @@ class TripsModel extends ListModel
 		if ((string) $this->getState('filter.reported', '') === '1')
 		{
 			$query->where('EXISTS (SELECT 1 FROM ' . $db->quoteName('#__mapaviajes_reports', 'rx') . ' WHERE ' . $db->quoteName('rx.trip_id') . ' = ' . $db->quoteName('a.id') . ')');
+		}
+
+		if ((string) $this->getState('filter.newphotos', '') === '1')
+		{
+			$query->where('EXISTS (SELECT 1 FROM ' . $db->quoteName('#__mapaviajes_photos', 'px') . ' WHERE ' . $db->quoteName('px.trip_id') . ' = ' . $db->quoteName('a.id') . ' AND ' . $db->quoteName('px.state') . ' = 0)');
 		}
 
 		$album = (int) $this->getState('filter.album_id', 0);

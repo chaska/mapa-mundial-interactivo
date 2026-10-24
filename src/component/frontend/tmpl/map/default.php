@@ -98,6 +98,9 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 		<button class="mv-btn mv-btn-soft" id="mv-btnDisc" type="button" aria-controls="mv-drawer" aria-label="<?php echo $t('COM_MAPAVIAJES_DISCOVER'); ?>">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span><?php echo $t('COM_MAPAVIAJES_DISCOVER'); ?></span>
 		</button>
+		<button class="mv-btn mv-btn-soft" id="mv-btnFri" type="button" aria-controls="mv-drawer" aria-label="<?php echo $t('COM_MAPAVIAJES_TAB_FRI'); ?>">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.300 2.700-5.500 6-5.500s6 2.200 6 5.500M17 6.500a3 3 0 0 1 0 5.500M18.500 14.500c1.800.8 2.800 2.500 2.800 5.500"/></svg><span><?php echo $t('COM_MAPAVIAJES_TAB_FRI'); ?></span>
+		</button>
 		<a class="mv-btn mv-btn-soft mv-exit" href="<?php echo $e(Uri::root(true) ?: '/'); ?>" aria-label="<?php echo $t('COM_MAPAVIAJES_BACK_TO_SITE'); ?>">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span><?php echo $t('COM_MAPAVIAJES_BACK_TO_SITE'); ?></span>
 		</a>
@@ -124,7 +127,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<div class="mv-ppl-head"><h2 id="mv-pplT"><?php echo $t('COM_MAPAVIAJES_PEOPLE_TITLE'); ?></h2>
 		<button type="button" id="mv-pplX" aria-label="<?php echo $t('COM_MAPAVIAJES_JS_CLOSE'); ?>"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
 	<p class="mv-ppl-help"><?php echo $t('COM_MAPAVIAJES_PEOPLE_HELP'); ?></p>
-	<div class="mv-ppl-act"><button type="button" id="mv-pplAll"><?php echo $t('COM_MAPAVIAJES_PEOPLE_ALL'); ?></button><button type="button" id="mv-pplNone"><?php echo $t('COM_MAPAVIAJES_PEOPLE_NONE'); ?></button></div>
+	<div class="mv-ppl-act"><button type="button" id="mv-pplAll"><?php echo $t('COM_MAPAVIAJES_PEOPLE_ALL'); ?></button><button type="button" id="mv-pplNone"><?php echo $t('COM_MAPAVIAJES_PEOPLE_NONE'); ?></button><button type="button" id="mv-pplFri"><?php echo $t('COM_MAPAVIAJES_PEOPLE_FRIENDS'); ?></button></div>
 	<ul class="mv-ppl-list" id="mv-pplList"></ul>
 </aside>
 
@@ -157,6 +160,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<div class="mv-tabs" role="tablist" aria-label="<?php echo $t('COM_MAPAVIAJES_LATEST'); ?>">
 		<button type="button" role="tab" id="mv-tab-new" aria-selected="true" aria-controls="mv-dBody" data-tab="new"><?php echo $t('COM_MAPAVIAJES_TAB_NEW'); ?></button>
 		<button type="button" role="tab" id="mv-tab-fav" aria-selected="false" aria-controls="mv-dBody" data-tab="fav"><?php echo $t('COM_MAPAVIAJES_TAB_FAV'); ?> <b id="mv-favN"></b></button>
+		<button type="button" role="tab" id="mv-tab-fri" aria-selected="false" aria-controls="mv-dBody" data-tab="fri"><?php echo $t('COM_MAPAVIAJES_TAB_FRI'); ?> <b id="mv-friN"></b></button>
 		<button type="button" role="tab" id="mv-tab-fol" aria-selected="false" aria-controls="mv-dBody" data-tab="fol"><?php echo $t('COM_MAPAVIAJES_TAB_FOL'); ?> <b id="mv-folN"></b></button>
 	</div>
 	<div class="mv-d-body" id="mv-dBody" role="tabpanel" tabindex="0"></div>
@@ -166,6 +170,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 	<div class="mv-fi-card">
 		<header class="mv-fi-head">
 			<div><h2 id="mv-fiT"></h2><p id="mv-fiS"></p><p class="mv-fi-pend" id="mv-fiPend" hidden><?php echo $t('COM_MAPAVIAJES_JS_PENDING'); ?></p>
+				<button type="button" class="mv-follow mv-friendbtn" id="mv-fFriend" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.300 2.700-5.500 6-5.500s6 2.200 6 5.500M17 6.500a3 3 0 0 1 0 5.500M18.500 14.500c1.800.8 2.800 2.500 2.800 5.500"/></svg><span></span></button>
 				<button type="button" class="mv-follow" id="mv-fFollow" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.300 2.700-5.500 6-5.500s6 2.200 6 5.500M18 8v6M15 11h6"/></svg><span></span></button></div>
 			<button class="mv-fi-x" type="button" id="mv-fiX" aria-label="<?php echo $t('COM_MAPAVIAJES_CLOSE'); ?>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 		</header>
@@ -178,6 +183,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<span class="mv-fi-cnt" id="mv-fiCnt"></span>
 			</div>
 			<div class="mv-fi-th" id="mv-fiTh"></div>
+			<p class="mv-fi-lock" id="mv-fiLock" hidden><span id="mv-fiLockT"></span> <button type="button" id="mv-fiLockBtn"></button></p>
 			<p class="mv-fi-cap" id="mv-fiCap"></p>
 			<p class="mv-sr" id="mv-fiLive" aria-live="polite"></p>
 			<div class="mv-fi-bar">
@@ -185,6 +191,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<button type="button" id="mv-fFan" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17.2 6.4 20.3l1.2-6.3L3 9.6l6.3-.8z"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_FAN'); ?></span><i id="mv-fFanN"></i></button>
 				<?php if ($this->commentsOn) : ?><button type="button" id="mv-fCom" hidden><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span><?php echo $t('COM_MAPAVIAJES_JS_COMMENTS_BTN'); ?></span></button><?php endif; ?>
 				<button type="button" id="mv-fCmSw" class="mv-fi-cmsw" hidden><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span></span></button>
+				<button type="button" id="mv-fEdit" class="mv-fi-rep" hidden><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_EDIT'); ?></span></button>
 				<button type="button" id="mv-fRep" class="mv-fi-rep" hidden><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_REPORT'); ?></span></button>
 				<button type="button" id="mv-fDel" class="mv-fi-del" hidden><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span><?php echo $t('COM_MAPAVIAJES_FI_DELETE'); ?></span></button>
 			</div>

@@ -138,6 +138,26 @@ final class TripSubmission
 			}
 		}
 
+		// "Friends only" per photo: at least ONE photo of the trip has to be public (it is the thumbnail everybody sees)
+		$privRaw = $post['priv'] ?? [];
+
+		if (!\is_array($privRaw) || \count($privRaw) > $max)
+		{
+			throw new SubmissionException('generic', 400);
+		}
+
+		$priv = [];
+
+		foreach (array_values($files) as $i => $unused)
+		{
+			$priv[$i] = (($privRaw[$i] ?? '0') === '1') ? 1 : 0;
+		}
+
+		if (array_sum($priv) >= \count($priv))
+		{
+			throw new SubmissionException('photo_public', 422, ['field' => 'priv']);
+		}
+
 		// Images: everything is converted into private temporary files first.
 		$storage = $this->settings->storage();
 
@@ -194,7 +214,7 @@ final class TripSubmission
 				$names[$i] = $storage->commit($tmp, $userId, $year, $i + 1);
 			}
 
-			$tripId = $this->store($userId, $album, $title, $place, $lat, $lon, $post, $names, $meta, $captions, $this->publishesDirectly($user) ? 1 : 0, $year);
+			$tripId = $this->store($userId, $album, $title, $place, $lat, $lon, $post, $names, $meta, $captions, $this->publishesDirectly($user) ? 1 : 0, $year, $priv);
 		}
 		catch (\Throwable $e)
 		{
@@ -389,7 +409,7 @@ final class TripSubmission
 	 * @param   int                                                 $published  1 live, 0 waiting for review
 	 * @param   int                                                 $year       year of the trip
 	 */
-	private function store(int $userId, array $album, string $title, string $place, float $lat, float $lon, array $post, array $names, array $meta, array $captions, int $published, int $year): int
+	private function store(int $userId, array $album, string $title, string $place, float $lat, float $lon, array $post, array $names, array $meta, array $captions, int $published, int $year, array $priv = []): int
 	{
 		$db        = $this->db;
 		$now       = Factory::getDate()->toSql();
@@ -448,11 +468,13 @@ final class TripSubmission
 				$h     = $meta[$i]['height'];
 				$b     = $meta[$i]['bytes'];
 				$cap   = $captions[$i];
+				$fo    = (int) ($priv[$i] ?? 0);
 
 				$q = $db->getQuery(true)
 					->insert($db->quoteName('#__mapaviajes_photos'))
-					->columns($db->quoteName(['trip_id', 'ordering', 'filename', 'width', 'height', 'bytes', 'caption', 'created']))
-					->values(':trip, :ord, :file, :w, :h, :b, :cap, :created')
+					->columns($db->quoteName(['trip_id', 'ordering', 'filename', 'width', 'height', 'bytes', 'caption', 'friends_only', 'created']))
+					->values(':trip, :ord, :file, :w, :h, :b, :cap, :fo, :created')
+					->bind(':fo', $fo, ParameterType::INTEGER)
 					->bind(':trip', $tripId, ParameterType::INTEGER)
 					->bind(':ord', $order, ParameterType::INTEGER)
 					->bind(':file', $name)

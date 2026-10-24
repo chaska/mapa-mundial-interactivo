@@ -16,6 +16,8 @@
 | **Fotos**: se recodifican a WebP y se elimina todo lo que traigan (EXIF, GPS, XMP). Nombre de archivo aleatorio; solo las sirve el componente tras comprobar permisos | `ImageProcessor`, `PhotoServer` |
 | **Declaración al subir**: casilla obligatoria de que las fotos son suyas o tiene permiso, que las personas que salen están de acuerdo y que no se ve ningún menor identificable | formulario del mapa, `TripSubmission` |
 | **Denunciar**: cualquier persona registrada puede avisar de un viaje; una denuncia por persona y viaje; los moderadores reciben correo y la gestionan en el administrador («Denunciados»). Guarda: viaje, quien denuncia, motivo, nota (500 caracteres) y fecha | `ReportService` |
+| **Fotos «solo amigos»**: el servidor las sirve solo a su autor/a, a sus amigos aceptados y a los moderadores (administradores y superadministradores, para revisar spam o incumplimientos); a cualquier otra persona responde 404 y el mapa solo le dice cuántas hay. Pueden añadirse fotos después de publicar; las nuevas esperan a un moderador si la revisión previa está activada | `PhotoServer`, `TripRepository`, `PhotoEditor` |
+| **Amigos y bloqueos**: una solicitud (aviso por correo sin enlaces) que la otra persona acepta; cualquiera puede quitar la amistad. Nadie ve las amistades de otra persona | `FriendService` |
 | **Nombre visible**: el alias (nombre de usuario) salvo que actives «nombre real» | Opciones → Privacidad |
 | **Ranking**: se muestra el alias; cada persona puede **no aparecer** (interruptor en el podio) | `RankingService`, `#__mapaviajes_prefs` |
 | **Seguir a viajeros**: se guarda a quién sigue cada persona (nadie ve quién le sigue) | `FollowService` |
@@ -40,6 +42,8 @@
 | Puntos del ranking | Podio | `#__mapaviajes_ranking` | Hasta borrar la cuenta |
 | Preferencias («no aparecer», resumen semanal) | Respetar su elección | `#__mapaviajes_prefs` | Hasta borrar la cuenta |
 | A quién sigue | Avisos y pestaña «Siguiendo» | `#__mapaviajes_follows` | Hasta dejar de seguir o borrar la cuenta (en ambos sentidos) |
+| Amistades y solicitudes | Dar acceso a las fotos «solo amigos» | `#__mapaviajes_friends` | Hasta que cualquiera de las dos personas la quite, o se borre una cuenta (en ambos sentidos) |
+| Bloqueos | Evitar solicitudes y acceso | `#__mapaviajes_blocks` | Hasta desbloquear o borrar la cuenta |
 | Denuncias enviadas | Moderación | `#__mapaviajes_reports` | Hasta que el moderador las descarte, se borre el viaje o la cuenta |
 | Códigos de suceso | Seguridad | `#__mapaviajes_events` | 90 días; al borrar la cuenta se desvincula |
 | Nombre y correo de la cuenta | Identificar, avisar | Joomla | Joomla |

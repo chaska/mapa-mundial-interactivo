@@ -51,6 +51,6 @@ class TripsController extends BaseController
 			// a mail problem never stops the map
 		}
 
-		$this->json(['ok' => true, 'trips' => $repo->forMap($user, $albumId, 3000, (new Settings())->showRealNames()), 'follow' => (new \Chaska\Component\Mapaviajes\Administrator\Service\FollowService($db))->state((int) $user->id)]);
+		$this->json(['ok' => true, 'trips' => $repo->forMap($user, $albumId, 3000, (new Settings())->showRealNames()), 'follow' => (new \Chaska\Component\Mapaviajes\Administrator\Service\FollowService($db))->state((int) $user->id), 'friend' => (new \Chaska\Component\Mapaviajes\Administrator\Service\FriendService($db))->state((int) $user->id, (new Settings())->showRealNames())]);
 	}
 }
