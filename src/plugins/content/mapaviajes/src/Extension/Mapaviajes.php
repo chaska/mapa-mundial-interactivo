@@ -27,7 +27,7 @@ use Joomla\Event\SubscriberInterface;
 use Joomla\Registry\Registry;
 
 /**
- * 1. Short codes for articles: {mapaviajes stats} -> "51 albums · 16 countries", {mapaviajes albums} -> 51, {mapaviajes countries} -> 16
+ * 1. Short codes for articles: {mapaviajes stats} -> "51 albums · 16 countries", {mapaviajes albums} -> 51, {mapaviajes countries} -> 16, {mapaviajes photos} -> 230
  *    (add album=ID to count a single map). Only totals of published trips: no names, no places, no photos.
  * 2. Tells Akeeba Engage / Engage what the assets named "com_mapaviajes.trip.<id>" are (a trip of the map), so its comment
  *    form, notices, moderation lists and permission checks work for them. It does nothing when Engage is not installed.
@@ -74,11 +74,11 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 		}
 
 		$item->text = preg_replace_callback(
-			'/\{mapaviajes\s+(stats|albums|countries)(?:\s+album\s*=\s*(\d{1,9}))?\s*\}/i',
+			'/\{mapaviajes\s+(stats|albums|countries|photos)(?:\s+album\s*=\s*(\d{1,9}))?\s*\}/i',
 			function (array $m): string {
 				try
 				{
-					[$albums, $countries] = $this->totals(isset($m[2]) ? (int) $m[2] : 0);
+					[$albums, $countries, $photos] = $this->totals(isset($m[2]) ? (int) $m[2] : 0);
 				}
 				catch (\Throwable $e)
 				{
@@ -89,6 +89,7 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 				{
 					'albums'    => (string) $albums,
 					'countries' => (string) $countries,
+					'photos'    => (string) $photos,
 					default     => '<span class="mv-stats">' . htmlspecialchars(Text::plural('PLG_CONTENT_MAPAVIAJES_ALBUMS', $albums) . ' · ' . Text::plural('PLG_CONTENT_MAPAVIAJES_COUNTRIES', $countries), ENT_QUOTES, 'UTF-8') . '</span>',
 				};
 			},
@@ -99,7 +100,7 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 	/**
 	 * Published trips of published maps (one map when $albumId > 0): how many, and in how many countries. Cached for ten minutes.
 	 *
-	 * @return array{0: int, 1: int}
+	 * @return array{0: int, 1: int, 2: int}  albums, countries, photos (every live photo of those trips, friends-only ones too: only the number is shown)
 	 */
 	private function totals(int $albumId): array
 	{
@@ -121,8 +122,19 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 			$rows   = $db->setQuery($q)->loadAssocList() ?: [];
 			$places = array_map(static fn (array $r): array => [(float) $r['lat'], (float) $r['lon']], $rows);
 
-			return [\count($rows), (new WorldCountries(JPATH_ROOT . '/media/com_mapaviajes/data/world.json'))->count($places)];
-		}, [$albumId], 'stats-' . $albumId);
+			$p = $db->getQuery(true)->select('COUNT(*)')->from($db->quoteName('#__mapaviajes_photos', 'p'))
+				->join('INNER', $db->quoteName('#__mapaviajes_trips', 't') . ' ON ' . $db->quoteName('t.id') . ' = ' . $db->quoteName('p.trip_id'))
+				->join('INNER', $db->quoteName('#__mapaviajes_albums', 'a') . ' ON ' . $db->quoteName('a.id') . ' = ' . $db->quoteName('t.album_id'))
+				->where($db->quoteName('t.published') . ' = 1')->where($db->quoteName('a.published') . ' = 1')->where($db->quoteName('p.state') . ' = 1');
+
+			if ($albumId > 0)
+			{
+				$b = $albumId;
+				$p->where($db->quoteName('a.id') . ' = :b')->bind(':b', $b, ParameterType::INTEGER);
+			}
+
+			return [\count($rows), (new WorldCountries(JPATH_ROOT . '/media/com_mapaviajes/data/world.json'))->count($places), (int) $db->setQuery($p)->loadResult()];
+		}, [$albumId], 'stats3-' . $albumId);
 	}
 
 	public function onAkeebaEngageGetAssetMeta(Event $event): void

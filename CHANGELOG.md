@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.16.1 — 2026-10-26
+- **Nuevo código `{mapaviajes photos}`**: escribe el total de fotografías (las ya aprobadas de los viajes publicados de mapas publicados, también las marcadas «solo amigos»; solo se enseña el número). Admite `album=ID` como los demás. Guía actualizada en `docs/CODIGOS-ARTICULO.md`.
+- Prueba `116` ampliada (8).
+
 ## 1.16.0 — 2026-10-26 (códigos para artículos)
 - **Códigos para insertar en un artículo de Joomla** (los resuelve el plugin «Contenido - Mapa de viajes», que ya viene en el paquete): `{mapaviajes stats}` escribe «51 álbumes · 16 países»; `{mapaviajes albums}` y `{mapaviajes countries}` escriben solo el número; con `album=ID` (por ejemplo `{mapaviajes stats album=3}`) cuentan un solo mapa. Cuentan los viajes publicados de mapas publicados; solo salen totales, nunca nombres, lugares ni fotos. Los países se cuentan igual que en la cabecera del mapa (mismos contornos, comprobado contra el navegador). Se guarda 10 minutos en la caché de Joomla. Si algo falla, el artículo se pinta igual. Guía: `docs/CODIGOS-ARTICULO.md`.
 - El plugin ahora se suscribe siempre que el componente esté activo; los eventos de comentarios (Engage) siguen activándose solo si Engage está instalado.
