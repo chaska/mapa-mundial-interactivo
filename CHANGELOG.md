@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## 1.16.0 — 2026-10-26 (códigos para artículos)
+- **Códigos para insertar en un artículo de Joomla** (los resuelve el plugin «Contenido - Mapa de viajes», que ya viene en el paquete): `{mapaviajes stats}` escribe «51 álbumes · 16 países»; `{mapaviajes albums}` y `{mapaviajes countries}` escriben solo el número; con `album=ID` (por ejemplo `{mapaviajes stats album=3}`) cuentan un solo mapa. Cuentan los viajes publicados de mapas publicados; solo salen totales, nunca nombres, lugares ni fotos. Los países se cuentan igual que en la cabecera del mapa (mismos contornos, comprobado contra el navegador). Se guarda 10 minutos en la caché de Joomla. Si algo falla, el artículo se pinta igual. Guía: `docs/CODIGOS-ARTICULO.md`.
+- El plugin ahora se suscribe siempre que el componente esté activo; los eventos de comentarios (Engage) siguen activándose solo si Engage está instalado.
+- Prueba nueva: `116-codigos-articulo.js` (7).
+
 ## 1.15.2 — 2026-10-25
 - **La edición de un álbum permite cambiar la ciudad, el año y el título** (antes solo las fotos). El lugar se cambia igual que al crear: escribiendo el nombre o las coordenadas (también `40°22′14″N 2°48′41″O`) o pinchando el mapa. Si el sitio revisa antes de publicar, cambiar el **título** (texto libre) o poner un **nombre de lugar escrito a mano** devuelve el álbum a revisión; el panel avisa antes de guardar. Cambiar a una ciudad de la lista, a coordenadas o a un punto del mapa no lo necesita.
 - **La Antártida ya está dibujada** en todos los mapas (la primera versión del dibujo del mundo la dejaba fuera). Herramienta: `tools/add-antarctica.mjs`.

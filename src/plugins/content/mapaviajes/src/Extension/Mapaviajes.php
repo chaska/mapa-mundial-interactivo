@@ -13,6 +13,9 @@ defined('_JEXEC') || die;
 
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Chaska\Component\Mapaviajes\Administrator\Service\TripRepository;
+use Chaska\Component\Mapaviajes\Administrator\Service\WorldCountries;
+use Joomla\CMS\Event\Content\ContentPrepareEvent;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -24,8 +27,10 @@ use Joomla\Event\SubscriberInterface;
 use Joomla\Registry\Registry;
 
 /**
- * Tells Akeeba Engage / Engage what the assets named "com_mapaviajes.trip.<id>" are (a trip of the map), so its comment
- * form, notices, moderation lists and permission checks work for them. It does nothing when Engage is not installed.
+ * 1. Short codes for articles: {mapaviajes stats} -> "51 albums · 16 countries", {mapaviajes albums} -> 51, {mapaviajes countries} -> 16
+ *    (add album=ID to count a single map). Only totals of published trips: no names, no places, no photos.
+ * 2. Tells Akeeba Engage / Engage what the assets named "com_mapaviajes.trip.<id>" are (a trip of the map), so its comment
+ *    form, notices, moderation lists and permission checks work for them. It does nothing when Engage is not installed.
  */
 final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 {
@@ -33,17 +38,91 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 
 	protected $allowLegacyListeners = false;
 
+	protected $autoloadLanguage = true;
+
 	public static function getSubscribedEvents(): array
 	{
-		if (!ComponentHelper::isEnabled('com_engage') || !ComponentHelper::isEnabled('com_mapaviajes'))
+		if (!ComponentHelper::isEnabled('com_mapaviajes'))
 		{
 			return [];
 		}
 
-		return [
-			'onAkeebaEngageGetAssetMeta'       => 'onAkeebaEngageGetAssetMeta',
-			'onAkeebaEngageGetAssetIDsByTitle' => 'onAkeebaEngageGetAssetIDsByTitle',
-		];
+		$events = ['onContentPrepare' => 'onContentPrepare'];
+
+		if (ComponentHelper::isEnabled('com_engage'))
+		{
+			$events['onAkeebaEngageGetAssetMeta']       = 'onAkeebaEngageGetAssetMeta';
+			$events['onAkeebaEngageGetAssetIDsByTitle'] = 'onAkeebaEngageGetAssetIDsByTitle';
+		}
+
+		return $events;
+	}
+
+	/** Replaces {mapaviajes stats|albums|countries [album=ID]} in the text of an article (or any content item). */
+	public function onContentPrepare(ContentPrepareEvent $event): void
+	{
+		if ($this->getApplication()->isClient('api') || $event->getContext() === 'com_finder.indexer')
+		{
+			return;
+		}
+
+		$item = $event->getItem();
+
+		if (!isset($item->text) || !\is_string($item->text) || stripos($item->text, '{mapaviajes') === false)
+		{
+			return;
+		}
+
+		$item->text = preg_replace_callback(
+			'/\{mapaviajes\s+(stats|albums|countries)(?:\s+album\s*=\s*(\d{1,9}))?\s*\}/i',
+			function (array $m): string {
+				try
+				{
+					[$albums, $countries] = $this->totals(isset($m[2]) ? (int) $m[2] : 0);
+				}
+				catch (\Throwable $e)
+				{
+					return ''; // an article never breaks because of a counter
+				}
+
+				return match (strtolower($m[1]))
+				{
+					'albums'    => (string) $albums,
+					'countries' => (string) $countries,
+					default     => '<span class="mv-stats">' . htmlspecialchars(Text::plural('PLG_CONTENT_MAPAVIAJES_ALBUMS', $albums) . ' · ' . Text::plural('PLG_CONTENT_MAPAVIAJES_COUNTRIES', $countries), ENT_QUOTES, 'UTF-8') . '</span>',
+				};
+			},
+			$item->text
+		) ?? $item->text;
+	}
+
+	/**
+	 * Published trips of published maps (one map when $albumId > 0): how many, and in how many countries. Cached for ten minutes.
+	 *
+	 * @return array{0: int, 1: int}
+	 */
+	private function totals(int $albumId): array
+	{
+		$cache = Factory::getContainer()->get(\Joomla\CMS\Cache\CacheControllerFactoryInterface::class)->createCacheController('callback', ['defaultgroup' => 'com_mapaviajes', 'lifetime' => 10]);
+
+		return $cache->get(function () use ($albumId): array {
+			$db = $this->getDatabase();
+			$q  = $db->getQuery(true)->select([$db->quoteName('t.lat'), $db->quoteName('t.lon')])
+				->from($db->quoteName('#__mapaviajes_trips', 't'))
+				->join('INNER', $db->quoteName('#__mapaviajes_albums', 'a') . ' ON ' . $db->quoteName('a.id') . ' = ' . $db->quoteName('t.album_id'))
+				->where($db->quoteName('t.published') . ' = 1')->where($db->quoteName('a.published') . ' = 1');
+
+			if ($albumId > 0)
+			{
+				$a = $albumId;
+				$q->where($db->quoteName('a.id') . ' = :a')->bind(':a', $a, ParameterType::INTEGER);
+			}
+
+			$rows   = $db->setQuery($q)->loadAssocList() ?: [];
+			$places = array_map(static fn (array $r): array => [(float) $r['lat'], (float) $r['lon']], $rows);
+
+			return [\count($rows), (new WorldCountries(JPATH_ROOT . '/media/com_mapaviajes/data/world.json'))->count($places)];
+		}, [$albumId], 'stats-' . $albumId);
 	}
 
 	public function onAkeebaEngageGetAssetMeta(Event $event): void

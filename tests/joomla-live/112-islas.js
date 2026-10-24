@@ -8,7 +8,7 @@ const world = JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/compone
 // Natural Earth 1 as the world file was made: scale and translation come from the file itself (formula checked against the mainland below)
 const proj = (lo, la) => {
 	const r = Math.PI / 180, phi = la * r, lam = lo * r, p2 = phi * phi, p4 = p2 * p2;
-	const x = lam * (0.8707 - 0.131979 * p2 + p4 * (-0.013791 + p4 * p2 * p2 * (0.003971 * p2 - 0.001529 * p4)));
+	const x = lam * (0.8707 - 0.131979 * p2 + p4 * (-0.013791 + p4 * (0.003971 * p2 - 0.001529 * p4)));
 	const y = phi * (1.007226 + p2 * (0.015085 + p4 * (-0.044475 + 0.028874 * p2 - 0.005916 * p4)));
 	return [world.t[0] + x * world.scale, world.t[1] - y * world.scale];
 };
