@@ -1021,7 +1021,34 @@
 		/* place search: our own list, no third party ever sees what the user types */
 		const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 		let opts = [], act = -1;
-		const parseCoords = (s) => { const m = s.match(/^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/); if (!m) { return null; } const la = +m[1].replace(',', '.'), lo = +m[2].replace(',', '.'); return Math.abs(la) <= 90 && Math.abs(lo) <= 180 ? { la, lo } : null; };
+		/* coordinates typed in the place box: decimals ("40.41, -3.70") or degrees, minutes, seconds as Google Maps shows them
+		 * ("40°22′14″N 2°48′41″O"; W / O / S are negative; letters before or after; ' " ′ ″ all work) */
+		const dmsCoords = (s) => {
+			const t = s.replace(/[′’´`]/g, "'").replace(/[″”“]/g, '"').replace(/'{2}/g, '"').replace(/[º˚]/g, '°');
+			const prefix = /^\s*[NSEWO]/i.test(t), L = '[NSEWO]';
+			const re = new RegExp((prefix ? '(' + L + ')\\s*' : '()') + '(-?)(\\d{1,3}(?:[.,]\\d+)?)\\s*°?\\s*(?:(\\d{1,2}(?:[.,]\\d+)?)\\s*\'\\s*)?(?:(\\d{1,2}(?:[.,]\\d+)?)\\s*"\\s*)?' + (prefix ? '()' : '(' + L + ')?') + '[\\s,;]*', 'gi');
+			const parts = []; let pos = t.search(/\S/), m; if (pos < 0) { return null; }
+			re.lastIndex = pos;
+			while (pos < t.length && (m = re.exec(t)) && m.index === pos && m[0] !== '') { parts.push(m); pos = re.lastIndex; }
+			if (pos < t.length || parts.length !== 2) { return null; }
+			const num = (v) => +String(v).replace(',', '.');
+			const vals = parts.map((p) => {
+				const letter = (p[1] || p[6] || '').toUpperCase();
+				if (!letter && !/[°'"]/.test(p[0])) { return null; }
+				const min = p[4] ? num(p[4]) : 0, sec = p[5] ? num(p[5]) : 0;
+				if (min >= 60 || sec >= 60) { return null; }
+				let v = num(p[3]) + min / 60 + sec / 3600;
+				if (letter ? 'SWO'.includes(letter) : p[2] === '-') { v = -v; }
+				return { v, letter };
+			});
+			if (vals.includes(null)) { return null; }
+			const [a, b] = vals, lat = (x) => 'NS'.includes(x.letter || '-'), lon = (x) => 'EWO'.includes(x.letter || '-');
+			let la, lo;
+			if (a.letter && b.letter) { if (lat(a) && lon(b)) { la = a.v; lo = b.v; } else if (lon(a) && lat(b)) { la = b.v; lo = a.v; } else { return null; } }
+			else if (a.letter || b.letter) { return null; } else { la = a.v; lo = b.v; }
+			return Math.abs(la) <= 90 && Math.abs(lo) <= 180 ? { la, lo } : null;
+		};
+		const parseCoords = (s) => { const d = dmsCoords(s); if (d) { return d; } const m = s.match(/^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/); if (!m) { return null; } const la = +m[1].replace(',', '.'), lo = +m[2].replace(',', '.'); return Math.abs(la) <= 90 && Math.abs(lo) <= 180 ? { la, lo } : null; };
 		let searchTimer = 0, searchSeq = 0;
 		function search() {
 			const q = $('q').value; opts = []; clearTimeout(searchTimer);
