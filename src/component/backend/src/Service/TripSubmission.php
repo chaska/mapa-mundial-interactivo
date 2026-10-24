@@ -246,7 +246,7 @@ final class TripSubmission
 	}
 
 	/** The year the trip happened: a whole number from 1900 to this year, nothing else. */
-	private function year(mixed $raw): int
+	public static function year(mixed $raw): int
 	{
 		$s = \is_string($raw) ? trim($raw) : '';
 
@@ -376,7 +376,7 @@ final class TripSubmission
 	}
 
 	/** @return array{0: float, 1: float} */
-	private function coordinates(mixed $rawLat, mixed $rawLon): array
+	public static function coordinates(mixed $rawLat, mixed $rawLon): array
 	{
 		$parse = static function (mixed $v, float $limit): ?float {
 			if (!\is_string($v) || $v === '' || \strlen($v) > 20 || !preg_match('/^-?\d{1,3}(?:\.\d{1,12})?$/', $v))

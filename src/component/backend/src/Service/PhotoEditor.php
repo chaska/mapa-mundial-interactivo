@@ -48,10 +48,12 @@ final class PhotoEditor
 	 * @param   array<int, mixed>     $captions  one per new file
 	 * @param   array<int, mixed>     $newPriv   "1" = friends only, one per new file
 	 *
-	 * @return  array{added: int, removed: int, changed: int, pending: bool}
+	 * @param   array<string, mixed>  $fields  optional new title, place (+ lat, lon) and trip_year of the trip itself
+	 *
+	 * @return  array{added: int, removed: int, changed: int, pending: bool, review: bool}
 	 * @throws  SubmissionException
 	 */
-	public function apply(User $user, int $tripId, array $delete, array $priv, array $files, array $captions, array $newPriv): array
+	public function apply(User $user, int $tripId, array $delete, array $priv, array $files, array $captions, array $newPriv, array $fields = []): array
 	{
 		$userId = (int) $user->id;
 		$trip   = $this->ownTrip($userId, $tripId);
@@ -91,9 +93,13 @@ final class PhotoEditor
 			}
 		}
 
+		$edit = $this->tripFields($userId, $trip, $fields); // validated new values of the trip itself (only what really changed)
+
+		// A new TITLE is free text: when the site reviews first, the whole trip goes back to review (the place only comes from the search list or the map)
+		$needsReview = (int) $trip['published'] === 1 && $this->settings->reviewFirst() && !$user->authorise('core.admin');
+		$toReview    = $needsReview && isset($edit['title']);
 		$n     = \count($files);
-		$live  = (int) $trip['published'] === 1 && $this->settings->reviewFirst() && !$user->authorise('core.admin');
-		$state = $live ? 0 : 1; // already on the map under review: new photos wait; a trip still under review is reviewed as a whole
+		$state = ($needsReview && !$toReview) ? 0 : 1; // live trip: new photos wait one by one; a trip sent back to review is reviewed as a whole
 
 		// the final state, checked as a whole
 		$left = 0;
@@ -142,9 +148,9 @@ final class PhotoEditor
 			throw new SubmissionException('photo_public', 422);
 		}
 
-		if ($delete === [] && $change === [] && $n === 0)
+		if ($delete === [] && $change === [] && $n === 0 && $edit === [])
 		{
-			return ['added' => 0, 'removed' => 0, 'changed' => 0, 'pending' => false];
+			return ['added' => 0, 'removed' => 0, 'changed' => 0, 'pending' => false, 'review' => false];
 		}
 
 		$clean = [];
@@ -229,7 +235,7 @@ final class PhotoEditor
 
 		try
 		{
-			$gone = $this->write((int) $trip['id'], $userId, $max, $delete, $change, $names, $meta, $clean, $flags, $state);
+			$gone = $this->write((int) $trip['id'], $userId, $max, $delete, $change, $names, $meta, $clean, $flags, $state, $edit, $toReview);
 		}
 		catch (\Throwable $e)
 		{
@@ -260,7 +266,13 @@ final class PhotoEditor
 			$this->tellModerators((string) $trip['title'], (string) $user->username, $n);
 		}
 
-		return ['added' => $n, 'removed' => \count($delete), 'changed' => \count($change), 'pending' => $n > 0 && $state === 0];
+		if ($toReview)
+		{
+			EventLog::add($this->db, $userId, 'trip_rereview');
+			$this->tellNewTrip((string) ($edit['title'] ?? $trip['title']), (string) $user->username, $this->countLive((int) $trip['id']), (int) $trip['album_id']);
+		}
+
+		return ['added' => $n, 'removed' => \count($delete), 'changed' => \count($change) + \count($edit), 'pending' => $n > 0 && $state === 0, 'review' => $toReview];
 	}
 
 	/** Moderators: the photos added later of these trips go live. */
@@ -321,7 +333,7 @@ final class PhotoEditor
 		}
 
 		$t   = $tripId;
-		$row = $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName(['id', 'user_id', 'album_id', 'title', 'published', 'trip_year']))->from($this->db->quoteName('#__mapaviajes_trips'))->where($this->db->quoteName('id') . ' = :t')->bind(':t', $t, ParameterType::INTEGER))->loadAssoc();
+		$row = $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName(['id', 'user_id', 'album_id', 'title', 'place', 'lat', 'lon', 'published', 'trip_year']))->from($this->db->quoteName('#__mapaviajes_trips'))->where($this->db->quoteName('id') . ' = :t')->bind(':t', $t, ParameterType::INTEGER))->loadAssoc();
 
 		if (!$row || (int) $row['user_id'] !== $userId || !\in_array((int) $row['published'], [0, 1], true))
 		{
@@ -375,7 +387,7 @@ final class PhotoEditor
 	 * @param array<int, array{width: int, height: int, bytes: int}> $meta @param array<int, string> $captions @param array<int, int> $flags
 	 * @return list<string>
 	 */
-	private function write(int $tripId, int $userId, int $max, array $delete, array $change, array $names, array $meta, array $captions, array $flags, int $state): array
+	private function write(int $tripId, int $userId, int $max, array $delete, array $change, array $names, array $meta, array $captions, array $flags, int $state, array $edit = [], bool $toReview = false): array
 	{
 		$db  = $this->db;
 		$now = Factory::getDate()->toSql();
@@ -447,6 +459,30 @@ final class PhotoEditor
 					->bind(':b', $b, ParameterType::INTEGER)->bind(':cap', $cap)->bind(':fo', $fo, ParameterType::INTEGER)->bind(':st', $st, ParameterType::INTEGER)->bind(':created', $now))->execute();
 			}
 
+			if ($edit !== [] || $toReview)
+			{
+				$q = $db->getQuery(true)->update($db->quoteName('#__mapaviajes_trips'))->where($db->quoteName('id') . ' = :tid')->where($db->quoteName('user_id') . ' = :own')->bind(':tid', $tripId, ParameterType::INTEGER)->bind(':own', $userId, ParameterType::INTEGER);
+				$map = ['title' => ':v1', 'place' => ':v2', 'lat' => ':v3', 'lon' => ':v4', 'trip_year' => ':v5'];
+				$vals = [];
+
+				foreach ($map as $col => $ph)
+				{
+					if (\array_key_exists($col, $edit))
+					{
+						$vals[$col] = $edit[$col];
+						$q->set($db->quoteName($col) . ' = ' . $ph);
+						\is_int($vals[$col]) ? $q->bind($ph, $vals[$col], ParameterType::INTEGER) : $q->bind($ph, $vals[$col]);
+					}
+				}
+
+				if ($toReview)
+				{
+					$q->set($db->quoteName('published') . ' = 0');
+				}
+
+				$db->setQuery($q)->execute();
+			}
+
 			self::recount($db, [$tripId]);
 			$db->transactionCommit();
 		}
@@ -458,6 +494,121 @@ final class PhotoEditor
 		}
 
 		return $gone;
+	}
+
+	/**
+	 * The new values of the trip itself that really differ from what is stored, validated like a new trip (nothing else can change here).
+	 *
+	 * @param  array<string, mixed>  $trip
+	 * @param  array<string, mixed>  $post
+	 * @return array<string, int|string>
+	 */
+	private function tripFields(int $userId, array $trip, array $post): array
+	{
+		$out = [];
+
+		if (isset($post['title']) && \is_string($post['title']) && $post['title'] !== '')
+		{
+			try
+			{
+				$title = TextSanitizer::clean($post['title'], 80, 0, false);
+			}
+			catch (SanitizeException $e)
+			{
+				EventLog::add($this->db, $userId, 'reject_text', 'field:' . $e->getReason());
+				throw new SubmissionException($e->getReason(), 422, ['field' => 'title']);
+			}
+
+			if ($title === '')
+			{
+				throw new SubmissionException('title_required', 422, ['field' => 'title']);
+			}
+
+			if ($title !== (string) $trip['title'])
+			{
+				$out['title'] = $title;
+			}
+		}
+
+		if (isset($post['lat'], $post['lon']))
+		{
+			[$lat, $lon] = TripSubmission::coordinates($post['lat'], $post['lon']);
+			$latS = sprintf('%.6f', $lat);
+			$lonS = sprintf('%.6f', $lon);
+			$place = (string) $trip['place'];
+
+			if (isset($post['place']) && \is_string($post['place']))
+			{
+				try
+				{
+					$place = TextSanitizer::clean($post['place'], 120, 0, false);
+				}
+				catch (SanitizeException $e)
+				{
+					EventLog::add($this->db, $userId, 'reject_text', 'field:' . $e->getReason());
+					throw new SubmissionException($e->getReason(), 422, ['field' => 'place']);
+				}
+			}
+
+			if ($place === '')
+			{
+				$place = sprintf('%.3f, %.3f', $lat, $lon);
+			}
+
+			if ($latS !== sprintf('%.6f', (float) $trip['lat']) || $lonS !== sprintf('%.6f', (float) $trip['lon']) || $place !== (string) $trip['place'])
+			{
+				$out['lat']   = $latS;
+				$out['lon']   = $lonS;
+				$out['place'] = $place;
+			}
+		}
+
+		if (isset($post['trip_year']) && $post['trip_year'] !== '')
+		{
+			$year = TripSubmission::year($post['trip_year']);
+
+			if ($year !== (int) $trip['trip_year'])
+			{
+				$out['trip_year'] = $year;
+			}
+		}
+
+		return $out;
+	}
+
+	private function countLive(int $tripId): int
+	{
+		$t = $tripId;
+
+		return (int) $this->db->setQuery($this->db->getQuery(true)->select('COUNT(*)')->from($this->db->quoteName('#__mapaviajes_photos'))->where($this->db->quoteName('trip_id') . ' = :t')->bind(':t', $t, ParameterType::INTEGER))->loadResult();
+	}
+
+	private function tellNewTrip(string $title, string $username, int $photos, int $albumId): void
+	{
+		if (!$this->settings->notifyAdmin())
+		{
+			return;
+		}
+
+		$to = $this->settings->notifyEmails();
+
+		if ($to === [])
+		{
+			$mailfrom = (string) Factory::getApplication()->get('mailfrom', '');
+			$to       = filter_var($mailfrom, FILTER_VALIDATE_EMAIL) !== false ? [$mailfrom] : [];
+		}
+
+		if ($to !== [])
+		{
+			(new Notifier($this->db, $this->settings))->newTrip(array_values($to), $this->albumTitle($albumId), $title, $username, $photos, true);
+		}
+	}
+
+	private function albumTitle(int $albumId): string
+	{
+		$a = $albumId;
+
+		return (string) $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName('title'))->from($this->db->quoteName('#__mapaviajes_albums'))->where($this->db->quoteName('id') . ' = :a')->bind(':a', $a, ParameterType::INTEGER))->loadResult();
 	}
 
 	/** @return list<array<string, mixed>> */

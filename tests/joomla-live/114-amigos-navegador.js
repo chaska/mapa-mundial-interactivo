@@ -19,6 +19,7 @@ const login = async (p, user, pass) => {
   afirma(!!trip, 'ana tiene un viaje con 2 fotos o mas (' + trip + ')');
   psql("UPDATE jt_mapaviajes_photos SET friends_only=0 WHERE trip_id=" + trip);
   psql("UPDATE jt_mapaviajes_photos SET friends_only=1 WHERE trip_id=" + trip + " AND id<>(SELECT MIN(id) FROM jt_mapaviajes_photos WHERE trip_id=" + trip + ")");
+  const origLat = psql("SELECT lat FROM jt_mapaviajes_trips WHERE id=" + trip), origLon = psql("SELECT lon FROM jt_mapaviajes_trips WHERE id=" + trip);
   const nPriv = Number(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=1 AND trip_id=" + trip));
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }).catch(() => chromium.launch());
   const errs = [];
@@ -57,14 +58,19 @@ const login = async (p, user, pass) => {
   await ana.click('#mv-fEdit'); await ana.waitForSelector('#mv-panel.mv-open.mv-editing'); await ana.waitForTimeout(500);
   const rows = await ana.locator('#mv-photos .mv-photo').count();
   afirma(rows === 1 + nPriv && /Edit the photos|Editar las fotos/.test(await ana.locator('#mv-panelTitle').textContent()), 'la pantalla de edicion es el panel de crear: ' + rows + ' tarjetas de foto con su titulo');
-  afirma(await ana.locator('#mv-q').isHidden() && await ana.locator('#mv-title').isHidden() && await ana.locator('#mv-year').isHidden() && await ana.locator('#mv-drop').isVisible() && await ana.locator('#mv-pv0').isVisible(), 'sin lugar, ano ni titulo (no se pueden cambiar) pero con la zona de subir y las casillas «Solo amigos»');
+  const place0 = psql("SELECT place FROM jt_mapaviajes_trips WHERE id=" + trip), title0 = psql("SELECT title FROM jt_mapaviajes_trips WHERE id=" + trip);
+  afirma(await ana.locator('#mv-q').isVisible() && (await ana.inputValue('#mv-q')) === place0 && (await ana.inputValue('#mv-title')) === title0 && await ana.locator('#mv-year').isVisible() && await ana.locator('#mv-drop').isVisible() && await ana.locator('#mv-pv0').isVisible(), 'trae el lugar, el titulo y el ano del album para cambiarlos, mas la zona de subir y las casillas «Solo amigos»');
+  afirma(await ana.locator('#mv-panel .mv-field:has(input[name=mv-comments])').isHidden(), 'los comentarios (que ya se cambian desde la ficha) no estan');
   afirma((await ana.locator('#mv-btnSend').textContent()).trim().length > 0 && /Save|Guardar/.test(await ana.locator('#mv-btnSend').textContent()), 'el boton dice «Guardar cambios»');
   afirma(await ana.locator('#mv-rightsRow').isHidden(), 'sin fotos nuevas no pide la declaracion de derechos');
   await ana.check('#mv-pv0'); await ana.click('#mv-btnSend'); await ana.waitForTimeout(500);
   afirma(/p[uú]blica|public/i.test(await ana.locator('#mv-perr').textContent()) && psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '1', 'esconder la unica foto publica: avisa y no guarda');
   await ana.uncheck('#mv-pv0'); await ana.uncheck('#mv-pv1'); await ana.waitForTimeout(300);
   afirma(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '1', 'los cambios NO se guardan hasta pulsar Guardar');
+  await ana.fill('#mv-q', '40°22′14″N 2°48′41″O'); await ana.waitForTimeout(500); await ana.keyboard.press('Enter'); await ana.waitForTimeout(500);
+  afirma(/40\.371, -2\.811/.test(await ana.locator('#mv-coords').textContent()), 'cambiar la ciudad: se escriben las coordenadas de Google y el panel las entiende');
   await ana.click('#mv-btnSend'); await ana.waitForSelector('#mv-panel:not(.mv-open)', { state: 'attached' }); await ana.waitForTimeout(1500);
+  afirma(Math.abs(Number(psql("SELECT lat FROM jt_mapaviajes_trips WHERE id=" + trip)) - 40.370556) < 0.0001 && Math.abs(Number(psql("SELECT lon FROM jt_mapaviajes_trips WHERE id=" + trip)) + 2.811389) < 0.0001, 'al guardar, el album cambia de sitio en la base de datos');
   afirma(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE friends_only=0 AND trip_id=" + trip) === '2' && await ana.locator('#mv-fi:not([hidden])').count() === 1, 'al guardar se aplica y vuelve a la ficha del viaje');
   await ana.click('#mv-fEdit'); await ana.waitForSelector('#mv-panel.mv-open.mv-editing'); await ana.waitForTimeout(400);
   await ana.locator('#mv-photos .mv-photo').last().locator('.mv-rm').click(); await ana.waitForTimeout(300);
@@ -93,6 +99,7 @@ const login = async (p, user, pass) => {
   }
   afirma(errs.length === 0, 'sin errores de JavaScript ' + JSON.stringify(errs));
   psql("DELETE FROM jt_mapaviajes_friends"); psql("UPDATE jt_mapaviajes_photos SET friends_only=0 WHERE trip_id=" + trip);
+  psql("UPDATE jt_mapaviajes_trips SET place='" + place0.replace(/'/g, "''") + "', lat=" + origLat + ", lon=" + origLon + " WHERE id=" + trip);
   await browser.close();
   console.log(`\n${ok} correctas, ${fail} fallos`); process.exit(fail ? 1 : 0);
 })();

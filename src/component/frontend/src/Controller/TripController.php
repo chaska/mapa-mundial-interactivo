@@ -224,7 +224,7 @@ class TripController extends BaseController
 
 		try
 		{
-			$result = (new PhotoEditor($db, new Settings()))->apply($user, $id, $delete, $priv, $files, \is_array($_POST['captions'] ?? null) ? $_POST['captions'] : [], \is_array($_POST['priv'] ?? null) ? $_POST['priv'] : []);
+			$result = (new PhotoEditor($db, new Settings()))->apply($user, $id, $delete, $priv, $files, \is_array($_POST['captions'] ?? null) ? $_POST['captions'] : [], \is_array($_POST['priv'] ?? null) ? $_POST['priv'] : [], $this->tripFieldsPost());
 		}
 		catch (SubmissionException $e)
 		{
@@ -236,7 +236,23 @@ class TripController extends BaseController
 			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
 		}
 
-		$this->json(['ok' => true] + $result + ['message' => Text::_($result['pending'] ? 'COM_MAPAVIAJES_PHOTOS_ADDED_REVIEW' : 'COM_MAPAVIAJES_PHOTOS_SAVED')], 200);
+		$this->json(['ok' => true] + $result + ['message' => Text::_($result['review'] ? 'COM_MAPAVIAJES_EDIT_REREVIEW' : ($result['pending'] ? 'COM_MAPAVIAJES_PHOTOS_ADDED_REVIEW' : 'COM_MAPAVIAJES_PHOTOS_SAVED'))], 200);
+	}
+
+	/** @return array<string, mixed> raw title / place / lat / lon / trip_year of the edit screen (the service validates them) */
+	private function tripFieldsPost(): array
+	{
+		$out = [];
+
+		foreach (['title', 'place', 'lat', 'lon', 'trip_year'] as $key)
+		{
+			if (isset($_POST[$key]) && \is_string($_POST[$key]))
+			{
+				$out[$key] = $_POST[$key];
+			}
+		}
+
+		return $out;
 	}
 
 	private function intOf(mixed $raw): int

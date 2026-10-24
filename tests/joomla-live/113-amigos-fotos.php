@@ -28,8 +28,8 @@ $send = function (Cliente $c, array $o, string $title, array $priv, int $n = 0) 
 	return $c->post('/index.php?option=com_mapaviajes&task=trip.submit&format=json', $body, ['X-Requested-With: XMLHttpRequest', "Content-Type: $ct"]);
 };
 
-$edit = function (Cliente $c, array $o, int $trip, array $delete = [], array $ep = [], int $n = 0, array $newPriv = [], bool $rights = true, bool $x = true, bool $t = true) {
-	$f = ['id' => (string) $trip, 'delete' => array_map('strval', $delete)] + ($n ? ['captions' => array_fill(0, $n, 'Otra'), 'priv' => $newPriv ?: array_fill(0, $n, '0')] : []) + ($t ? [$o['token'] => '1'] : []) + ($rights ? ['rights' => '1'] : []);
+$edit = function (Cliente $c, array $o, int $trip, array $delete = [], array $ep = [], int $n = 0, array $newPriv = [], bool $rights = true, bool $x = true, bool $t = true, array $extra = []) {
+	$f = $extra + ['id' => (string) $trip, 'delete' => array_map('strval', $delete)] + ($n ? ['captions' => array_fill(0, $n, 'Otra'), 'priv' => $newPriv ?: array_fill(0, $n, '0')] : []) + ($t ? [$o['token'] => '1'] : []) + ($rights ? ['rights' => '1'] : []);
 	foreach ($ep as $pid => $v) { $f['ep[' . $pid . ']'] = (string) $v; }
 	$files = []; for ($i = 0; $i < $n; $i++) { $files[] = ['field' => 'photos[]', 'filename' => "n$i.jpg", 'type' => 'image/jpeg', 'data' => jpegBytes(640 + $i * 7, 480)]; }
 	$ct = ''; $body = multipart($f, $files, $ct);
@@ -157,6 +157,30 @@ afirma($edit($ana, $oa, $idA)['code'] === 200, 'guardar sin cambios no hace nada
 $db->exec("UPDATE $P SET friends_only = 0 WHERE trip_id = :t", [':t' => $idA]);
 $sob = array_map('intval', array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t ORDER BY id", [':t' => $idA]), 'id'));
 foreach (array_slice($sob, 2) as $pid) { $rm($ana, $oa, $pid); }
+
+seccion('Cambiar lugar, ano y titulo desde la edicion');
+$row = fn () => $db->filas("SELECT title, place, lat, lon, trip_year, published FROM $T WHERE id = :t", [':t' => $idA])[0];
+$orig = $row();
+$r = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['place' => 'Kioto, Japon', 'lat' => '35.011600', 'lon' => '135.768300', 'trip_year' => '2019']);
+$n = $row();
+afirma($r['code'] === 200 && $n['place'] === 'Kioto, Japon' && abs((float) $n['lat'] - 35.0116) < 1e-6 && abs((float) $n['lon'] - 135.7683) < 1e-6 && (int) $n['trip_year'] === 2019 && (int) $n['published'] === 1 && $n['title'] === $orig['title'], 'ana cambia la ciudad (y las coordenadas) y el ano: se guarda y el album sigue publicado');
+$bad = [['lat' => '99.5', 'lon' => '10'], ['lat' => 'abc', 'lon' => '10'], ['trip_year' => '1800'], ['trip_year' => '2999'], ['title' => '<script>alert(1)</script>']];
+$all = true; foreach ($bad as $b) { $c = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, $b)['code']; $all = $all && $c === 422; }
+$n2 = $row(); afirma($all && $n2 === $n, 'latitud imposible, coordenadas basura, ano imposible o un titulo con codigo: 422 y no cambia nada');
+afirma($edit($beto, $ob, $idA, [], [], 0, [], false, true, true, ['place' => 'Hackeado', 'lat' => '1', 'lon' => '1'])['code'] === 404 && $row() === $n, 'beto no puede cambiar el lugar del album de ana: 404');
+afirma($edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['place' => 'Kioto, Japon', 'lat' => '35.011600', 'lon' => '135.768300', 'trip_year' => '2019'])['code'] === 200 && $row() === $n, 'guardar lo mismo no cambia nada');
+$db->setParams(['review_first' => 1, 'notify_admin' => 1, 'notify_emails' => 'moderacion@example.test']); $flush();
+$r = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['place' => 'Osaka, Japon', 'lat' => '34.693700', 'lon' => '135.502300']); $j = json_decode($r['body'], true);
+afirma($r['code'] === 200 && ($j['review'] ?? true) === false && (int) $row()['published'] === 1 && $row()['place'] === 'Osaka, Japon', 'con la revision activada, cambiar SOLO el lugar no vuelve a revision');
+$r = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['title' => 'Titulo nuevo de ana']); $j = json_decode($r['body'], true);
+afirma($r['code'] === 200 && ($j['review'] ?? false) === true && (int) $row()['published'] === 0 && $row()['title'] === 'Titulo nuevo de ana', 'cambiar el titulo vuelve a revision: el album queda pendiente');
+afirma($tripIn($dataOf($beto), $idA) === null && $tripIn($dataOf($ana), $idA) !== null, 'beto ya no ve el album; ana si (pendiente)');
+usleep(500000); $files = $mails(); $raw = $files ? (string) file_get_contents($files[0]) : ''; $body = correoTexto($raw);
+afirma(count($files) === 1 && str_contains($body, 'Titulo nuevo de ana') && !str_contains($raw . $body, 'COM_MAPAVIAJES'), 'los moderadores reciben el aviso de revision');
+$r = $edit($admB === null ? $ana : $adm, $oadm, $idA, [], [], 0, [], false, true, true, ['title' => 'Cambiado por admin']);
+afirma($r['code'] === 404 && $row()['title'] === 'Titulo nuevo de ana', 'ni siquiera un administrador cambia el album de otra persona desde esta pantalla (404)');
+$db->exec("UPDATE $T SET published = 1, title = :ti, place = :pl, lat = :la, lon = :lo, trip_year = :y WHERE id = :t", [':ti' => $orig['title'], ':pl' => $orig['place'], ':la' => $orig['lat'], ':lo' => $orig['lon'], ':y' => $orig['trip_year'], ':t' => $idA]);
+$db->setParams(['review_first' => 0, 'notify_admin' => 0]);
 
 seccion('Fotos nuevas con revision previa');
 $ids5 = array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t ORDER BY id", [':t' => $idA]), 'id');

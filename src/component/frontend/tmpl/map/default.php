@@ -262,7 +262,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 			<p class="mv-intro mv-only-new"><?php echo $t('COM_MAPAVIAJES_FORM_INTRO'); ?></p>
 			<p class="mv-intro mv-only-edit" id="mv-edIntro" hidden></p>
 
-			<div class="mv-field mv-only-new">
+			<div class="mv-field">
 				<label for="mv-q"><?php echo $t('COM_MAPAVIAJES_FIELD_PLACE'); ?></label>
 				<div class="mv-combo">
 					<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -274,7 +274,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<p class="mv-err" id="mv-qerr" role="alert"></p>
 			</div>
 
-			<div class="mv-field mv-only-new">
+			<div class="mv-field">
 				<label for="mv-year"><?php echo $t('COM_MAPAVIAJES_FIELD_YEAR'); ?></label>
 				<select class="mv-input" id="mv-year" aria-describedby="mv-yerr">
 					<option value=""><?php echo $t('COM_MAPAVIAJES_FIELD_YEAR_PH'); ?></option>
@@ -285,9 +285,10 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 				<p class="mv-err" id="mv-yerr" role="alert"></p>
 			</div>
 
-			<div class="mv-field mv-only-new">
+			<div class="mv-field">
 				<label for="mv-title"><?php echo $t('COM_MAPAVIAJES_FIELD_TITLE'); ?></label>
 				<input class="mv-input" id="mv-title" type="text" maxlength="80" placeholder="<?php echo $t('COM_MAPAVIAJES_FIELD_TITLE_PH'); ?>" aria-describedby="mv-terr">
+				<p class="mv-help mv-only-edit" id="mv-edWarn" hidden></p>
 				<p class="mv-err" id="mv-terr" role="alert"></p>
 			</div>
 
