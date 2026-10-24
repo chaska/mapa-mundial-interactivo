@@ -29,6 +29,9 @@ final class FriendService
 	public const MAX_FRIENDS = 500;
 	public const MAX_PENDING = 20;
 	public const MAX_REQUESTS_PER_DAY = 10;
+	/** After a request was declined nobody may ask again for this long; a withdrawn request is not mailed again for a week */
+	public const DECLINED_DAYS = 30;
+	public const RESEND_DAYS = 7;
 
 	public function __construct(private readonly DatabaseInterface $db)
 	{
@@ -187,11 +190,15 @@ final class FriendService
 			{
 				$status = 'friends';
 			}
-			elseif ($mine !== null)
+			elseif ($mine !== null && (int) $mine['status'] === 0)
 			{
 				$status = 'pending'; // already asked: nothing to do
 			}
-			elseif ($their !== null)
+			elseif ($mine !== null && (int) $mine['status'] === 2 && $this->recent($mine, self::DECLINED_DAYS))
+			{
+				throw new SubmissionException('trip', 404); // declined not long ago: the same answer as "no such person"
+			}
+			elseif ($their !== null && (int) $their['status'] === 0)
 			{
 				if ($this->countFriends($me) >= self::MAX_FRIENDS || $this->countFriends($target) >= self::MAX_FRIENDS)
 				{
@@ -209,12 +216,25 @@ final class FriendService
 				}
 
 				$now = Factory::getDate()->toSql();
-				$ra = $me;
-				$rb = $target;
-				$db->setQuery($db->getQuery(true)->insert($db->quoteName('#__mapaviajes_friends'))->columns($db->quoteName(['requester_id', 'addressee_id', 'status', 'created']))->values(':a, :b, 0, :c')
-					->bind(':a', $ra, ParameterType::INTEGER)->bind(':b', $rb, ParameterType::INTEGER)->bind(':c', $now))->execute();
+
+				if ($mine !== null)
+				{
+					// an old declined / withdrawn request of mine: the same row asks again; the other person is mailed only if it was a while ago
+					$mail = !$this->recent($mine, self::RESEND_DAYS);
+					$mid  = (int) $mine['id'];
+					$db->setQuery($db->getQuery(true)->update($db->quoteName('#__mapaviajes_friends'))->set($db->quoteName('status') . ' = 0')->set($db->quoteName('created') . ' = :c')->set($db->quoteName('answered') . ' = NULL')->where($db->quoteName('id') . ' = :i')
+						->bind(':c', $now)->bind(':i', $mid, ParameterType::INTEGER))->execute();
+				}
+				else
+				{
+					$ra = $me;
+					$rb = $target;
+					$db->setQuery($db->getQuery(true)->insert($db->quoteName('#__mapaviajes_friends'))->columns($db->quoteName(['requester_id', 'addressee_id', 'status', 'created']))->values(':a, :b, 0, :c')
+						->bind(':a', $ra, ParameterType::INTEGER)->bind(':b', $rb, ParameterType::INTEGER)->bind(':c', $now))->execute();
+					$mail = true;
+				}
+
 				EventLog::add($db, $me, 'friend_req');
-				$mail = true;
 			}
 
 			$db->transactionCommit();
@@ -285,14 +305,14 @@ final class FriendService
 
 				$this->setStatus((int) $row['id'], 1);
 			}
+			elseif ($action === 'decline')
+			{
+				$this->setStatus((int) $row['id'], 2); // kept, so the same person cannot ask again (and mail) at once
+			}
 			else
 			{
 				$this->deleteRow((int) $row['id']);
-
-				if ($action === 'block')
-				{
-					$this->addBlock($me, $target);
-				}
+				$this->addBlock($me, $target);
 			}
 
 			$db->transactionCommit();
@@ -333,7 +353,14 @@ final class FriendService
 
 			if ($mine !== null)
 			{
-				$this->deleteRow((int) $mine['id']);
+				if ((int) $mine['status'] === 0)
+				{
+					$this->setStatus((int) $mine['id'], 3); // withdrawn: kept for a week so asking again does not mail again
+				}
+				elseif ((int) $mine['status'] === 1)
+				{
+					$this->deleteRow((int) $mine['id']);
+				}
 			}
 
 			if ($their !== null && (int) $their['status'] === 1)
@@ -402,6 +429,14 @@ final class FriendService
 
 			throw $e;
 		}
+	}
+
+	/** Was this row answered / withdrawn less than $days days ago? @param array<string, mixed> $row */
+	private function recent(array $row, int $days): bool
+	{
+		$r = $this->db->setQuery($this->db->getQuery(true)->select($this->db->quoteName('answered'))->from($this->db->quoteName('#__mapaviajes_friends'))->where($this->db->quoteName('id') . ' = ' . (int) $row['id']))->loadResult();
+
+		return $r !== null && (string) $r > Factory::getDate('-' . $days . ' days')->toSql();
 	}
 
 	/** @return array<string, mixed>|null */

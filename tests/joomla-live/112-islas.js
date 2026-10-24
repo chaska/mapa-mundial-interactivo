@@ -26,6 +26,8 @@ const proj = (lo, la) => {
 		['Spain', 'Fuerteventura', -14.0, 28.4], ['Spain', 'El Hierro', -18.0, 27.75], ['Spain', 'Formentera', 1.45, 38.7], ['Spain', 'Mallorca', 2.95, 39.62], ['Spain', 'Menorca', 4.0, 39.95], ['Spain', 'Ibiza', 1.43, 38.98],
 		['Portugal', 'Madeira', -16.95, 32.75], ['Portugal', 'Porto Santo', -16.33, 33.07], ['Portugal', 'San Miguel (Azores)', -25.5, 37.78], ['Portugal', 'Terceira (Azores)', -27.2, 38.72], ['Portugal', 'Pico (Azores)', -28.35, 38.47], ['Portugal', 'Flores (Azores)', -31.2, 39.45], ['Portugal', 'Corvo (Azores)', -31.1, 39.7], ['Portugal', 'Faial (Azores)', -28.72, 38.58], ['Portugal', 'Santa Maria (Azores)', -25.08, 36.97],
 	]) { afirma(await inside(name, lo, la), label + ' esta en el mapa como parte de ' + name); }
+	afirma(await inside('Antarctica', 0, -80) && await inside('Antarctica', 120, -75) && await inside('Antarctica', 90, -80), 'la Antartida esta dibujada (tres puntos del continente)');
+	afirma(!(await inside('Antarctica', 0, -50)), 'y el mar de alrededor sigue siendo mar');
 	afirma(!(await inside('Spain', -16.6, 25.0)), 'el mar entre Canarias y el Sahara sigue siendo mar');
 	afirma(world.countries.find((c) => c.n === 'Spain').d.length > 1200 && world.islands === true, 'el archivo marca que las islas ya estan añadidas');
 	await browser.close();

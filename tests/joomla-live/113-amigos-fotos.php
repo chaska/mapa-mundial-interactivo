@@ -100,6 +100,26 @@ $fr($beto, $ob, 'request', ['u' => $ua]); $fr($ana, $oa, 'respond', ['u' => $ubK
 $r = $fr($ana, $oa, 'cancel', ['u' => $ubKey]);
 afirma($r['code'] === 200 && (int) $db->uno("SELECT COUNT(*) FROM $F") === 0, 'la otra parte tambien puede quitar la amistad');
 
+seccion('Abuso de solicitudes: rechazadas y retiradas');
+$db->exec("DELETE FROM $F"); $flush();
+$fr($beto, $ob, 'request', ['u' => $ua]); usleep(300000); $flush();
+$fr($ana, $oa, 'respond', ['u' => $ubKey, 'action' => 'decline']);
+afirma((int) $db->uno("SELECT status FROM $F") === 2, 'rechazar deja la fila marcada como rechazada (no la borra)');
+$r = $fr($beto, $ob, 'request', ['u' => $ua]);
+afirma($r['code'] === 404 && (int) $db->uno("SELECT status FROM $F") === 2 && count($mails()) === 0, 'tras un rechazo, beto no puede volver a pedirla en 30 dias (404 neutro) ni se manda otro correo');
+$r = $fr($ana, $oa, 'request', ['u' => $ubKey]); $j = json_decode($r['body'], true);
+afirma($r['code'] === 200 && ($j['result'] ?? '') === 'pending' && (int) $db->uno("SELECT COUNT(*) FROM $F WHERE status = 1") === 0, 'una solicitud rechazada NO se convierte en amistad si luego la pide la otra persona');
+$db->exec("DELETE FROM $F"); $flush();
+$fr($beto, $ob, 'request', ['u' => $ua]); usleep(300000); afirma(count($mails()) === 1, 'primera solicitud: un correo'); $flush();
+$fr($beto, $ob, 'cancel', ['u' => $ua]);
+afirma((int) $db->uno("SELECT status FROM $F") === 3, 'retirar la solicitud deja la fila como retirada');
+$r = $fr($beto, $ob, 'request', ['u' => $ua]); usleep(300000);
+afirma($r['code'] === 200 && (int) $db->uno("SELECT status FROM $F") === 0 && count($mails()) === 0, 'volver a pedirla enseguida funciona pero NO manda otro correo (ni 10 al dia a la misma persona)');
+$db->exec("UPDATE $F SET status = 2, answered = NOW() - INTERVAL '40 days'"); $flush();
+$r = $fr($beto, $ob, 'request', ['u' => $ua]); usleep(300000);
+afirma($r['code'] === 200 && (int) $db->uno("SELECT status FROM $F") === 0 && count($mails()) === 1, 'pasados los 30 dias de un rechazo se puede pedir otra vez y avisa de nuevo');
+$db->exec("DELETE FROM $F"); $flush();
+
 seccion('Rechazar, bloquear');
 $fr($beto, $ob, 'request', ['u' => $ua]);
 $r = $fr($ana, $oa, 'respond', ['u' => $ubKey, 'action' => 'decline']);
@@ -171,7 +191,12 @@ afirma($edit($beto, $ob, $idA, [], [], 0, [], false, true, true, ['place' => 'Ha
 afirma($edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['place' => 'Kioto, Japon', 'lat' => '35.011600', 'lon' => '135.768300', 'trip_year' => '2019'])['code'] === 200 && $row() === $n, 'guardar lo mismo no cambia nada');
 $db->setParams(['review_first' => 1, 'notify_admin' => 1, 'notify_emails' => 'moderacion@example.test']); $flush();
 $r = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['place' => 'Osaka, Japon', 'lat' => '34.693700', 'lon' => '135.502300']); $j = json_decode($r['body'], true);
-afirma($r['code'] === 200 && ($j['review'] ?? true) === false && (int) $row()['published'] === 1 && $row()['place'] === 'Osaka, Japon', 'con la revision activada, cambiar SOLO el lugar no vuelve a revision');
+afirma($r['code'] === 200 && ($j['review'] ?? true) === false && (int) $row()['published'] === 1 && $row()['place'] === 'Osaka, Japon', 'con la revision activada, cambiar el lugar a una ciudad de la lista no vuelve a revision');
+$r = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['place' => 'Punto elegido en el mapa', 'lat' => '10.5', 'lon' => '20.5']); $j = json_decode($r['body'], true);
+afirma($r['code'] === 200 && ($j['review'] ?? true) === false && (int) $row()['published'] === 1, 'tampoco los nombres que genera el propio mapa (punto elegido, coordenadas)');
+$r = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['place' => 'Visita mi tienda barata', 'lat' => '34.693700', 'lon' => '135.502300']); $j = json_decode($r['body'], true);
+afirma($r['code'] === 200 && ($j['review'] ?? false) === true && (int) $row()['published'] === 0, 'pero un nombre de lugar escrito a mano (que no sale de la lista ni del mapa) si vuelve a revision');
+$db->exec("UPDATE $T SET published = 1, place = 'Osaka, Japon' WHERE id = :t", [':t' => $idA]);
 $r = $edit($ana, $oa, $idA, [], [], 0, [], false, true, true, ['title' => 'Titulo nuevo de ana']); $j = json_decode($r['body'], true);
 afirma($r['code'] === 200 && ($j['review'] ?? false) === true && (int) $row()['published'] === 0 && $row()['title'] === 'Titulo nuevo de ana', 'cambiar el titulo vuelve a revision: el album queda pendiente');
 afirma($tripIn($dataOf($beto), $idA) === null && $tripIn($dataOf($ana), $idA) !== null, 'beto ya no ve el album; ana si (pendiente)');

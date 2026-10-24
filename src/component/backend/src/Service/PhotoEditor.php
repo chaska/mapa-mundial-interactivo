@@ -16,6 +16,7 @@ use Chaska\Component\Mapaviajes\Administrator\Security\SanitizeException;
 use Chaska\Component\Mapaviajes\Administrator\Security\TextSanitizer;
 use Chaska\Component\Mapaviajes\Administrator\Security\UserLock;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\User\User;
 use Joomla\Database\DatabaseInterface;
@@ -93,11 +94,12 @@ final class PhotoEditor
 			}
 		}
 
-		$edit = $this->tripFields($userId, $trip, $fields); // validated new values of the trip itself (only what really changed)
+		[$edit, $untrusted] = $this->tripFields($userId, $trip, $fields); // validated new values of the trip itself (only what really changed)
 
-		// A new TITLE is free text: when the site reviews first, the whole trip goes back to review (the place only comes from the search list or the map)
+		// A new TITLE is free text, and so is a place name that does not come from the search list, the map or the coordinates:
+		// when the site reviews first, the whole trip goes back to review
 		$needsReview = (int) $trip['published'] === 1 && $this->settings->reviewFirst() && !$user->authorise('core.admin');
-		$toReview    = $needsReview && isset($edit['title']);
+		$toReview    = $needsReview && (isset($edit['title']) || $untrusted);
 		$n     = \count($files);
 		$state = ($needsReview && !$toReview) ? 0 : 1; // live trip: new photos wait one by one; a trip sent back to review is reviewed as a whole
 
@@ -412,14 +414,44 @@ final class PhotoEditor
 				throw new SubmissionException('photos_too_many', 422, ['max' => $max]);
 			}
 
-			$gone = [];
+			// the same rules as before, on what is stored NOW: two saves at the same time cannot add up to an album with no public photo
+			$left       = 0;
+			$livePublic = 0;
+			$gone       = [];
 
 			foreach ($have as $p)
 			{
 				if (\in_array((int) $p['id'], $delete, true))
 				{
 					$gone[] = (string) $p['filename'];
+
+					continue;
 				}
+
+				$left++;
+
+				if ((int) $p['state'] === 1 && ($change[(int) $p['id']] ?? (int) $p['friends_only']) === 0)
+				{
+					$livePublic++;
+				}
+			}
+
+			foreach ($flags as $fl)
+			{
+				if ($state === 1 && $fl === 0)
+				{
+					$livePublic++;
+				}
+			}
+
+			if ($left + \count($names) < 1)
+			{
+				throw new SubmissionException('photo_last', 422);
+			}
+
+			if ($livePublic < 1)
+			{
+				throw new SubmissionException('photo_public', 422);
 			}
 
 			foreach ($change as $id => $fo)
@@ -501,11 +533,12 @@ final class PhotoEditor
 	 *
 	 * @param  array<string, mixed>  $trip
 	 * @param  array<string, mixed>  $post
-	 * @return array<string, int|string>
+	 * @return array{0: array<string, int|string>, 1: bool}  the changes, and whether the new place name is free text
 	 */
 	private function tripFields(int $userId, array $trip, array $post): array
 	{
-		$out = [];
+		$out       = [];
+		$untrusted = false;
 
 		if (isset($post['title']) && \is_string($post['title']) && $post['title'] !== '')
 		{
@@ -560,6 +593,7 @@ final class PhotoEditor
 				$out['lat']   = $latS;
 				$out['lon']   = $lonS;
 				$out['place'] = $place;
+				$untrusted    = $place !== (string) $trip['place'] && !$this->placeTrusted($place, $lat, $lon);
 			}
 		}
 
@@ -573,7 +607,47 @@ final class PhotoEditor
 			}
 		}
 
-		return $out;
+		return [$out, $untrusted];
+	}
+
+	/**
+	 * A place name the map itself can produce: "point chosen on the map", "point at sea", "Coordinates lat, lon" (in the site's language), or
+	 * a city of our own places file near those coordinates ("City, Country"). Anything else is text somebody typed or forged.
+	 */
+	private function placeTrusted(string $label, float $lat, float $lon): bool
+	{
+		if ($label === Text::_('COM_MAPAVIAJES_JS_POINT') || $label === Text::_('COM_MAPAVIAJES_JS_SEA') || $label === sprintf('%.3f, %.3f', $lat, $lon))
+		{
+			return true;
+		}
+
+		if ($label === sprintf(Text::_('COM_MAPAVIAJES_JS_COORDS'), sprintf('%.3f, %.3f', $lat, $lon)))
+		{
+			return true;
+		}
+
+		$name = trim(explode(',', $label, 2)[0]);
+
+		if ($name === '')
+		{
+			return false;
+		}
+
+		$want = PlaceSearch::normalise($name);
+		$cos  = max(0.05, cos(deg2rad($lat)));
+
+		foreach ((new PlaceSearch(JPATH_ROOT . '/media/com_mapaviajes/data/places.tsv'))->search($name, 12) as $p)
+		{
+			$dx = min(abs($p['lo'] - $lon), 360 - abs($p['lo'] - $lon)) * $cos;
+			$dy = abs($p['la'] - $lat);
+
+			if (PlaceSearch::normalise((string) $p['n']) === $want && 111.0 * sqrt($dx * $dx + $dy * $dy) <= 80.0)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private function countLive(int $tripId): int
