@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## 1.17.0 — 2026-10-26 (fotos HEIC)
+- **Fotos HEIC / HEIF** (iPhone y algunos Xiaomi): se pueden elegir en el formulario de crear y en el de editar un álbum. Se leen **en el navegador** con `libheif` (WebAssembly), que viaja dentro del paquete (`media/js/vendor/libheif-bundle.js`, LGPL-3.0, anotado en `NOTICE.md`) y solo se carga cuando alguien elige un HEIC: nada se descarga de internet y el servidor nunca abre un HEIC. La foto se reduce a 1800 px como cualquier otra y sigue el camino normal (el servidor la guarda en WebP, sin EXIF). Mientras se prepara, la tarjeta muestra un marcador y no se puede enviar hasta que acabe.
+- **Menos pérdida al subir**: el paso intermedio en el navegador pasa de JPEG calidad 88 a **WebP calidad 92** cuando el navegador sabe escribir WebP (el servidor también guarda WebP, así que la segunda conversión casi no pierde), y a JPEG calidad 92 si no. Un JPEG pequeño sigue yendo tal cual, sin reconvertir.
+- Prueba nueva: `117-heic-navegador.js` (12), con un HEIC real y un JPEG grande: vista previa, reducción, envío, WebP en disco sin EXIF y ninguna petición a internet.
+
 ## 1.16.2 — 2026-10-25
 - **Miniaturas que no cargaban en las listas** (Favoritos, Últimos, Siguiendo, ventanas del mapa): al abrir una lista de 50 viajes el navegador pedía a la vez 50 fotos en tamaño completo y un hosting compartido rechazaba parte de las peticiones. Ahora las listas piden una **copia pequeña** (320 px de lado, `&t=1`) que el servidor crea la primera vez y guarda en el disco privado (`thumbs/`, se borra con la foto); las imágenes se cargan **solo al aparecer en pantalla** y, si una falla, se **piden de nuevo hasta 3 veces**. La copia pequeña puede reutilizarse 10 minutos; la foto completa se sigue revalidando siempre. La puerta de acceso es la misma: una foto «solo amigos» da 404 a quien no es amigo también en miniatura.
 - Pruebas: `113` ampliada (100), `114` independiente de los datos que dejen otras pruebas (33).

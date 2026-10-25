@@ -959,7 +959,7 @@
 	})();
 
 	/* ---------------------------------------------------------------- form (only when the user may add trips) */
-	const F = { pt: null, titleTouched: false, photos: [], busy: false, edit: null, removed: [] };
+	const F = { pt: null, titleTouched: false, photos: [], busy: false, edit: null, removed: [], converting: 0 };
 	let renderPhotos = () => {}, syncSub = () => {}; // replaced below when the user may add trips
 	let draftEl = null, lastFocus = null;
 	const panel = $('panel');
@@ -1097,15 +1097,57 @@
 
 		/* photos */
 		const words = (s) => s.trim().split(/\s+/).filter(Boolean);
+		const isHeic = (f) => /^image\/hei[cf]$/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+		/* a HEIC / HEIF photo (iPhone, some Xiaomi): decoded here by a small program that travels with the component (nothing is fetched from
+		 * the internet), shrunk like any other photo and handed on as an ordinary picture. The server never opens a HEIC. */
+		let heifLib = null;
+		function loadHeif() {
+			if (!heifLib) {
+				heifLib = new Promise((res, rej) => {
+					const s = document.createElement('script'); s.src = O.heifUrl; s.async = true;
+					s.onload = () => { try { Promise.resolve(window.libheif()).then((L) => { if (L && L.HeifDecoder) { res(L); } else { rej(new Error('heif')); } }, rej); } catch (e) { rej(e); } };
+					s.onerror = () => rej(new Error('heif')); document.head.appendChild(s);
+				});
+				heifLib.catch(() => { heifLib = null; });
+			}
+			return heifLib;
+		}
+		async function heicToFile(f) {
+			const L = await loadHeif(), imgs = new L.HeifDecoder().decode(new Uint8Array(await f.arrayBuffer()));
+			if (!imgs || !imgs.length) { throw new Error('heic'); }
+			const im = imgs[0], w = im.get_width(), h = im.get_height();
+			if (!w || !h || w * h > 64e6) { throw new Error('heic'); }
+			const full = document.createElement('canvas'); full.width = w; full.height = h;
+			const fctx = full.getContext('2d'), data = fctx.createImageData(w, h);
+			await new Promise((res, rej) => im.display(data, (o) => (o ? res() : rej(new Error('heic')))));
+			fctx.putImageData(data, 0, 0);
+			const s = Math.min(1, 1800 / Math.max(w, h)), cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(h * s));
+			const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+			const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch); ctx.drawImage(full, 0, 0, cw, ch);
+			full.width = full.height = 1;
+			const blob = await encodeCanvas(cv); if (!blob) { throw new Error('heic'); }
+			const out = new File([blob], f.name.replace(/\.hei[cf]$/i, '') + (blob.type === 'image/webp' ? '.webp' : '.jpg'), { type: blob.type });
+			out.mvReady = true; return out;
+		}
 		function addFiles(list) {
 			const errs = []; let skipped = 0;
 			for (const f of list) {
-				if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { errs.push(fmt(T('COM_MAPAVIAJES_JS_E_TYPE'), f.name.slice(0, 40))); continue; }
+				const heic = isHeic(f);
+				if (!heic && !/^image\/(jpeg|png|webp)$/.test(f.type)) { errs.push(fmt(T('COM_MAPAVIAJES_JS_E_TYPE'), f.name.slice(0, 40))); continue; }
 				if (F.photos.length >= O.maxPhotos) { skipped++; continue; }
+				if (heic) {
+					const slot = { file: f, url: '', cap: '', priv: false, working: true }; F.photos.push(slot); F.converting = (F.converting || 0) + 1;
+					$('perr').textContent = fmt(T('COM_MAPAVIAJES_JS_HEIC_WORKING'), f.name.slice(0, 40));
+					heicToFile(f).then((g) => { slot.file = g; slot.url = URL.createObjectURL(g); slot.working = false; $('perr').textContent = ''; })
+						.catch(() => { const i = F.photos.indexOf(slot); if (i >= 0) { F.photos.splice(i, 1); } $('perr').textContent = fmt(T('COM_MAPAVIAJES_JS_HEIC_ERR'), f.name.slice(0, 40)); })
+						.finally(() => { F.converting--; renderPhotos(); });
+					continue;
+				}
 				F.photos.push({ file: f, url: URL.createObjectURL(f), cap: '', priv: false });
 			}
 			if (skipped) { errs.push(fmt(T('COM_MAPAVIAJES_JS_E_MAX'), O.maxPhotos)); }
-			$('perr').textContent = errs.join(' '); renderPhotos();
+			if (errs.length) { $('perr').textContent = errs.join(' '); } else if (!F.converting) { $('perr').textContent = ''; }
+			renderPhotos();
 		}
 		renderPhotos = function () {
 			const ul = $('photos'); ul.replaceChildren();
@@ -1120,7 +1162,7 @@
 				const upd = () => { if (p.existing) { return; } const c = words(ta.value).length; n.textContent = fmt(T('COM_MAPAVIAJES_JS_WORDS'), c, O.maxWords); row.classList.toggle('mv-warn', c >= O.maxWords); };
 				ta.addEventListener('input', () => { const w = words(ta.value); if (w.length > O.maxWords) { ta.value = w.slice(0, O.maxWords).join(' '); } p.cap = ta.value; upd(); });
 				upd();
-				ul.appendChild(h('li', { class: 'mv-photo' }, h('div', { class: 'mv-th' }, h('img', { alt: '', src: p.url }), h('em', { text: i + 1 })), h('div', {}, h('label', { class: 'mv-sr', for: 'mv-cap' + i, text: T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }), (p.existing && !p.cap) ? null : ta, row, pv)));
+				ul.appendChild(h('li', { class: 'mv-photo' }, h('div', { class: 'mv-th' + (p.working ? ' mv-busy' : '') }, p.url ? h('img', { alt: '', src: p.url }) : null, h('em', { text: i + 1 })), h('div', {}, h('label', { class: 'mv-sr', for: 'mv-cap' + i, text: T('COM_MAPAVIAJES_JS_CAPTION_PH') + ' ' + (i + 1) }), (p.existing && !p.cap) ? null : ta, row, pv)));
 			});
 			$('pcount').textContent = fmt(T('COM_MAPAVIAJES_JS_PHOTOS_OF'), F.photos.length, O.maxPhotos); $('drop').hidden = F.photos.length >= O.maxPhotos;
 			$('rightsRow').hidden = !!F.edit && !F.photos.some((p) => !p.existing);
@@ -1142,7 +1184,17 @@
 		/* Shrink every photo in the browser first: a phone photo is 3 to 10 MB and a mobile connection should not carry it.
 		 * The server still treats the result as hostile and re-encodes it. */
 		prepareImg = prepare;
+		/* the picture we send is a normal one: WebP when this browser can write it (the server stores WebP too, so the second step loses almost nothing), else JPEG */
+		let canWebp = null;
+		async function encodeCanvas(canvas) {
+			if (canWebp !== false) {
+				const w = await new Promise((r) => canvas.toBlob(r, 'image/webp', 0.92));
+				canWebp = !!(w && w.type === 'image/webp'); if (canWebp) { return w; }
+			}
+			return new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
+		}
 		async function prepare(file) {
+			if (file.mvReady) { return file; }
 			const MAXPX = 1800;
 			try {
 				const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -1152,7 +1204,7 @@
 				const canvas = document.createElement('canvas'); canvas.width = cw; canvas.height = ch;
 				const ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch); ctx.drawImage(bmp, 0, 0, cw, ch);
 				if (bmp.close) { bmp.close(); }
-				const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.88));
+				const blob = await encodeCanvas(canvas);
 				if (!blob) { throw new Error('blob'); }
 				return blob;
 			} catch (_) {
@@ -1176,6 +1228,7 @@
 		}
 		$('form').addEventListener('submit', async (e) => {
 			e.preventDefault();
+			if (F.converting > 0) { $('summary').textContent = T('COM_MAPAVIAJES_JS_HEIC_WAIT'); return; }
 			if (F.busy || !showErrors()) { return; }
 			setBusy(true, T('COM_MAPAVIAJES_JS_PREPARING'));
 			const fresh = F.photos.filter((p) => !p.existing); let blobs;
@@ -1186,13 +1239,13 @@
 				fd.append('title', $('title').value); fd.append('place', F.pt.label); fd.append('lat', F.pt.la.toFixed(6)); fd.append('lon', F.pt.lo.toFixed(6)); if ($('year').value) { fd.append('trip_year', $('year').value); }
 				for (const id of F.removed) { fd.append('delete[]', String(id)); }
 				for (const p of F.photos) { if (p.existing) { fd.append('ep[' + p.id + ']', p.priv ? '1' : '0'); } }
-				blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', fresh[i].cap); fd.append('priv[]', fresh[i].priv ? '1' : '0'); });
+				blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + (b.type === 'image/webp' ? '.webp' : '.jpg')); fd.append('captions[]', fresh[i].cap); fd.append('priv[]', fresh[i].priv ? '1' : '0'); });
 			} else {
 			fd.append(O.token, '1'); fd.append('album_id', String(O.albumId)); fd.append('title', $('title').value); fd.append('trip_year', $('year').value); fd.append('place', F.pt.label);
 			fd.append('lat', F.pt.la.toFixed(6)); fd.append('lon', F.pt.lo.toFixed(6)); fd.append('website', $('website').value); fd.append('rights', $('rights').checked ? '1' : '0');
 			const r = document.querySelector('input[name="mv-comments"]:checked'), allow = r ? r.value === '1' : false;
 			fd.append('allow_comments', allow ? '1' : '0'); fd.append('notify', allow && $('sub') && $('sub').checked ? '1' : '0');
-			blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + '.jpg'); fd.append('captions[]', F.photos[i].cap); fd.append('priv[]', F.photos[i].priv ? '1' : '0'); });
+			blobs.forEach((b, i) => { fd.append('photos[]', b, 'photo-' + (i + 1) + (b.type === 'image/webp' ? '.webp' : '.jpg')); fd.append('captions[]', F.photos[i].cap); fd.append('priv[]', F.photos[i].priv ? '1' : '0'); });
 			}
 			setBusy(true, T('COM_MAPAVIAJES_JS_SENDING'));
 			const xhr = new XMLHttpRequest();

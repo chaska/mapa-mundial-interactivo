@@ -299,7 +299,7 @@ $t = static fn (string $key): string => htmlspecialchars(Text::_($key), ENT_QUOT
 					<strong><?php echo $t('COM_MAPAVIAJES_DROP_TITLE'); ?></strong>
 					<span><?php echo $t('COM_MAPAVIAJES_DROP_HELP'); ?></span>
 				</label>
-				<input class="mv-sr" id="mv-files" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+				<input class="mv-sr" id="mv-files" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple>
 				<ul class="mv-photos" id="mv-photos"></ul>
 				<p class="mv-help"><?php echo $t('COM_MAPAVIAJES_PHOTOS_NOTE'); ?></p>
 				<p class="mv-err" id="mv-perr" role="alert"></p>

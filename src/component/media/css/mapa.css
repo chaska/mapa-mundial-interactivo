@@ -684,3 +684,5 @@ html,body{overscroll-behavior:none}
 /* the edit screen shares the new-album panel */
 .mv-editing .mv-only-new{display:none}.mv-only-edit[hidden]{display:none}
 .mv-photo textarea:disabled{background:#f4ead6;color:var(--ink-2);cursor:not-allowed;resize:none}
+
+.mv-photo .mv-th.mv-busy{background:linear-gradient(90deg,#eadcc6,#f6ecd9,#eadcc6);background-size:200% 100%;animation:mv-busy 1.1s linear infinite}@keyframes mv-busy{to{background-position:-200% 0}}
