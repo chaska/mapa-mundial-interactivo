@@ -69,9 +69,9 @@ const login = async (p, user, pass) => {
   // list thumbnails: small copies, loaded lazily, all of them end up drawn
   await beto.goto(BASE + '/index.php?option=com_mapaviajes'); await beto.waitForSelector('#mv-svg path.mv-sphere[d]'); await beto.waitForTimeout(900);
   await beto.click('#mv-btnMenu'); await beto.click('#mv-btnDisc'); await beto.waitForSelector('#mv-drawer.mv-open .mv-list2 img'); await beto.waitForTimeout(2500);
-  const imgs = await beto.evaluate(() => [...document.querySelectorAll('#mv-drawer .mv-list2 img')].map((i) => ({ s: i.getAttribute('src') || '', l: i.getAttribute('loading'), ok: i.complete && i.naturalWidth > 0 })));
+  const imgs = await beto.evaluate(() => [...document.querySelectorAll('#mv-drawer .mv-list2 img')].map((i) => ({ s: i.getAttribute('src') || '', l: i.getAttribute('loading'), ok: i.complete && i.naturalWidth > 0, seen: i.getBoundingClientRect().top < innerHeight && i.getBoundingClientRect().bottom > 0 })));
   afirma(imgs.length > 0 && imgs.every((i) => i.s.includes('t=1') && i.l === 'lazy'), 'las miniaturas de la lista piden la copia pequeña (t=1) y cargan en diferido (' + imgs.length + ')');
-  afirma(imgs.every((i) => i.ok), 'y todas acaban pintadas (' + imgs.filter((i) => i.ok).length + '/' + imgs.length + ')');
+  afirma(imgs.filter((i) => i.seen).length > 0 && imgs.filter((i) => i.seen).every((i) => i.ok), 'las que se ven en pantalla acaban pintadas (' + imgs.filter((i) => i.seen && i.ok).length + '/' + imgs.filter((i) => i.seen).length + '; el resto espera a aparecer)');
   await beto.click('#dClose').catch(() => {});
 
   // editing my own photos: the SAME screen as the new-album one, with what cannot change hidden

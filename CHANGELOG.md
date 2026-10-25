@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 1.16.2 — 2026-10-25
+- **Miniaturas que no cargaban en las listas** (Favoritos, Últimos, Siguiendo, ventanas del mapa): al abrir una lista de 50 viajes el navegador pedía a la vez 50 fotos en tamaño completo y un hosting compartido rechazaba parte de las peticiones. Ahora las listas piden una **copia pequeña** (320 px de lado, `&t=1`) que el servidor crea la primera vez y guarda en el disco privado (`thumbs/`, se borra con la foto); las imágenes se cargan **solo al aparecer en pantalla** y, si una falla, se **piden de nuevo hasta 3 veces**. La copia pequeña puede reutilizarse 10 minutos; la foto completa se sigue revalidando siempre. La puerta de acceso es la misma: una foto «solo amigos» da 404 a quien no es amigo también en miniatura.
+- Pruebas: `113` ampliada (100), `114` independiente de los datos que dejen otras pruebas (33).
+
 ## 1.16.1 — 2026-10-26
 - **Nuevo código `{mapaviajes photos}`**: escribe el total de fotografías (las ya aprobadas de los viajes publicados de mapas publicados, también las marcadas «solo amigos»; solo se enseña el número). Admite `album=ID` como los demás. Guía actualizada en `docs/CODIGOS-ARTICULO.md`.
 - Prueba `116` ampliada (8).
