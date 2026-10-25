@@ -23,17 +23,23 @@ final class PhotoServer
 	/**
 	 * @param   callable(array<string, int|string>): bool  $mayView  Receives the gate data of the photo.
 	 */
-	public static function send(CMSApplicationInterface $app, DatabaseInterface $db, Settings $settings, int $photoId, callable $mayView): never
+	public static function send(CMSApplicationInterface $app, DatabaseInterface $db, Settings $settings, int $photoId, callable $mayView, bool $thumb = false): never
 	{
 		$gate = (new TripRepository($db))->photoGate($photoId);
 		$path = ($gate !== null && $mayView($gate)) ? $settings->storage()->pathFor($gate['filename']) : null;
+
+		// the small copy of a photo the person may see (lists and previews); if it cannot be made, the photo itself
+		if ($thumb && $path !== null && ($small = $settings->storage()->thumbFor($gate['filename'])) !== null)
+		{
+			$path = $small;
+		}
 
 		while (ob_get_level() > 0)
 		{
 			@ob_end_clean();
 		}
 
-		self::deliver($app, $path, (string) ($gate['filename'] ?? ''), 'foto.webp');
+		self::deliver($app, $path, ($thumb ? 't|' : '') . (string) ($gate['filename'] ?? ''), 'foto.webp', $thumb ? 600 : 0);
 	}
 
 	/** The logo of a map: the same empty 404 for anything that is not allowed or not there. */
@@ -50,7 +56,7 @@ final class PhotoServer
 		self::deliver($app, $path, $gate['logo'] ?? '', 'logo.png');
 	}
 
-	private static function deliver(CMSApplicationInterface $app, ?string $path, string $etagSeed, string $downloadName): never
+	private static function deliver(CMSApplicationInterface $app, ?string $path, string $etagSeed, string $downloadName, int $maxAge = 0): never
 	{
 		if ($path === null)
 		{
@@ -68,7 +74,9 @@ final class PhotoServer
 		$etag   = '"' . substr(hash_hmac('sha256', 'mapaviajes-etag|' . $etagSeed . '|' . $size, $secret !== '' ? $secret : JPATH_ROOT), 0, 32) . '"';
 
 		header('X-Content-Type-Options: nosniff');
-		header('Cache-Control: private, no-cache'); // revalidate every time: a hidden or trashed photo must stop showing at once
+		// the photo itself is revalidated every time (a hidden or trashed photo must stop showing at once); the small copy used in lists may be
+		// reused for a few minutes: the lists are rebuilt from the server's data, so a trip that is gone stops being asked for
+		header($maxAge > 0 ? 'Cache-Control: private, max-age=' . $maxAge : 'Cache-Control: private, no-cache');
 		header('Vary: Cookie');
 		header('ETag: ' . $etag);
 		header('Content-Security-Policy: default-src \'none\'; sandbox');

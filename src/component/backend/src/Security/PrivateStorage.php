@@ -165,6 +165,71 @@ final class PrivateStorage
 		return $path;
 	}
 
+	/**
+	 * A small copy of a photo for lists and previews (cached on disk, made the first time somebody asks): a list of fifty trips would
+	 * otherwise make the browser download fifty full-size photos at once. Null when it cannot be made: the caller then serves the photo itself.
+	 */
+	public function thumbFor(string $name, int $side = 320): ?string
+	{
+		$src = $this->pathFor($name);
+
+		if ($src === null || !\function_exists('imagecreatefromwebp') || !\function_exists('imagewebp'))
+		{
+			return null;
+		}
+
+		$dir  = $this->root . '/thumbs';
+		$file = $dir . '/' . sha1($name) . '.webp';
+
+		if (is_file($file) && !is_link($file) && filemtime($file) >= (int) filemtime($src))
+		{
+			return $file;
+		}
+
+		if ((!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) || !str_ends_with($src, '.webp'))
+		{
+			return null;
+		}
+
+		$img = @imagecreatefromwebp($src);
+
+		if ($img === false)
+		{
+			return null;
+		}
+
+		$w = imagesx($img);
+		$h = imagesy($img);
+
+		if ($w > $side || $h > $side)
+		{
+			$small = imagescale($img, $w >= $h ? $side : max(1, (int) round($w * $side / $h)), $w >= $h ? max(1, (int) round($h * $side / $w)) : $side);
+			imagedestroy($img);
+
+			if ($small === false)
+			{
+				return null;
+			}
+
+			$img = $small;
+		}
+
+		$tmp = $dir . '/' . bin2hex(random_bytes(8)) . '.part';
+		$ok  = @imagewebp($img, $tmp, 72);
+		imagedestroy($img);
+
+		if (!$ok || !@rename($tmp, $file))
+		{
+			@unlink($tmp);
+
+			return null;
+		}
+
+		@chmod($file, 0640);
+
+		return $file;
+	}
+
 	public function delete(string $name): void
 	{
 		$path = $this->pathFor($name);
@@ -172,6 +237,7 @@ final class PrivateStorage
 		if ($path !== null)
 		{
 			@unlink($path);
+			@unlink($this->root . '/thumbs/' . sha1($name) . '.webp');
 
 			// A person's folder goes when their last photo does (rmdir refuses a folder that still has files).
 			if (str_contains($name, '/'))

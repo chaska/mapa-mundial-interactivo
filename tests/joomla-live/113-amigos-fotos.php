@@ -56,6 +56,8 @@ afirma($tb !== null && count($tb['ph']) === 1 && $tb['ph'][0]['id'] === $pub && 
 
 $bodyB = json_encode($dataOf($beto)); afirma(!preg_match('/"id":(' . $priv1 . '|' . $priv2 . ')[,}]/', $bodyB), 'los ids de las fotos privadas NO viajan a beto');
 $view = fn (Cliente $c, int $id) => $c->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $id)['code'];
+$thumbGet = fn (Cliente $c, int $id) => $c->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $id . '&t=1');
+$thumbsDir = rtrim((string) getenv('MV_STORAGE'), '/') . '/thumbs';
 afirma($view($beto, $pub) === 200, 'beto ve la foto publica');
 afirma($view($beto, $priv1) === 404 && $view($beto, $priv2) === 404, 'beto pidiendo la foto privada por su direccion: 404');
 afirma($view($guest, $priv1) === 404, 'un invitado tampoco');
@@ -151,7 +153,9 @@ $pp($ana, $oa, $pub, '0'); $pp($ana, $oa, $priv1, '1');
 seccion('Borrar fotos y anadir hasta 5');
 $rm = fn (Cliente $c, array $o, int $photo) => $GLOBALS['edit']($c, $o, $GLOBALS['idA'], [$photo]);
 afirma($rm($beto, $ob, $priv2)['code'] === 404, 'beto no puede borrar fotos de ana: 404');
+$thumbGet($ana, $priv2); $before = count(glob($thumbsDir . '/*.webp') ?: []);
 afirma($rm($ana, $oa, $priv2)['code'] === 200 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 2 && (int) $db->uno("SELECT photo_count FROM $T WHERE id = :t", [':t' => $idA]) === 2, 'ana borra una foto: quedan 2 y el contador se actualiza');
+afirma(count(glob($thumbsDir . '/*.webp') ?: []) === $before - 1, 'y su miniatura guardada se borra con ella');
 afirma($rm($ana, $oa, $pub)['code'] === 422, 'no puede borrar la unica publica mientras haya otras');
 afirma($rm($ana, $oa, $priv1)['code'] === 200 && $rm($ana, $oa, $pub)['code'] === 422 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 1, 'tampoco la ultima foto del album');
 $add = fn (Cliente $c, array $o, int $trip, int $n, array $priv = [], bool $rights = true) => $GLOBALS['edit']($c, $o, $trip, [], [], $n, $priv, $rights);
@@ -163,6 +167,18 @@ $r = $add($ana, $oa, $idA, 3);
 afirma($r['code'] === 422 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 3, 'con 3 fotos no caben 3 mas (max 5): 422 y no se guarda nada');
 $r = $add($ana, $oa, $idA, 2); afirma($r['code'] === 200 && (int) $db->uno("SELECT COUNT(*) FROM $P WHERE trip_id = :t", [':t' => $idA]) === 5, 'hasta llegar a 5');
 afirma($add($ana, $oa, $idA, 1)['code'] === 422, 'la sexta no entra');
+
+seccion('Miniaturas (listas y vistas previas)');
+$thumbGet = fn (Cliente $c, int $id) => $c->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $id . '&t=1');
+$full = $beto->get('/index.php?option=com_mapaviajes&task=photo.view&id=' . $pub); $small = $thumbGet($beto, $pub);
+afirma($small['code'] === 200 && ($small['headers']['content-type'] ?? '') === 'image/webp' && strlen($small['body']) > 100 && strlen($small['body']) < strlen($full['body']), 'la miniatura de una foto publica sale mas pequena que la foto (' . strlen($small['body']) . ' < ' . strlen($full['body']) . ' bytes)');
+afirma(str_contains((string) ($small['headers']['cache-control'] ?? ''), 'max-age=600') && str_contains((string) ($full['headers']['cache-control'] ?? ''), 'no-cache'), 'la miniatura se puede reutilizar unos minutos; la foto completa se revalida siempre');
+$im = @imagecreatefromstring($small['body']); afirma($im !== false && max(imagesx($im), imagesy($im)) <= 320, 'y mide como mucho 320 px de lado');
+afirma($thumbGet($beto, $priv1) === null || $thumbGet($beto, $priv1)['code'] === 404, 'pedir la miniatura de una foto privada sin ser amigo: 404 (la puerta es la misma)');
+afirma($thumbGet($guest, $pub)['code'] === 404, 'y un invitado tampoco');
+$thumbsDir = rtrim((string) getenv('MV_STORAGE'), '/') . '/thumbs';
+afirma(is_dir($thumbsDir) && count(glob($thumbsDir . '/*.webp') ?: []) >= 1, 'la miniatura queda guardada en el disco privado para no volver a calcularla');
+$nThumbs = count(glob($thumbsDir . '/*.webp') ?: []);
 
 seccion('Un solo guardado: borrar + cambiar + anadir a la vez');
 $cur = array_column($db->filas("SELECT id FROM $P WHERE trip_id = :t ORDER BY id", [':t' => $idA]), 'id');

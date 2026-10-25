@@ -62,7 +62,8 @@ class PhotoController extends BaseController
 				}
 
 				return true;
-			}
+			},
+			($_GET['t'] ?? '') === '1'
 		);
 	}
 

@@ -52,6 +52,14 @@ const login = async (p, user, pass) => {
   afirma(checked >= 1 && checked < before + 1 && (await beto.locator('#mv-pplList li').count()) > checked, '«Solo amigos» deja marcados a los amigos (y a ti) y desmarca al resto (' + before + ' → ' + checked + ')');
   afirma((await beto.locator('#mv-chip').isVisible()), 'aparece la etiqueta de filtro activa');
 
+  // list thumbnails: small copies, loaded lazily, all of them end up drawn
+  await beto.goto(BASE + '/index.php?option=com_mapaviajes'); await beto.waitForSelector('#mv-svg path.mv-sphere[d]'); await beto.waitForTimeout(900);
+  await beto.click('#mv-btnDisc'); await beto.waitForSelector('#mv-drawer.mv-open .mv-list2 img'); await beto.waitForTimeout(2500);
+  const imgs = await beto.evaluate(() => [...document.querySelectorAll('#mv-drawer .mv-list2 img')].map((i) => ({ s: i.getAttribute('src') || '', l: i.getAttribute('loading'), ok: i.complete && i.naturalWidth > 0 })));
+  afirma(imgs.length > 0 && imgs.every((i) => i.s.includes('t=1') && i.l === 'lazy'), 'las miniaturas de la lista piden la copia pequeña (t=1) y cargan en diferido (' + imgs.length + ')');
+  afirma(imgs.every((i) => i.ok), 'y todas acaban pintadas (' + imgs.filter((i) => i.ok).length + '/' + imgs.length + ')');
+  await beto.click('#dClose').catch(() => {});
+
   // editing my own photos: the SAME screen as the new-album one, with what cannot change hidden
   await open(ana, trip);
   afirma(await ana.locator('#mv-fEdit').isVisible() && await ana.locator('#mv-fFriend').isHidden(), 'ana ve «Editar fotos» en su viaje');

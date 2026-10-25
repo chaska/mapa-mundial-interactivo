@@ -29,6 +29,13 @@
 		return e;
 	}
 	const photoSrc = (id) => O.photoUrl + encodeURIComponent(String(id));
+	/* a small picture for lists and previews: the server sends a ~320 px copy (not the full photo), the browser loads it only when it scrolls
+	 * into view, and a picture that fails (a busy server) is asked for again up to three times */
+	function thumbImg(id, attrs) {
+		const img = h('img', { alt: '', loading: 'lazy', decoding: 'async', ...(attrs || {}) }), base = photoSrc(id) + '&t=1'; let tries = 0;
+		img.addEventListener('error', () => { if (tries >= 3) { return; } tries++; setTimeout(() => { img.src = base + '&r=' + tries; }, 700 * tries); });
+		img.src = base; return img;
+	}
 
 	document.body.classList.add('mv-body');
 	document.documentElement.classList.add('mv-lock');
@@ -240,7 +247,7 @@
 			let el = polEls.get(key);
 			if (!el) {
 				el = h('button', { type: 'button', class: 'mv-polaroid', 'aria-label': t.t + ' ' + fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) },
-					h('span', { class: 'mv-pol-in' }, h('span', { class: 'mv-ph' }, t.ph.length ? h('img', { alt: '', draggable: 'false', src: photoSrc(t.ph[0].id) }) : null), h('span', { class: 'mv-cap', text: t.t })));
+					h('span', { class: 'mv-pol-in' }, h('span', { class: 'mv-ph' }, t.ph.length ? thumbImg(t.ph[0].id, { draggable: 'false' }) : null), h('span', { class: 'mv-cap', text: t.t })));
 				el.addEventListener('click', (ev) => { ev.stopPropagation(); openViewer(t); });
 				el.addEventListener('pointerdown', (ev) => ev.stopPropagation());
 				polEls.set(key, el); pinsEl.appendChild(el);
@@ -259,7 +266,7 @@
 					keep.add(c.key); let el = polEls.get(c.key); const pw = small ? 120 : 158;
 					if (!el) {
 						el = h('button', { type: 'button', class: 'mv-polaroid', 'aria-label': t.t + ' ' + fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) },
-							h('span', { class: 'mv-pol-in' }, h('span', { class: 'mv-ph' }, h('img', { alt: '', draggable: 'false', src: photoSrc(t.ph[0].id) })), h('span', { class: 'mv-cap', text: t.t })));
+							h('span', { class: 'mv-pol-in' }, h('span', { class: 'mv-ph' }, thumbImg(t.ph[0].id, { draggable: 'false' })), h('span', { class: 'mv-cap', text: t.t })));
 						el.addEventListener('click', (ev) => { ev.stopPropagation(); openViewer(t); });
 						el.addEventListener('pointerdown', (ev) => ev.stopPropagation());
 						polEls.set(c.key, el); pinsEl.appendChild(el);
@@ -311,7 +318,7 @@
 		const sx = V.tx + c.cx * V.k, sy = V.ty + c.cy * V.k, one = c.items.length === 1, t = c.items[0];
 		const el = h('div', { class: 'mv-pop', role: 'dialog', 'aria-label': one ? t.t : fmt(T('COM_MAPAVIAJES_JS_ALBUMS_N'), c.items.length) });
 		if (one) {
-			el.append(h('div', { class: 'mv-ph', style: 'background:#2d1b10' }, t.ph.length ? h('img', { alt: '', src: photoSrc(t.ph[0].id), style: 'width:100%;height:100%;object-fit:cover;display:block' }) : null),
+			el.append(h('div', { class: 'mv-ph', style: 'background:#2d1b10' }, t.ph.length ? thumbImg(t.ph[0].id, { style: 'width:100%;height:100%;object-fit:cover;display:block' }) : null),
 				h('div', { class: 'mv-in' }, h('h3', { text: t.t }),
 					h('p', { class: 'mv-meta', text: [t.p, fmt(T('COM_MAPAVIAJES_JS_BY'), t.by), photosLabel(t.ph.length)].join(' · ') }),
 					t.pending ? h('p', { class: 'mv-meta', text: T('COM_MAPAVIAJES_JS_PENDING') }) : null,
@@ -375,7 +382,7 @@
 		const meta = [photosLabel(t.ph.length), ago(t.ts)]; if (t.yr > 0) { meta.unshift(String(t.yr)); } if (t.lk > 0) { meta.push(fmt(T('COM_MAPAVIAJES_JS_LIKES_N'), t.lk)); }
 		return h('li', { class: 'mv-arow', style: 'animation-delay:' + Math.min(i, 10) * 35 + 'ms' },
 			h('a', { class: 'mv-arow-main', href: '#', onclick: (e) => { e.preventDefault(); openViewer(t); } },
-				t.ph.length ? h('img', { alt: '', src: photoSrc(t.ph[0].id), width: '64', height: '64' }) : h('span', { style: 'width:64px;height:64px' }),
+				t.ph.length ? thumbImg(t.ph[0].id, { width: '64', height: '64' }) : h('span', { style: 'width:64px;height:64px' }),
 				h('span', { style: 'min-width:0' }, h('strong', { text: t.t }), h('small', { text: t.p + ' · ' + t.by }), h('small', { class: 'mv-m', text: meta.join(' · ') }))),
 			h('div', { class: 'mv-arow-act' }, t.by && t.u && !(onlyUser() && onlyUser().u === t.u) ? h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_POD_FILTER') + ': ' + t.by, onclick: () => setAuthor(t.u, t.by) }, h('span', { text: '👤' })) : null, h('button', { class: 'mv-ib', type: 'button', style: 'min-height:36px', 'aria-label': T('COM_MAPAVIAJES_JS_ON_MAP') + ': ' + t.t, onclick: () => {
 				if (innerWidth <= 720) { closeDrawer(); }
@@ -993,7 +1000,7 @@
 	function openEdit(t) {
 		if (!panel || !t || !t.mine) { return; }
 		closeFi(); resetForm(); F.edit = t;
-		F.photos = t.ph.map((p) => ({ id: p.id, existing: true, url: photoSrc(p.id), cap: p.cap || '', priv: !!p.fo, pd: !!p.pd }));
+		F.photos = t.ph.map((p) => ({ id: p.id, existing: true, url: photoSrc(p.id) + '&t=1', cap: p.cap || '', priv: !!p.fo, pd: !!p.pd }));
 		F.pt = { la: t.la, lo: t.lo, x: t.x, y: t.y, label: t.p, city: null, same: true }; F.titleTouched = true;
 		$('q').value = t.p; $('coords').textContent = t.la.toFixed(3) + ', ' + t.lo.toFixed(3); $('where').hidden = false; $('title').value = t.t; $('year').value = t.yr > 0 ? String(t.yr) : '';
 		const warn = () => { const w = $('edWarn'); w.hidden = !(O.reviewsEdits && !t.pending && $('title').value.trim() !== t.t); w.textContent = w.hidden ? '' : T('COM_MAPAVIAJES_JS_ED_WARN'); };
