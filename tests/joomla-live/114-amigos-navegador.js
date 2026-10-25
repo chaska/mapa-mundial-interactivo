@@ -12,9 +12,23 @@ const login = async (p, user, pass) => {
 };
 (async () => {
   if (!process.env.MV_PSQL) { console.log('Falta MV_PSQL'); process.exit(2); }
-  psql("DELETE FROM jt_mapaviajes_friends"); psql("DELETE FROM jt_mapaviajes_blocks");
+  psql("DELETE FROM jt_mapaviajes_friends"); psql("DELETE FROM jt_mapaviajes_blocks"); psql("DELETE FROM jt_mapaviajes_events WHERE event='friend_req'"); // the daily limit counts every run of the tests
   psql("DELETE FROM jt_mapaviajes_photos WHERE state=0"); // leftovers of other tests (photos still waiting for a moderator)
   psql("UPDATE jt_mapaviajes_albums SET access=2");
+  // fixture: ana needs a trip with at least 3 live photos whatever the other tests left behind
+  const fs = require('fs'), crypto = require('crypto');
+  const anaId = psql("SELECT id FROM jt_users WHERE username='ana'");
+  let base = psql("SELECT t.id FROM jt_mapaviajes_trips t WHERE t.user_id=" + anaId + " AND t.published=1 AND (SELECT COUNT(*) FROM jt_mapaviajes_photos p WHERE p.trip_id=t.id AND p.state=1)>=3 ORDER BY t.id DESC LIMIT 1");
+  if (!base && process.env.MV_STORAGE) {
+    base = psql("SELECT t.id FROM jt_mapaviajes_trips t WHERE t.user_id=" + anaId + " AND t.published=1 AND t.photo_count>0 ORDER BY t.id DESC LIMIT 1");
+    const src = psql("SELECT filename FROM jt_mapaviajes_photos WHERE trip_id=" + base + " ORDER BY id LIMIT 1");
+    for (let k = 0; k < 2; k++) {
+      const name = anaId + '/viaje_2024_9_' + crypto.randomBytes(8).toString('hex') + '.webp';
+      fs.mkdirSync(process.env.MV_STORAGE + '/photos/' + anaId, { recursive: true }); fs.copyFileSync(process.env.MV_STORAGE + '/photos/' + src, process.env.MV_STORAGE + '/photos/' + name);
+      psql("INSERT INTO jt_mapaviajes_photos (trip_id, ordering, filename, width, height, bytes, state, created) SELECT trip_id, 50+" + k + ", '" + name + "', width, height, bytes, 1, now() FROM jt_mapaviajes_photos WHERE trip_id=" + base + " ORDER BY id LIMIT 1");
+    }
+    psql("UPDATE jt_mapaviajes_trips SET photo_count=(SELECT COUNT(*) FROM jt_mapaviajes_photos WHERE trip_id=" + base + " AND state=1) WHERE id=" + base);
+  }
   const trip = psql("SELECT t.id FROM jt_mapaviajes_trips t WHERE t.user_id=(SELECT id FROM jt_users WHERE username='ana') AND t.published=1 AND (SELECT COUNT(*) FROM jt_mapaviajes_photos p WHERE p.trip_id=t.id AND p.state=1)>=2 ORDER BY t.id DESC LIMIT 1");
   afirma(!!trip, 'ana tiene un viaje con 2 fotos o mas (' + trip + ')');
   psql("UPDATE jt_mapaviajes_photos SET friends_only=0 WHERE trip_id=" + trip);
@@ -54,7 +68,7 @@ const login = async (p, user, pass) => {
 
   // list thumbnails: small copies, loaded lazily, all of them end up drawn
   await beto.goto(BASE + '/index.php?option=com_mapaviajes'); await beto.waitForSelector('#mv-svg path.mv-sphere[d]'); await beto.waitForTimeout(900);
-  await beto.click('#mv-btnDisc'); await beto.waitForSelector('#mv-drawer.mv-open .mv-list2 img'); await beto.waitForTimeout(2500);
+  await beto.click('#mv-btnMenu'); await beto.click('#mv-btnDisc'); await beto.waitForSelector('#mv-drawer.mv-open .mv-list2 img'); await beto.waitForTimeout(2500);
   const imgs = await beto.evaluate(() => [...document.querySelectorAll('#mv-drawer .mv-list2 img')].map((i) => ({ s: i.getAttribute('src') || '', l: i.getAttribute('loading'), ok: i.complete && i.naturalWidth > 0 })));
   afirma(imgs.length > 0 && imgs.every((i) => i.s.includes('t=1') && i.l === 'lazy'), 'las miniaturas de la lista piden la copia pequeña (t=1) y cargan en diferido (' + imgs.length + ')');
   afirma(imgs.every((i) => i.ok), 'y todas acaban pintadas (' + imgs.filter((i) => i.ok).length + '/' + imgs.length + ')');
