@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// Seeds the podium for the browser test: two weeks ago (closed by the first request) five people compete; this week ana and beto have
+// Seeds the podium for the browser test: last week (closed by the first request, or provisional while still in its grace days) five people compete; this week ana and beto have
 // published trips with photos. Prints nothing. Throw-away users are named pd_*.
 require __DIR__ . '/http.php';
 $prefix = getenv('MV_PREFIX') ?: 'jt_'; $db = new Bd($prefix);
@@ -17,7 +17,9 @@ $trip = function (int $u, string $created, int $photos) use ($db, $T, $P, $album
 	for ($i = 0; $i < $photos; $i++) { $db->exec("INSERT INTO $P (trip_id, ordering, filename, width, height, bytes, created) VALUES (:t, :o, :f, 10, 10, 1, :c)", [':t' => $id, ':o' => $i, ':f' => 'pd' . bin2hex(random_bytes(12)) . '.webp', ':c' => $created]); }
 };
 $monday = strtotime(gmdate('Y-m-d', time() - ((int) gmdate('N') - 1) * 86400) . ' UTC');
-$old = fn (int $day) => gmdate('Y-m-d H:i:s', $monday - 14 * 86400 + $day * 86400 + 43200);
+$old = fn (int $day) => gmdate('Y-m-d H:i:s', $monday - 7 * 86400 + $day * 86400 + 43200);
 $trip($uid('pd_alba'), $old(0), 5); $trip($uid('pd_alba'), $old(1), 5); $trip($uid('pd_bruno'), $old(1), 5); $trip($uid('pd_carla'), $old(2), 2);
 $trip($uid('ana'), $old(3), 3); $trip($uid('beto'), $old(4), 1);
 foreach (['ana', 'beto'] as $n) { $trip($uid($n), gmdate('Y-m-d H:i:s'), 2); }
+// Other tests leave trips made "now"; once a week turns over they would count in last week. Keep only the seeded ones in that week.
+$db->exec("UPDATE $T SET published = 0 WHERE title NOT LIKE 'PD %' AND created >= :f AND created < :t", [':f' => gmdate('Y-m-d H:i:s', $monday - 7 * 86400), ':t' => gmdate('Y-m-d H:i:s', $monday)]);

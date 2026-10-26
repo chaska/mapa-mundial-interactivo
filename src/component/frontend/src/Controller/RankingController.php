@@ -80,8 +80,12 @@ class RankingController extends BaseController
 			}
 		}
 
-		$lastWeek = $svc->lastClosedWeek();
-		$last     = $lastWeek !== null ? array_map(fn (array $r): array => $this->row($r, $real, $me), $svc->closedWeek($lastWeek) ?? []) : [];
+		// "Last week" is always the calendar week before this one. While it is still inside its grace period it is not
+		// closed yet, so it is computed live (provisional) instead of showing an older closed week.
+		$lastWeek = gmdate('Y-m-d', strtotime($week . ' UTC') - 7 * 86400);
+		$closed   = $svc->closedWeek($lastWeek);
+		$lastRows = $closed ?? $svc->compute($lastWeek);
+		$last     = array_map(fn (array $r): array => $this->row($r, $real, $me), $lastRows);
 		$all      = $svc->allTime(500);
 		$general  = [];
 		$mineAll  = null;
@@ -109,7 +113,7 @@ class RankingController extends BaseController
 			'weights' => $set->rankWeights(),
 			'caps'    => ['likes' => $set->rankLikeCap(), 'comments' => $set->rankCommentCap()],
 			'week'    => ['start' => $week, 'end' => gmdate('Y-m-d', strtotime(RankingService::weekEnd($week) . ' UTC') - 86400), 'rows' => array_map(fn (array $r): array => $this->row($r, $real, $me), \array_slice($live, 0, RankingService::TOP)), 'mine' => $mine, 'count' => \count($live)],
-			'last'    => ['start' => $lastWeek, 'end' => $lastWeek !== null ? gmdate('Y-m-d', strtotime(RankingService::weekEnd($lastWeek) . ' UTC') - 86400) : null, 'rows' => $last],
+			'last'    => ['start' => $lastWeek, 'end' => gmdate('Y-m-d', strtotime(RankingService::weekEnd($lastWeek) . ' UTC') - 86400), 'rows' => $last, 'provisional' => $closed === null],
 			'general' => ['rows' => $general, 'mine' => $mineAll],
 		]);
 	}

@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.17.1 — 2026-10-26
+- **Podio: «Semana pasada» se quedaba en la primera semana.** Enseñaba la última semana *cerrada*, y una semana solo se cierra 2 días después de acabar (para dar tiempo a moderar), así que cada lunes seguía saliendo la semana anterior a la anterior. Ahora «Semana pasada» es siempre la semana natural anterior: si aún no está cerrada se calcula en vivo y se avisa de que es provisional; al cerrarse queda fija. «Esta semana» y «General» no cambian.
+
 ## 1.17.0 — 2026-10-26 (fotos HEIC)
 - **Fotos HEIC / HEIF** (iPhone y algunos Xiaomi): se pueden elegir en el formulario de crear y en el de editar un álbum. Se leen **en el navegador** con `libheif` (WebAssembly), que viaja dentro del paquete (`media/js/vendor/libheif-bundle.js`, LGPL-3.0, anotado en `NOTICE.md`) y solo se carga cuando alguien elige un HEIC: nada se descarga de internet y el servidor nunca abre un HEIC. La foto se reduce a 1800 px como cualquier otra y sigue el camino normal (el servidor la guarda en WebP, sin EXIF). Mientras se prepara, la tarjeta muestra un marcador y no se puede enviar hasta que acabe.
 - **Menos pérdida al subir**: el paso intermedio en el navegador pasa de JPEG calidad 88 a **WebP calidad 92** cuando el navegador sabe escribir WebP (el servidor también guarda WebP, así que la segunda conversión casi no pierde), y a JPEG calidad 92 si no. Un JPEG pequeño sigue yendo tal cual, sin reconvertir.

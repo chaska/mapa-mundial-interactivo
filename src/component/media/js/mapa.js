@@ -871,6 +871,7 @@
 			const title = kind === 'week' ? 'COM_MAPAVIAJES_JS_POD_TITLE_WEEK' : kind === 'last' ? 'COM_MAPAVIAJES_JS_POD_TITLE_LAST' : 'COM_MAPAVIAJES_JS_POD_TITLE_ALL';
 			pg.append(h('h2', { class: 'mv-ptitle', id: 'mv-podT', text: T(title) }));
 			if (kind !== 'all' && block.start) { pg.append(h('p', { class: 'mv-prange', text: range(block.start, block.end) })); }
+			if (kind === 'last' && block.provisional && rows.length) { pg.append(h('p', { class: 'mv-pnote', text: T('COM_MAPAVIAJES_JS_POD_PROVISIONAL') })); }
 			if (!rows.length) { pg.append(h('p', { class: 'mv-pnote', text: T(kind === 'last' ? 'COM_MAPAVIAJES_JS_POD_LAST_NONE' : 'COM_MAPAVIAJES_JS_POD_NONE') })); }
 			else {
 				pg.append(h('div', { class: 'mv-pstage' }, slot(rows[1], 2, kind), slot(rows[0], 1, kind), slot(rows[2], 3, kind)), h('div', { class: 'mv-pfloor', 'aria-hidden': 'true' }));
