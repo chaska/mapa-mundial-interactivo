@@ -1,5 +1,8 @@
 # Registro de cambios
 
+## 1.17.2 — 2026-10-26
+- **Podio: la semana se cierra al acabar** (domingo 24:00 UTC), sin esperar los 2 días de margen. En la primera petición después, la semana pasada queda fijada y suma al ranking General.
+
 ## 1.17.1 — 2026-10-26
 - **Podio: «Semana pasada» se quedaba en la primera semana.** Enseñaba la última semana *cerrada*, y una semana solo se cierra 2 días después de acabar (para dar tiempo a moderar), así que cada lunes seguía saliendo la semana anterior a la anterior. Ahora «Semana pasada» es siempre la semana natural anterior: si aún no está cerrada se calcula en vivo y se avisa de que es provisional; al cerrarse queda fija. «Esta semana» y «General» no cambian.
 

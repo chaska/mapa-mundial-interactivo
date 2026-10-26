@@ -33,7 +33,7 @@ const afirma = (c, m) => { c ? (ok++, console.log('  ok    ' + m)) : (fail++, co
     afirma(await page.locator('.mv-pslot.mv-p3 .mv-pstar').count() === 1 && await page.locator('.mv-pslot.mv-p1 .mv-pstar').count() === 3, 'estrellas 3, 2 y 1 con tres personas');
     await page.screenshot({ path: `${process.env.MV_OUT || '.'}/${name}-podio-pasada.png` });
     await page.click('#mv-pod [data-v=all]'); await page.waitForTimeout(300);
-    { const aunAbierta = (new Date().getUTCDay() + 6) % 7 < 2; /* lun-mar: la semana pasada aun es provisional y no suma al general */ afirma(aunAbierta || (await page.locator('.mv-pslot .mv-pname').allTextContents())[1] === 'pd_alba', 'general: alba lidera (cuando la semana pasada ya se cerro)'); }
+    { const aunAbierta = false; afirma(aunAbierta || (await page.locator('.mv-pslot .mv-pname').allTextContents())[1] === 'pd_alba', 'general: alba lidera (cuando la semana pasada ya se cerro)'); }
     afirma(await page.locator('.mv-phide').count() === 0, 'ya no hay interruptor «No aparecer en el ranking»: aparece todo el mundo');
     afirma(/20/.test(await page.locator('.mv-phow').textContent()) && await page.locator('.mv-phow[open]').count() === 1, '«Cómo se puntúa» está abierto y trae las puntuaciones');
     // filter by one person

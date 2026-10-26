@@ -26,7 +26,7 @@ use Joomla\Database\ParameterType;
  * most double what trips and photos earned. Blocked users and people who asked to stay out never appear.
  * Ties are broken by trips, then photos, then who got there first, then id: the same data always gives the same podium.
  *
- * A week is closed lazily, once it ended at least two days ago (moderation catches up first): its top ten are written
+ * A week is closed lazily, as soon as it ends (Sunday 24:00 UTC, on the first request after that): its top ten are written
  * once and never change. Position 1-3 earn 3/2/1 stars; podium points for the all-time table are 10/6/3 and 1 for 4th-10th.
  */
 final class RankingService
@@ -34,7 +34,7 @@ final class RankingService
 	public const STARS  = [1 => 3, 2 => 2, 3 => 1];
 	public const POINTS = [1 => 10, 2 => 6, 3 => 3];
 	public const TOP    = 10;
-	public const GRACE_DAYS = 2;
+	public const GRACE_DAYS = 0;
 	public const MAX_BACK_WEEKS = 26;
 
 	public function __construct(private DatabaseInterface $db, private Settings $settings)

@@ -102,10 +102,10 @@ afirma(($by['rk_e']['comments'] ?? -1) === 2 && ($by['rk_e']['score'] ?? 0) === 
 afirma(($by['rk_a']['comments'] ?? -1) === 0, 'a comentando en su propio viaje: 0');
 
 seccion('Cierre semanal');
-$now = strtotime('2026-03-09 12:00:00 UTC'); // Monday, the week ended 12 h ago: inside the grace period
-afirma(!in_array($week, $svc->closePending($now), true) && $svc->closedWeek($week) === null, 'una semana recien terminada (menos de 2 dias) sigue abierta');
-$closed = $svc->closePending(strtotime('2026-03-12 00:00:00 UTC'));
-afirma(in_array($week, $closed, true) && !in_array('2026-03-09', $closed, true), 'pasados 2 dias se cierra la semana ' . $week . ' (y no la siguiente: ' . json_encode($closed) . ')');
+$now = strtotime('2026-03-08 12:00:00 UTC'); // Sunday noon: the week has not ended yet
+afirma(!in_array($week, $svc->closePending($now), true) && $svc->closedWeek($week) === null, 'una semana que aun no ha acabado sigue abierta');
+$closed = $svc->closePending(strtotime('2026-03-09 00:00:00 UTC'));
+afirma(in_array($week, $closed, true) && !in_array('2026-03-09', $closed, true), 'en cuanto acaba (lunes 00:00) se cierra la semana ' . $week . ' (y no la siguiente: ' . json_encode($closed) . ')');
 $res = $svc->closedWeek($week);
 afirma(is_array($res) && count($res) === 4 && $res[0]['username'] === 'rk_a' && (int) $res[0]['stars'] === 3 && (int) $res[0]['points'] === 10, 'guardada: 4 filas, la primera es a con 3 estrellas');
 afirma($svc->closePending(strtotime('2026-03-12 00:00:00 UTC')) === [], 'cerrar otra vez no hace nada (idempotente)');
