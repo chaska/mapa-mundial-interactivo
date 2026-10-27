@@ -216,7 +216,7 @@ Revisión de seguridad con tres revisores independientes (frontend, servicios, a
 - Pruebas nuevas en `02-imagen.php` (4).
 
 ## 1.4.1 — 2026-10-16
-- **Logo como emblema**: probado con el logo real («el sitio de pruebas», que lleva texto), 52/36 px era ilegible. Ahora se guarda a un máximo de **512 px** y el mapa lo pinta grande: **208 px en ordenador** (≥1101 px), 168 px (≤1100), 132 px (≤900), 120 px (≤720), 108 px (≤400) y 96 px (≤340), siempre entero (`object-fit: contain`, nunca estirado ni recortado).
+- **Logo como emblema**: probado con un logo real que lleva texto, 52/36 px era ilegible. Ahora se guarda a un máximo de **512 px** y el mapa lo pinta grande: **208 px en ordenador** (≥1101 px), 168 px (≤1100), 132 px (≤900), 120 px (≤720), 108 px (≤400) y 96 px (≤340), siempre entero (`object-fit: contain`, nunca estirado ni recortado).
 - Si el mapa tiene logo, el `<h1>` queda en la página solo para lectores de pantalla y buscadores (el logo ya lleva el nombre); el contador de álbumes pasa a una píldora junto al logo. En móvil (≤900 px) los botones pasan a una columna de iconos de 44 px a la derecha, sin tapar el logo.
 - Límite de subida del logo de 2 a **5 MB** (un PNG con transparencia de ~1250 px ya pesa 2,2 MB). Mismos topes de 4096 px por lado y 16 MP, y la misma tubería de seguridad. Nota: el `upload_max_filesize` de PHP del servidor también cuenta.
 - Pruebas actualizadas (`02`, `96`, `97`).

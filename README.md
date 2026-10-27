@@ -1,5 +1,7 @@
 # Mapa de viajes para Joomla 5 y 6
 
+> Creado y dirigido por ChasKa, desarrollado con asistencia de IA (Claude, de Anthropic).
+
 Un mapa mundi interactivo y propio donde los usuarios registrados de tu web comparten álbumes de fotos de sus viajes. Todo se procesa y se guarda en tu servidor: ni el mapa, ni las tipografías, ni la búsqueda de lugares hablan con terceros, así que la IP de tus usuarios no sale de tu web.
 
 - **Mapa**: seis estilos (pergamino viajero y otros) en SVG, chinchetas 3D agrupadas por país que se separan al acercar, con Canarias, Baleares, Madeira, Azores y la Antártida. Al acercarte a un álbum, su foto cuelga como una polaroid sujeta por la chincheta.
