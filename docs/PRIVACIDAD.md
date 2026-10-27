@@ -16,10 +16,10 @@
 | **Fotos**: se recodifican a WebP y se elimina todo lo que traigan (EXIF, GPS, XMP). Nombre de archivo aleatorio; solo las sirve el componente tras comprobar permisos | `ImageProcessor`, `PhotoServer` |
 | **Declaración al subir**: casilla obligatoria de que las fotos son suyas o tiene permiso, que las personas que salen están de acuerdo y que no se ve ningún menor identificable | formulario del mapa, `TripSubmission` |
 | **Denunciar**: cualquier persona registrada puede avisar de un viaje; una denuncia por persona y viaje; los moderadores reciben correo y la gestionan en el administrador («Denunciados»). Guarda: viaje, quien denuncia, motivo, nota (500 caracteres) y fecha | `ReportService` |
-| **Fotos «solo amigos»**: el servidor las sirve solo a su autor/a, a sus amigos aceptados y a los moderadores (administradores y superadministradores, para revisar spam o incumplimientos); a cualquier otra persona responde 404 y el mapa solo le dice cuántas hay. Pueden añadirse fotos después de publicar; las nuevas esperan a un moderador si la revisión previa está activada | `PhotoServer`, `TripRepository`, `PhotoEditor` |
+| **Fotos «solo amigos»**: el servidor las sirve solo a su autor/a, a sus amigos aceptados y a los moderadores (superadministradores y quien tenga el permiso «Moderar en el mapa», por defecto el grupo Administrator, para revisar spam o incumplimientos); a cualquier otra persona responde 404 y el mapa solo le dice cuántas hay. Pueden añadirse fotos después de publicar; las nuevas esperan a un moderador si la revisión previa está activada | `PhotoServer`, `TripRepository`, `PhotoEditor` |
 | **Amigos y bloqueos**: una solicitud (aviso por correo sin enlaces) que la otra persona acepta; cualquiera puede quitar la amistad. Nadie ve las amistades de otra persona | `FriendService` |
 | **Nombre visible**: el alias (nombre de usuario) salvo que actives «nombre real» | Opciones → Privacidad |
-| **Ranking**: se muestra el alias; cada persona puede **no aparecer** (interruptor en el podio) | `RankingService`, `#__mapaviajes_prefs` |
+| **Ranking**: se muestra el alias; **aparecen todas las personas con viajes publicados** (no hay interruptor para ocultarse; si quieres ofrecer esa oposición, dilo en tu política y gestiona las peticiones a mano) | `RankingService` |
 | **Seguir a viajeros**: se guarda a quién sigue cada persona (nadie ve quién le sigue) | `FollowService` |
 | **Correos** (todos en HTML, sin enlaces, con el logo incrustado, el motivo por el que se reciben, el remitente que configures y un aviso de confidencialidad): aviso de publicación o no publicación de su viaje; felicitación del podio (si la activas); aviso a moderadores; y el **resumen semanal opcional** de quien sigue, que solo recibe quien activa la casilla (opt-in) | `Notifier` |
 | **Sorteo**: lista de personas con nombre y correo, solo para moderadores; el sorteo queda anotado sin datos personales | `RaffleService` |
@@ -41,7 +41,7 @@
 | Fotos y pies de foto | Publicar | `media/com_mapaviajes_private/photos` + `#__mapaviajes_photos` | Ídem |
 | Reacciones | Contadores y favoritos | `#__mapaviajes_reactions` | Hasta borrar la cuenta |
 | Puntos del ranking | Podio | `#__mapaviajes_ranking` | Hasta borrar la cuenta |
-| Preferencias («no aparecer», resumen semanal) | Respetar su elección | `#__mapaviajes_prefs` | Hasta borrar la cuenta |
+| Preferencias (resumen semanal) | Respetar su elección | `#__mapaviajes_prefs` | Hasta borrar la cuenta |
 | A quién sigue | Avisos y pestaña «Siguiendo» | `#__mapaviajes_follows` | Hasta dejar de seguir o borrar la cuenta (en ambos sentidos) |
 | Amistades y solicitudes | Dar acceso a las fotos «solo amigos» | `#__mapaviajes_friends` | Hasta que cualquiera de las dos personas la quite, o se borre una cuenta (en ambos sentidos) |
 | Bloqueos | Evitar solicitudes y acceso | `#__mapaviajes_blocks` | Hasta desbloquear o borrar la cuenta |
@@ -65,7 +65,7 @@
 2. **Informar antes** de que nombre y correo se usarán para el sorteo y cuánto tiempo (RGPD art. 13).
 3. **Minimizar**: descarga el CSV solo si lo necesitas y bórralo al terminar.
 4. **Régimen legal**: comprueba en el BOE, la DGOJ, la Agencia Tributaria y tu comunidad autónoma, o con un abogado, si hay obligaciones fiscales o de autorización (no se ha verificado en fuentes oficiales).
-5. Quien pide **no aparecer en el ranking** sí puede participar en el sorteo: dilo en las bases.
+5. Participar en el sorteo no depende de aparecer en el ranking (todo el mundo aparece): dilo en las bases.
 
 ## 7. Lo que te falta (documentos y ajustes, no código)
 - Política de privacidad que cite este tratamiento, el captcha y Engage (finalidad, base, conservación, derechos).

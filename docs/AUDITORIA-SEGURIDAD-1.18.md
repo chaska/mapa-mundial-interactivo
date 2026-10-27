@@ -1,30 +1,38 @@
-# Auditoría de seguridad de lo nuevo en 1.16 – 1.18
+# Auditoría de seguridad de lo nuevo en 1.16 – 1.18 (cerrada en 1.18.1)
 
-Fecha: 2026-10-27. Alcance: código nuevo desde 1.15.2 (miniaturas 1.16.2, códigos de artículo 1.16.x, HEIC en el navegador 1.17.0, podio 1.17.1/1.17.2, fotos de perfil 1.18.0). Método: lectura del diff (`4f7a0fb..HEAD`) con las listas de las skills `security-audit` (pasada enfocada, sin tocar el servidor real) y `seguridad-zero-trust` (puertas de salida) y la batería de pruebas en vivo. La skill `security-review` no pudo ejecutarse tal cual (la rama no tiene `origin/HEAD`); se hizo la misma revisión a mano sobre el diff. No sustituye una prueba de intrusión del servidor real.
+Fecha: 2026-10-27. Alcance: código nuevo desde 1.15.2 (miniaturas, códigos de artículo, HEIC en el navegador, podio, fotos de perfil MiFoto) y, donde lo pedía el tema, el código de siempre que lo rodea. Método: seis revisiones independientes de solo lectura (fotos y amigos · ranking, plugin y fotos de perfil · JavaScript y HEIC · instalación, base de datos, empaquetado y privacidad · revisión de código · revisión del diff con las reglas de `security-review`), más las listas de las skills `security-audit` y `seguridad-zero-trust` y la batería de pruebas en vivo. Cada arreglo de seguridad se vio en rojo sin el arreglo y en verde con él. Sin tocar el servidor real. No es la auditoría completa de seis fases de `security-audit` (sin sandbox de ejecución ni verificación independiente de cada registro).
 
 ## Resumen
-- **Sin hallazgos críticos, altos ni medios.**
-- 1 hallazgo bajo, ya corregido en 1.18.0; 3 observaciones sin cambio de código.
+- **Sin hallazgos críticos.** Un hallazgo **medio** y seis **bajos**, todos corregidos en 1.18.1. Algunas decisiones quedan para ti (abajo).
+- El control central (quién puede ver cada foto y miniatura) aguantó todos los caminos revisados.
 
-## Hallazgo corregido
+## Corregidos
 | ID | Gravedad | Qué era | Arreglo |
 |---|---|---|---|
-| S1 | Baja (cadena de suministro) | El lector HEIC (`libheif-bundle.js`, 2 MB de WebAssembly) se ejecuta en el navegador de quien elige un HEIC y nada impedía que un cambio accidental o malicioso del archivo llegara al ZIP. | El empaquetador fija su SHA-256 y se niega a construir si cambia (visto en rojo y en verde). Hash anotado en `NOTICE.md`. |
+| A1 | **Media** | «Moderar» dependía de «Editar estado» / «Eliminar», que Joomla hereda de serie a los grupos Publisher y Manager: cualquier persona de esos grupos veía TODAS las fotos «solo amigos» y pendientes, podía borrar viajes ajenos y cerrar sus comentarios. | Permiso propio `mapaviajes.moderate` (Administrator por defecto; Superusuarios siempre). Visto en rojo/verde (prueba 113). |
+| A2 | Baja | Bloquear → desbloquear → pedir amistad saltaba la espera de 30 días tras un rechazo y volvía a mandar correo. | El bloqueo conserva la fila de rechazada/retirada. Rojo/verde (113). |
+| A3 | Baja | Denunciar servía para sondear números de viaje de mapas que no ves. | Solo se denuncia lo que se puede ver. Prueba 108. |
+| A4 | Baja | El CSS propio permitía `@import` y `url()` remotos (y escapes de CSS): todo visitante llamaba a otra web. | Se eliminan. Prueba 110. |
+| A5 | Baja | Los viajes de un mapa despublicado puntuaban en el ranking. | Solo puntúan los de mapas publicados. |
+| A6 | Baja | Fallos silenciosos de MiFoto y del borrado de datos al eliminar una cuenta. | Quedan en el registro de Joomla. «Descartar denuncias» queda anotado. |
+| A7 | Baja | El lector HEIC incluido no tenía candado. | Hash SHA-256 fijado en el empaquetador. |
 
-## Revisado sin hallazgo
-- **Miniaturas**: la puerta (autor, moderador, amigo, bloqueos) se aplica antes de elegir el archivo; la copia pequeña sale de la foto ya validada, el nombre es `sha1(nombre)` (sin entrada del usuario en la ruta), se escribe en temporal + `rename`, y se borra con la foto. «Solo amigos» da 404 también en miniatura.
-- **HEIC**: el servidor nunca abre un HEIC; el navegador lo convierte y el servidor vuelve a validar y recodificar a WebP sin EXIF. Tope de 64 megapíxeles antes de reservar memoria. Sin peticiones a internet.
-- **Códigos de artículo**: solo consultas con enteros ligados; salida como números o texto escapado; no muestran nombres, lugares ni fotos; un fallo devuelve cadena vacía.
-- **Fotos de perfil**: solo se aceptan direcciones del propio sitio que empiezan por una `/`, sin espacios, comillas ni `\`; la imagen se pinta con `alt` vacío y sin `referer`; el navegador no recibe ids de Joomla; las respuestas JSON van con `no-store`; si MiFoto falla o no existe, no hay foto y no se rompe nada; las escrituras siguen exigiendo POST + token.
-- **Podio**: sin entradas nuevas; solo cambia el día de cierre y qué semana se enseña.
+## Decisiones tuyas (no cambian el código sin que lo digas)
+1. **Ranking sin opción de ocultarse**: el interruptor «no aparecer» se retiró antes y todas las personas con viajes publicados salen con alias (o nombre real si lo activas). La política de privacidad debe decirlo y tramitar a mano a quien se oponga (RGPD art. 21). Los textos del repositorio ya no prometen el interruptor.
+2. **Cierre de la semana al acabar** (decisión tuya): un viaje o foto que se aprueba en lunes ya no cuenta en la semana de su creación ni en la siguiente. Con «revisar antes de publicar» activo, la autora pierde esos puntos. Alternativa: dar 1 día de margen.
+3. **Códigos de artículo** enseñan totales a cualquiera aunque el mapa exija sesión y aunque el mapa tenga acceso «Registrado»: es lo que pediste. Si prefieres solo los de acceso público, dime y se filtra (ojo: si tus mapas son «Registrado», el contador saldría a 0).
+4. **Nombre de usuario visible** cuando «Mostrar el nombre real» está apagado: es el login de Joomla. Si en tu sitio el login es el correo, se enseña a todo usuario con sesión. Conviene que el login no sea el correo, o activar el nombre real.
+5. **Moderación tras actualizar**: al actualizar a 1.18.1 solo moderan Superusuarios, el grupo Administrator y lo que ya tuvieras marcado explícitamente en «Editar estado». Revísalo en Opciones → Permisos.
 
-## Observaciones (no cambian el código)
-1. **Miniaturas en la caché del navegador 10 minutos** (`private, max-age=600`): si alguien te quita de amigos o te bloquea, una miniatura ya cargada puede seguir viéndose en ese navegador hasta 10 minutos. La foto grande revalida siempre.
-2. **Los códigos de artículo enseñan totales a cualquiera** que vea el artículo, aunque el mapa exija sesión, e incluyen el número de fotos «solo amigos» (solo la cifra). Es intencionado; quien no lo quiera no usa el código. Con la caché de Joomla apagada, cada visita recalcula los países (milisegundos).
-3. **Confianza en MiFoto**: la dirección de la foto viene de otra extensión instalada por el administrador. Si esa extensión se comprometiera, el mapa pondría esa ruta local en un `<img>` (petición GET de la misma web). No amplía lo que ya podría hacer esa extensión.
-
-## Legal (resumen de la skill `auditoria-legal-app-ue-es`, solo lo nuevo)
-- La foto de perfil es dato personal: añadida a `docs/PRIVACIDAD.md` (§3) con lo que hay que citar en la política (quién la ve, borrado, denuncia). La foto, su consentimiento y su borrado viven en MiFoto.
-- Pendiente tuyo: que MiFoto tenga su propia vía de denuncia y de borrado, y que el aviso al subir la foto diga dónde se verá (ranking, viajes, amigos).
+## Pendiente conocido, sin cambio (bajo)
+- Miniaturas en caché del navegador 10 minutos tras quitar a alguien de amigos.
+- El borrado de datos de una cuenta no es atómico (se registra si falla; no hay limpieza de huérfanos). Al desinstalar el componente las fotos se conservan a propósito.
+- La exportación de datos incluye metadatos de fotos, no los archivos.
+- Los ganadores del sorteo (nombre y correo) viven en la sesión del administrador hasta que caduca.
+- `storage_path` y `custom_css` los puede cambiar quien tenga «Opciones» sin ser superadministrador.
+- El instalador solo acepta Joomla ≥ 5.4.9 / 6.1.4: un sitio más viejo no puede instalar ni las correcciones.
+- El SQL de MySQL (instalación y actualización) sigue sin probarse; solo PostgreSQL.
+- El empaquetador es un candado simple (cadenas literales), no un analizador.
+- Un bloqueado puede deducir que le bloquearon por la respuesta a su petición (matiz de privacidad).
 
 Esto es una revisión técnica de código y pruebas locales. No sustituye una prueba de intrusión del servidor real ni el asesoramiento de un abogado o DPD.

@@ -51,7 +51,8 @@ final class Mapaviajes extends CMSPlugin implements SubscriberInterface
 		}
 		catch (\Throwable $e)
 		{
-			// the account is already gone: a failure here must not break the Users manager
+			// the account is already gone: a failure here must not break the Users manager, but it must leave a trace so the data can be removed by hand
+			\Joomla\CMS\Log\Log::add('erasing the map data of user ' . $userId . ' failed: ' . \get_class($e) . ': ' . substr($e->getMessage(), 0, 160), \Joomla\CMS\Log\Log::ERROR, 'com_mapaviajes');
 		}
 	}
 }

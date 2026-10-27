@@ -39,7 +39,7 @@ final class TripCommentsSwitch
 		$id = $tripId;
 		$owner = $db->setQuery($db->getQuery(true)->select($db->quoteName('user_id'))->from($db->quoteName('#__mapaviajes_trips'))->where($db->quoteName('id') . ' = :id')->bind(':id', $id, ParameterType::INTEGER))->loadResult();
 
-		if ($owner === null || ((int) $owner !== $me && !$user->authorise('core.edit.state', 'com_mapaviajes')))
+		if ($owner === null || ((int) $owner !== $me && !Settings::isModerator($user)))
 		{
 			throw new SubmissionException('trip', 404);
 		}

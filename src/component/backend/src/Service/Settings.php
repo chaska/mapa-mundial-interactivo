@@ -44,7 +44,11 @@ final class Settings
 	{
 		$css = (string) $this->params->get('custom_css', '');
 
-		return trim(str_replace(['<', '>', "\0"], '', mb_substr($css, 0, 5000, 'UTF-8')));
+		$css = str_replace(['<', '>', "\0", '\\'], '', mb_substr($css, 0, 5000, 'UTF-8')); // no tag break-out, no CSS escapes (they hide keywords from the checks below)
+		// nothing that makes every visitor's browser call another site (the map promises no third-party requests): no @import, no remote url()
+		$css = preg_replace(['~@import\b[^;{}]*;?~i', '~url\(\s*[\'"]?\s*(?:[a-z][a-z0-9+.-]*:|//)(?!\s*data:image/)[^)]*\)~i'], ['', 'none'], $css) ?? '';
+
+		return trim($css);
 	}
 
 	/**
@@ -123,10 +127,14 @@ final class Settings
 	public function rankEnabled(): bool   { return (int) $this->params->get('rank_enabled', 1) === 1; }
 	/** E-mail the author when a moderator publishes or rejects their trip. */
 	public function notifyAuthor(): bool  { return (int) $this->params->get('notify_author', 1) === 1; }
-	/** Moderators may see every photo, friends only or not, and approve the photos added to live trips (administrators and Super Users). */
+	/**
+	 * Moderators may see every photo, friends only or not, approve the photos added to live trips, delete other people's trips and switch their
+	 * comments from the map: Super Users and whoever has the component's own `mapaviajes.moderate` permission (Administrators by default;
+	 * deliberately not Joomla's inheritable edit-state / delete rights, which the stock Publisher and Manager groups have).
+	 */
 	public static function isModerator(\Joomla\CMS\User\User $user): bool
 	{
-		return !$user->guest && ($user->authorise('core.admin') || $user->authorise('core.edit.state', 'com_mapaviajes'));
+		return !$user->guest && ($user->authorise('core.admin') || $user->authorise('mapaviajes.moderate', 'com_mapaviajes'));
 	}
 
 	/** Where people can write to flag content (shown in the map's report window); empty = not shown. */

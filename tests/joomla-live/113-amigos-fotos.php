@@ -66,6 +66,20 @@ afirma($view($adm, $priv1) === 200 && $view($adm, $priv2) === 200, 'el administr
 $ta = $tripIn($dataOf($adm), $idA);
 afirma($ta !== null && count($ta['ph']) === 3, 'y el administrador recibe las 3 en el mapa');
 
+seccion('Moderar: solo quien tiene el permiso propio, no los grupos que Joomla hereda');
+$U = $db->t('users'); $UG = $db->t('user_usergroup_map'); $hash = password_hash('cambia-esta-clave-de-prueba', PASSWORD_BCRYPT);
+foreach (['mv_pub' => 5, 'mv_mgr' => 6, 'mv_adm7' => 7] as $uname => $grp) {
+	$db->exec("DELETE FROM $UG WHERE user_id IN (SELECT id FROM $U WHERE username = '$uname')"); $db->exec("DELETE FROM $U WHERE username = '$uname'");
+	$db->exec("INSERT INTO $U (name, username, email, password, block, \"sendEmail\", \"registerDate\", params) VALUES ('$uname', '$uname', '$uname@example.test', '$hash', 0, 0, now(), '{}')");
+	$uid2 = (int) $db->uno("SELECT id FROM $U WHERE username = '$uname'"); $db->exec("INSERT INTO $UG (user_id, group_id) VALUES ($uid2, $grp)");
+}
+$cPub = new Cliente($base, 'cpub'); $cMgr = new Cliente($base, 'cmgr'); $cAdm7 = new Cliente($base, 'cadm7');
+afirma($cPub->login('mv_pub', 'cambia-esta-clave-de-prueba') && $cMgr->login('mv_mgr', 'cambia-esta-clave-de-prueba') && $cAdm7->login('mv_adm7', 'cambia-esta-clave-de-prueba'), 'entran un Publisher (5), un Manager (6) y un Administrator (7)');
+afirma($view($cPub, $priv1) === 404 && $view($cMgr, $priv1) === 404, 'Publisher y Manager NO ven las fotos privadas de otros (Joomla les da «editar estado» por herencia, pero no es moderar aqui)');
+afirma($view($cAdm7, $priv1) === 200, 'un Administrator (grupo 7) si: el permiso propio «Moderar en el mapa» se le da al instalar');
+$tPub = $tripIn($dataOf($cPub), $idA); afirma($tPub !== null && ($tPub['lk2'] ?? 0) === 2 && count($tPub['ph']) === 1, 'y en el mapa el Publisher recibe solo la foto publica y el numero de privadas');
+foreach (['mv_pub', 'mv_mgr', 'mv_adm7'] as $uname) { $db->exec("DELETE FROM $UG WHERE user_id IN (SELECT id FROM $U WHERE username = '$uname')"); $db->exec("DELETE FROM $U WHERE username = '$uname'"); }
+
 seccion('Amistad: pedir, aceptar, cancelar');
 $ua = $tb['u'] ?? ''; // opaque key of ana
 $ubKey = ''; foreach ($dataOf($ana)['trips'] as $t) { if (($t['by'] ?? '') === 'beto') { $ubKey = $t['u']; } }
@@ -109,6 +123,10 @@ $fr($ana, $oa, 'respond', ['u' => $ubKey, 'action' => 'decline']);
 afirma((int) $db->uno("SELECT status FROM $F") === 2, 'rechazar deja la fila marcada como rechazada (no la borra)');
 $r = $fr($beto, $ob, 'request', ['u' => $ua]);
 afirma($r['code'] === 404 && (int) $db->uno("SELECT status FROM $F") === 2 && count($mails()) === 0, 'tras un rechazo, beto no puede volver a pedirla en 30 dias (404 neutro) ni se manda otro correo');
+$fr($beto, $ob, 'block', ['u' => $ua]); $fr($beto, $ob, 'unblock', ['u' => $ua]); $flush();
+$r = $fr($beto, $ob, 'request', ['u' => $ua]); usleep(300000);
+afirma($r['code'] === 404 && (int) $db->uno("SELECT status FROM $F") === 2 && count($mails()) === 0, 'bloquear y desbloquear a quien te rechazo NO borra la espera de 30 dias: sigue 404 y sin correo');
+$db->exec("DELETE FROM " . $db->t('mapaviajes_blocks'));
 $r = $fr($ana, $oa, 'request', ['u' => $ubKey]); $j = json_decode($r['body'], true);
 afirma($r['code'] === 200 && ($j['result'] ?? '') === 'pending' && (int) $db->uno("SELECT COUNT(*) FROM $F WHERE status = 1") === 0, 'una solicitud rechazada NO se convierte en amistad si luego la pide la otra persona');
 $db->exec("DELETE FROM $F"); $flush();

@@ -79,7 +79,9 @@ class RankingController extends BaseController
 		$closed   = $svc->closedWeek($lastWeek);
 		$lastRows = $closed ?? $svc->compute($lastWeek);
 		$all      = $svc->allTime(500);
-		$this->photos = (new ProfilePhoto())->urls(array_map(static fn (array $r): int => (int) $r['user_id'], array_merge($live, $lastRows, $all)), $user, 128);
+		// only the people who are actually shown: the top ten of each list, me, and the general top ten
+		$shown = array_merge(\array_slice($live, 0, RankingService::TOP), array_filter($live, static fn (array $r): bool => (int) $r['user_id'] === $me), \array_slice($lastRows, 0, RankingService::TOP), \array_slice($all, 0, RankingService::TOP), array_filter($all, static fn (array $r): bool => (int) $r['user_id'] === $me));
+		$this->photos = (new ProfilePhoto())->urls(array_map(static fn (array $r): int => (int) $r['user_id'], $shown), $user, 128);
 		$mine = null;
 
 		foreach ($live as $r)

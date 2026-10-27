@@ -106,7 +106,9 @@ class TripsController extends AdminController
 		}
 		else
 		{
-			\Chaska\Component\Mapaviajes\Administrator\Service\ReportService::dismiss(\Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class), $ids);
+			$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			\Chaska\Component\Mapaviajes\Administrator\Service\ReportService::dismiss($db, $ids);
+			\Chaska\Component\Mapaviajes\Administrator\Service\EventLog::add($db, (int) $this->app->getIdentity()->id, 'report_dismiss', (string) \count($ids)); // who closed how many notices (a trace for notice-and-action)
 			$this->app->enqueueMessage(Text::_('COM_MAPAVIAJES_REPORTS_CLEARED'));
 		}
 

@@ -8,7 +8,7 @@ const psql = (sql) => execSync(process.env.MV_PSQL + ' -Atc "' + sql + '"').toSt
 const setParams = (o) => psql("UPDATE jt_extensions SET params=(params::jsonb || '" + JSON.stringify(o).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "''") + "'::jsonb)::text WHERE element='com_mapaviajes' AND type='component'");
 (async () => {
   if (!process.env.MV_PSQL) { console.log('Falta MV_PSQL'); process.exit(2); }
-  setParams({ custom_css: '.fake-fab{display:none!important} body{--probe:1}</style><script>alert(1)</script>', menu_extras: 'Cookies | .fake-fab\nAyuda | /ayuda\nMala | javascript:alert(1)\nOtra | .no-existe\nSin valor |' });
+  setParams({ custom_css: '.fake-fab{display:none!important} body{--probe:1} @import url(https://evil.example/x.css); .fake-x{background:url(https://evil.example/p.png)} .fake-y{background:u\\72l(https://evil.example/q.png)} </style><script>alert(1)</script>', menu_extras: 'Cookies | .fake-fab\nAyuda | /ayuda\nMala | javascript:alert(1)\nOtra | .no-existe\nSin valor |' });
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }).catch(() => chromium.launch());
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } }); const p = await ctx.newPage();
   const errs = []; p.on('pageerror', (e) => errs.push(String(e))); p.on('dialog', (d) => { errs.push('dialog'); d.dismiss(); });
@@ -18,6 +18,7 @@ const setParams = (o) => psql("UPDATE jt_extensions SET params=(params::jsonb ||
   // a button from "another extension"
   await p.evaluate(() => { const b = document.createElement('button'); b.className = 'fake-fab'; b.textContent = 'galleta'; b.style.cssText = 'position:fixed;right:10px;bottom:10px'; b.onclick = () => { window.__fab = (window.__fab || 0) + 1; }; document.body.appendChild(b); });
   afirma(await p.locator('.fake-fab').isHidden(), 'el CSS propio oculta el boton de la otra extension');
+  { const html = await p.content(); afirma(!/@import/i.test(html) && !/url\(\s*['"]?\s*(https?:)?\/\//i.test(html), 'el CSS propio no puede llamar a otras webs: ni @import, ni url() remoto, ni con escapes de CSS'); }
   afirma(!(await p.content()).includes('<script>alert(1)'), 'el CSS propio no puede sacar etiquetas (</style><script> neutralizado)');
   await p.click('#mv-btnMenu');
   const items = await p.locator('#mv-menu .mv-xmenu:visible').allTextContents();

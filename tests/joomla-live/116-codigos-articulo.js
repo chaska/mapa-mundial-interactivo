@@ -37,7 +37,7 @@ const project = (lon, lat) => { const [a, b] = rawNE(lon * Math.PI / 180, lat * 
     afirma(/\d+ (álbum|album)/.test(m[3]) && m[3].includes(m[1]) && m[3].includes(m[2]), 'stats escribe «N albumes · N paises» con los dos numeros: «' + m[3].trim() + '»');
     afirma(Number(m[4]) === Number(psql("SELECT COUNT(*) FROM jt_mapaviajes_photos p JOIN jt_mapaviajes_trips t ON t.id=p.trip_id JOIN jt_mapaviajes_albums a ON a.id=t.album_id WHERE t.published=1 AND a.published=1 AND p.state=1")), 'fotografias = fotos aprobadas de viajes publicados (' + m[4] + ')');
     afirma(m[5] === '0', 'con album=ID de un mapa que no existe cuenta 0');
-    afirma(m[6] !== undefined, 'un codigo desconocido no rompe el articulo');
+    afirma(m[6] === '{mapaviajes', 'un codigo desconocido se queda tal cual en el texto y no rompe el articulo');
   }
   afirma(!(await page.content()).includes('Exception') && txt.includes('X:'), 'el articulo se pinta entero');
   psql("DELETE FROM jt_content WHERE alias='mv-codigos-test'");

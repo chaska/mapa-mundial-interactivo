@@ -186,7 +186,7 @@ final class PrivateStorage
 			return $file;
 		}
 
-		if ((!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) || !str_ends_with($src, '.webp'))
+		if (!str_ends_with($src, '.webp') || (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)))
 		{
 			return null;
 		}
@@ -234,10 +234,11 @@ final class PrivateStorage
 	{
 		$path = $this->pathFor($name);
 
+		@unlink($this->root . '/thumbs/' . sha1($name) . '.webp'); // also when the photo itself is already gone
+
 		if ($path !== null)
 		{
 			@unlink($path);
-			@unlink($this->root . '/thumbs/' . sha1($name) . '.webp');
 
 			// A person's folder goes when their last photo does (rmdir refuses a folder that still has files).
 			if (str_contains($name, '/'))

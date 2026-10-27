@@ -1,5 +1,17 @@
 # Registro de cambios
 
+## 1.18.1 — 2026-10-27 (auditoría completa de seguridad)
+Auditoría con seis revisiones independientes (fotos y amigos, ranking y plugin, JavaScript, instalación y privacidad, revisión de código y revisión del diff). Informe: `docs/AUDITORIA-SEGURIDAD-1.18.md`.
+- **Permiso propio «Moderar en el mapa»** (`mapaviajes.moderate`). Antes, ver todas las fotos «solo amigos» o pendientes, borrar viajes ajenos y abrir/cerrar comentarios ajenos dependía de «Editar estado» / «Eliminar», que Joomla hereda de serie a los grupos **Publisher y Manager**: cualquiera de esos grupos veía las fotos privadas de todo el mundo. Ahora solo moderan los Superusuarios y quien tenga el permiso nuevo. Al instalar se da al grupo Administrator; al **actualizar** se conserva lo que ya tuvieras marcado en «Editar estado» y se añade Administrator, pero se pierde lo heredado de Publisher y Manager. Revísalo en Opciones → Permisos. El panel de administración sigue usando los permisos normales de Joomla.
+- **Amistad: bloquear y desbloquear ya no salta la espera.** Quien pedía amistad, era rechazada y se bloqueaba a sí misma y desbloqueaba podía volver a pedirla al instante y mandar otro correo (hasta 10 al día). Ahora el bloqueo conserva la fila de rechazada/retirada.
+- **Denuncias**: solo se puede denunciar un viaje que la persona podría ver (mapa publicado y con su nivel de acceso); antes servía para sondear números de viaje.
+- **CSS propio**: ya no admite `@import` ni `url()` remotos ni escapes de CSS (hacían que el navegador de todo visitante llamara a otra web, contra lo que promete la política).
+- **Ranking**: los viajes de un mapa despublicado ya no puntúan. Se quita `lastClosedWeek()` (sin uso). Los textos de privacidad dejan de prometer un interruptor «no aparecer» que ya no existe.
+- **Fallos que antes eran mudos y ahora dejan rastro** en el registro de Joomla (`com_mapaviajes`): MiFoto que falla o cambia de API, y borrado de datos de un usuario que falla al eliminar su cuenta. «Descartar denuncias» queda anotado en el registro de eventos (quién y cuántas).
+- Miniaturas: se borran también si la foto original ya no existe.
+- Empaquetador: ya no deja pasar direcciones con «example» u «openfontlicense» en el nombre, y revisa también `.html` y `.svg`.
+- Pruebas: 113 (+4: bloqueo, permisos de Publisher/Manager/Administrator), 108 (+1), 110 (+1), vistos en rojo sin el arreglo.
+
 ## 1.18.0 — 2026-10-27 (fotos de perfil con MiFoto)
 - **Fotos de perfil** (opcional, necesita el componente **MiFoto** ≥ 0.2.0): quien haya subido su foto la enseña en el **podio** (semana, semana pasada y General), en la **lista de amigos y solicitudes** y junto al nombre del autor en la **ficha del viaje**. Quien no tiene foto sigue con el círculo de color con la inicial; si la foto falla al cargar, también vuelve la inicial.
 - **Quién la ve lo decide MiFoto** (permiso de quien mira): el mapa le pregunta con una sola consulta por pantalla (`ProfilePhoto::urls()`), no guarda la dirección en la base de datos ni en cachés compartidas y no distingue «sin foto» de «no puedes verla». Sin MiFoto, o si algo falla, no pasa nada: se ven las iniciales.

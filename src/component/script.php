@@ -107,6 +107,15 @@ return new class () implements InstallerScriptInterface {
 					}
 				}
 
+				// Moderating on the map (seeing every private photo, deleting other people's trips) is its own permission: new installs give it to
+				// Administrators (Super Users have everything); an update keeps whatever groups the owner had set for "edit state" in Options, plus
+				// Administrators, and drops the rights Joomla's stock Publisher and Manager groups used to hand over by inheritance.
+				if (!isset($rules['mapaviajes.moderate']))
+				{
+					$rules['mapaviajes.moderate'] = (isset($rules['core.edit.state']) && \is_array($rules['core.edit.state']) ? $rules['core.edit.state'] : []) + ['7' => 1];
+					$dirty = true;
+				}
+
 				if ($dirty)
 				{
 					$json = json_encode($rules, JSON_THROW_ON_ERROR);

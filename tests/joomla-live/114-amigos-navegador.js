@@ -68,7 +68,9 @@ const login = async (p, user, pass) => {
 
   // list thumbnails: small copies, loaded lazily, all of them end up drawn
   await beto.goto(BASE + '/index.php?option=com_mapaviajes'); await beto.waitForSelector('#mv-svg path.mv-sphere[d]'); await beto.waitForTimeout(900);
-  await beto.click('#mv-btnMenu'); await beto.click('#mv-btnDisc'); await beto.waitForSelector('#mv-drawer.mv-open .mv-list2 img'); await beto.waitForTimeout(2500);
+  await beto.click('#mv-btnMenu'); await beto.click('#mv-btnDisc'); await beto.waitForSelector('#mv-drawer.mv-open .mv-list2 img');
+  // the first request of each small copy makes the file on the server and a busy box retries: wait until what is on screen is drawn (up to 15 s), not a fixed time
+  await beto.waitForFunction(() => { const v = [...document.querySelectorAll('#mv-drawer .mv-list2 img')].filter((i) => i.getBoundingClientRect().top < innerHeight && i.getBoundingClientRect().bottom > 0); return v.length > 0 && v.every((i) => i.complete && i.naturalWidth > 0); }, null, { timeout: 15000 }).catch(() => {});
   const imgs = await beto.evaluate(() => [...document.querySelectorAll('#mv-drawer .mv-list2 img')].map((i) => ({ s: i.getAttribute('src') || '', l: i.getAttribute('loading'), ok: i.complete && i.naturalWidth > 0, seen: i.getBoundingClientRect().top < innerHeight && i.getBoundingClientRect().bottom > 0 })));
   afirma(imgs.length > 0 && imgs.every((i) => i.s.includes('t=1') && i.l === 'lazy'), 'las miniaturas de la lista piden la copia pequeña (t=1) y cargan en diferido (' + imgs.length + ')');
   afirma(imgs.filter((i) => i.seen).length > 0 && imgs.filter((i) => i.seen).every((i) => i.ok), 'las que se ven en pantalla acaban pintadas (' + imgs.filter((i) => i.seen && i.ok).length + '/' + imgs.filter((i) => i.seen).length + '; el resto espera a aparecer)');

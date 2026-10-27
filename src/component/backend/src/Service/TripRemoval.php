@@ -41,7 +41,7 @@ final class TripRemoval
 		$id = $tripId;
 		$trip = $db->setQuery($db->getQuery(true)->select($db->quoteName(['id', 'user_id', 'asset_id']))->from($db->quoteName('#__mapaviajes_trips'))->where($db->quoteName('id') . ' = :id')->bind(':id', $id, ParameterType::INTEGER))->loadAssoc();
 
-		if (!\is_array($trip) || ((int) $trip['user_id'] !== $userId && !$user->authorise('core.delete', 'com_mapaviajes')))
+		if (!\is_array($trip) || ((int) $trip['user_id'] !== $userId && !Settings::isModerator($user)))
 		{
 			throw new SubmissionException('trip', 404);
 		}

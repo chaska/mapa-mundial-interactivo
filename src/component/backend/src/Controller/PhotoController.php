@@ -24,7 +24,7 @@ class PhotoController extends BaseController
 	{
 		$user = $this->app->getIdentity();
 		$id   = (int) preg_replace('/\D/', '', substr((string) ($_GET['id'] ?? ''), 0, 9));
-		$ok   = !$user->guest && $user->authorise('core.manage', 'com_mapaviajes');
+		$ok   = !$user->guest && $user->authorise('core.manage', 'com_mapaviajes') && Settings::isModerator($user);
 
 		PhotoServer::send($this->app, Factory::getContainer()->get(DatabaseInterface::class), new Settings(), $ok ? $id : 0, static fn (array $g): bool => true);
 	}

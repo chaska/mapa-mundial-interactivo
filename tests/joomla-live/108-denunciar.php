@@ -57,6 +57,13 @@ afirma($rep($ana, $oa, $idA)['code'] === 404, 'no puedes denunciar tu propio via
 afirma($rep($beto, $ob, 'x')['code'] === 404, 'id basura: 404');
 afirma($n() === 0, 'nada guardado por los intentos malos');
 
+seccion('No se denuncia lo que no se puede ver');
+$AL = $db->t('mapaviajes_albums'); $T = $db->t('mapaviajes_trips');
+$alb = (int) $db->uno("SELECT album_id FROM $T WHERE id = $idA");
+$db->exec("UPDATE $AL SET published = 0 WHERE id = $alb");
+afirma($rep($beto, $ob, $idA)['code'] === 404 && $n() === 0, 'viaje de un mapa despublicado: 404 y nada guardado');
+$db->exec("UPDATE $AL SET published = 1 WHERE id = $alb");
+
 seccion('Denuncia valida');
 $flush();
 $r = $rep($beto, $ob, $idA, 'rights', 'Esta foto es mia y no la he dado');

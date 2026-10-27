@@ -46,11 +46,11 @@ function inspect(string $src, array &$fail): array
 
 	// 3. No third-party requests in anything we ship.
 	foreach ($files as $path) {
-		if (preg_match('/\.(css|js|php)$/', $path) !== 1) { continue; }
+		if (preg_match('/\.(css|js|php|html|svg)$/', $path) !== 1) { continue; }
 		$code = (string) file_get_contents($path);
 		if (preg_match_all('~(?:https?:)?//(?!www\.w3\.org|localhost|127\.0\.0\.1)[a-z0-9.-]+\.[a-z]{2,}~i', $code, $m)) {
 			foreach (array_unique($m[0]) as $url) {
-				if (!str_contains($url, 'example') && !str_contains($url, 'openfontlicense')) { $fail[] = 'external URL in ' . substr($path, strlen($src) + 1) . ': ' . $url; }
+				$fail[] = 'external URL in ' . substr($path, strlen($src) + 1) . ': ' . $url;
 			}
 		}
 	}

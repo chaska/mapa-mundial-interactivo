@@ -65,9 +65,13 @@ final class ReportService
 
 		$db   = $this->db;
 		$id   = $tripId;
-		$trip = $db->setQuery($db->getQuery(true)->select($db->quoteName(['id', 'user_id', 'title', 'published']))->from($db->quoteName('#__mapaviajes_trips'))->where($db->quoteName('id') . ' = :id')->bind(':id', $id, ParameterType::INTEGER))->loadAssoc();
+		$trip = $db->setQuery($db->getQuery(true)->select([$db->quoteName('t.id'), $db->quoteName('t.user_id'), $db->quoteName('t.title'), $db->quoteName('t.published'), $db->quoteName('a.access', 'album_access'), $db->quoteName('a.published', 'album_published')])
+			->from($db->quoteName('#__mapaviajes_trips', 't'))->join('LEFT', $db->quoteName('#__mapaviajes_albums', 'a') . ' ON ' . $db->quoteName('a.id') . ' = ' . $db->quoteName('t.album_id'))
+			->where($db->quoteName('t.id') . ' = :id')->bind(':id', $id, ParameterType::INTEGER))->loadAssoc();
+		$levels = array_map('intval', Factory::getContainer()->get(\Joomla\CMS\User\UserFactoryInterface::class)->loadUserById($userId)->getAuthorisedViewLevels());
 
-		if (!\is_array($trip) || (int) $trip['user_id'] === $userId || !\in_array((int) $trip['published'], [1, 2], true))
+		// only a trip the reporter could see on the map: its album is published and open to their view levels (no probing of other ids)
+		if (!\is_array($trip) || (int) $trip['user_id'] === $userId || !\in_array((int) $trip['published'], [1, 2], true) || (int) $trip['album_published'] !== 1 || !\in_array((int) $trip['album_access'], $levels, true))
 		{
 			throw new SubmissionException('trip', 404);
 		}

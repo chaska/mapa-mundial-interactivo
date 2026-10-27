@@ -13,6 +13,7 @@ defined('_JEXEC') || die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\User\User;
 
 /**
@@ -25,6 +26,8 @@ use Joomla\CMS\User\User;
  */
 final class ProfilePhoto
 {
+	private static bool $logged = false;
+
 	/** @param (\Closure(list<int>, int, User): array<int, mixed>)|null $source tests give their own; null = MiFoto */
 	public function __construct(private readonly ?\Closure $source = null, private readonly ?bool $enabled = null)
 	{
@@ -57,6 +60,10 @@ final class ProfilePhoto
 		}
 		catch (\Throwable $e)
 		{
+			// the map goes on with initials, but a broken or renamed MiFoto must leave a trace for the administrator (class and message only)
+			self::$logged || Log::add('profile photos unavailable: ' . \get_class($e) . ': ' . substr($e->getMessage(), 0, 160), Log::WARNING, 'com_mapaviajes');
+			self::$logged = true;
+
 			return [];
 		}
 
@@ -83,7 +90,13 @@ final class ProfilePhoto
 			return [];
 		}
 
-		$service = Factory::getApplication()->bootComponent('com_mifoto')->getPhotoService();
+		$component = Factory::getApplication()->bootComponent('com_mifoto');
+		$service   = method_exists($component, 'getPhotoService') ? $component->getPhotoService() : null;
+
+		if ($service === null || !method_exists($service, 'getPhotos'))
+		{
+			throw new \RuntimeException('com_mifoto does not offer getPhotoService()->getPhotos() (needs MiFoto 0.2.0 or later)');
+		}
 
 		return (array) $service->getPhotos($ids, $size, $viewer);
 	}

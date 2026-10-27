@@ -415,7 +415,9 @@ final class FriendService
 
 			foreach ([$this->pair($me, $target), $this->pair($target, $me)] as $row)
 			{
-				if ($row !== null)
+				// A pending request or a friendship ends; a declined / withdrawn row stays: it is what keeps the 30-day and 7-day waits
+				// from being reset by block -> unblock -> ask again
+				if ($row !== null && \in_array((int) $row['status'], [0, 1], true))
 				{
 					$this->deleteRow((int) $row['id']);
 				}

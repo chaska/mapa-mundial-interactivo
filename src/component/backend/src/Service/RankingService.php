@@ -23,7 +23,7 @@ use Joomla\Database\ParameterType;
  *              + w_comment * min(published comments left on OTHER people's trips, comment cap)
  *   score      = base + min(engagement, base)
  * so nobody climbs by clicking or typing alone: without published trips there are no points, and engagement can at
- * most double what trips and photos earned. Blocked users and people who asked to stay out never appear.
+ * most double what trips and photos earned. Blocked users never appear; trips of unpublished maps do not score.
  * Ties are broken by trips, then photos, then who got there first, then id: the same data always gives the same podium.
  *
  * A week is closed lazily, as soon as it ends (Sunday 24:00 UTC, on the first request after that): its top ten are written
@@ -72,13 +72,13 @@ final class RankingService
 
 		$trips = $this->perUser(
 			'SELECT t.user_id AS uid, COUNT(*) AS n, MIN(t.created) AS first FROM ' . $this->t('trips') . ' t'
-			. ' WHERE t.published = 1 AND t.photo_count > 0 AND t.created >= :f AND t.created < :t GROUP BY t.user_id',
+			. ' WHERE t.published = 1 AND t.photo_count > 0 AND t.album_id IN (SELECT a.id FROM ' . $this->t('albums') . ' a WHERE a.published = 1) AND t.created >= :f AND t.created < :t GROUP BY t.user_id',
 			$from,
 			$to
 		);
 		$photos = $this->perUser(
 			'SELECT t.user_id AS uid, SUM(CASE WHEN p.friends_only = 0 THEN 1 ELSE 0 END) AS n, SUM(CASE WHEN p.friends_only = 1 THEN 1 ELSE 0 END) AS np FROM ' . $this->t('trips') . ' t JOIN ' . $this->t('photos') . ' p ON p.trip_id = t.id'
-			. ' WHERE t.published = 1 AND p.state = 1 AND t.created >= :f AND t.created < :t GROUP BY t.user_id',
+			. ' WHERE t.published = 1 AND p.state = 1 AND t.album_id IN (SELECT a.id FROM ' . $this->t('albums') . ' a WHERE a.published = 1) AND t.created >= :f AND t.created < :t GROUP BY t.user_id',
 			$from,
 			$to
 		);
@@ -259,17 +259,6 @@ final class RankingService
 			->order($this->db->quoteName('r.position') . ' ASC');
 
 		return $this->db->setQuery($q)->loadAssocList() ?: [];
-	}
-
-	/** The most recent closed week that has at least one person, or null. */
-	public function lastClosedWeek(): ?string
-	{
-		$q = $this->db->getQuery(true)->select($this->db->quoteName('w.week_start'))->from($this->db->quoteName('#__mapaviajes_weeks', 'w'))
-			->where('EXISTS (SELECT 1 FROM ' . $this->db->quoteName('#__mapaviajes_ranking') . ' r WHERE r.week_start = w.week_start)')
-			->order($this->db->quoteName('w.week_start') . ' DESC');
-		$v = $this->db->setQuery($q, 0, 1)->loadResult();
-
-		return $v ? (string) $v : null;
 	}
 
 	/**
