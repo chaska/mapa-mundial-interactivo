@@ -31,7 +31,7 @@ Fecha: 2026-10-27. Alcance: código nuevo desde 1.15.2 (miniaturas, códigos de 
 - Los ganadores del sorteo (nombre y correo) viven en la sesión del administrador hasta que caduca.
 - `storage_path` y `custom_css` los puede cambiar quien tenga «Opciones» sin ser superadministrador.
 - El instalador solo acepta Joomla ≥ 5.4.9 / 6.1.4: un sitio más viejo no puede instalar ni las correcciones.
-- El SQL de MySQL (instalación y actualización) sigue sin probarse; solo PostgreSQL.
+- El SQL de MySQL/MariaDB se ha probado en Joomla 6.2.0 con MariaDB 11.8.9 (instalación manual por el propietario); las pruebas automáticas siguen siendo solo de PostgreSQL.
 - El empaquetador es un candado simple (cadenas literales), no un analizador.
 - Un bloqueado puede deducir que le bloquearon por la respuesta a su petición (matiz de privacidad).
 

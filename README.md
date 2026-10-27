@@ -11,7 +11,7 @@ Un mapa mundi interactivo y propio donde los usuarios registrados de tu web comp
 - **Códigos para artículos**: `{mapaviajes stats}`, `{mapaviajes albums}`, `{mapaviajes countries}` y `{mapaviajes photos}` ponen los totales en cualquier artículo de Joomla ([`docs/CODIGOS-ARTICULO.md`](docs/CODIGOS-ARTICULO.md)).
 - **Privacidad (RGPD)**: sin cookies ni analítica propias, herramientas de acceso y borrado de datos de Joomla, y un texto base en [`docs/PRIVACIDAD.md`](docs/PRIVACIDAD.md).
 
-Requisitos: Joomla **5.4.9 / 6.1.4 o superior** (el instalador se niega en versiones con fallos conocidos), PHP 8.1+ con GD (WebP), fileinfo e intl; MySQL/MariaDB o PostgreSQL. El SQL de MySQL/MariaDB está escrito pero solo se ha probado en PostgreSQL.
+Requisitos: Joomla **5.4.9 / 6.1.4 o superior** (el instalador se niega en versiones con fallos conocidos), PHP 8.1+ con GD (WebP), fileinfo e intl; MySQL/MariaDB o PostgreSQL. Probado en Joomla 6.1.4 con PostgreSQL y en Joomla 6.2.0 con MariaDB 11.8.9.
 
 ## Instalar
 Descarga `pkg_mapaviajes-<versión>.zip` de la página de [Releases](../../releases), o genéralo tú:
