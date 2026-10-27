@@ -10,7 +10,7 @@ Auditoría con seis revisiones independientes (fotos y amigos, ranking y plugin,
 - **Fallos que antes eran mudos y ahora dejan rastro** en el registro de Joomla (`com_mapaviajes`): MiFoto que falla o cambia de API, y borrado de datos de un usuario que falla al eliminar su cuenta. «Descartar denuncias» queda anotado en el registro de eventos (quién y cuántas).
 - Miniaturas: se borran también si la foto original ya no existe.
 - Empaquetador: ya no deja pasar direcciones con «example» u «openfontlicense» en el nombre, y revisa también `.html` y `.svg`.
-- Pruebas: 113 (+4: bloqueo, permisos de Publisher/Manager/Administrator), 108 (+1), 110 (+1), vistos en rojo sin el arreglo.
+- Pruebas: 113 (+4: bloqueo, permisos de Publisher/Manager/Administrator), 108 (+1), 110 (+1), vistos en rojo sin el arreglo; 114 ya no falla por las miniaturas falsas que deja la prueba del podio.
 
 ## 1.18.0 — 2026-10-27 (fotos de perfil con MiFoto)
 - **Fotos de perfil** (opcional, necesita el componente **MiFoto** ≥ 0.2.0): quien haya subido su foto la enseña en el **podio** (semana, semana pasada y General), en la **lista de amigos y solicitudes** y junto al nombre del autor en la **ficha del viaje**. Quien no tiene foto sigue con el círculo de color con la inicial; si la foto falla al cargar, también vuelve la inicial.
