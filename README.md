@@ -1,29 +1,32 @@
-# Mapa de viajes para Joomla 6
+# Mapa de viajes para Joomla 5 y 6
 
 Un mapa mundi interactivo y propio donde los usuarios registrados de tu web comparten álbumes de fotos de sus viajes. Todo se procesa y se guarda en tu servidor: ni el mapa, ni las tipografías, ni la búsqueda de lugares hablan con terceros, así que la IP de tus usuarios no sale de tu web.
 
-- **Mapa**: pergamino viajero en SVG, chinchetas 3D agrupadas por país (un «27» sobre España) que se separan al acercar. Al acercarte a un álbum, su foto cuelga como una polaroid ladeada sujeta por la chincheta.
-- **Fotos**: de 1 a 5 por álbum con pie de foto (256 palabras). Se convierten a WebP con el lado largo a 1000 px sin deformarlas. Visor a pantalla completa con `<` `>`, teclado y deslizar con el dedo.
-- **Formulario**: pensado para el móvil. Busca un lugar o pincha en el mapa; las fotos se reducen en el teléfono antes de subirlas.
-- **Administración**: publicaciones (publicar, despublicar, ocultar, spam, papelera, eliminar), álbumes del mapa, Opciones con interruptores y aviso por correo.
+- **Mapa**: seis estilos (pergamino viajero y otros) en SVG, chinchetas 3D agrupadas por país que se separan al acercar, con Canarias, Baleares, Madeira, Azores y la Antártida. Al acercarte a un álbum, su foto cuelga como una polaroid sujeta por la chincheta.
+- **Fotos**: de 1 a 5 por álbum con pie de foto (256 palabras), también desde el móvil y en **HEIC** (iPhone, Xiaomi): se leen en el propio teléfono y el servidor nunca abre un HEIC. Se guardan en WebP, sin datos EXIF, en una carpeta privada servida solo con permiso. Visor a pantalla completa con teclado y deslizar con el dedo.
+- **Amigos y fotos «solo amigos»**: solicitudes de amistad con aviso por correo, bloqueo, y cada foto puede ser pública o solo para amigos (siempre queda una pública como miniatura). El servidor no entrega nada privado a quien no es amigo.
+- **Podio semanal** en estilo cómic (semana, semana pasada y General), con sorteo entre participantes y avisos por correo.
+- **Moderación**: los álbumes y las fotos nuevas pueden esperar aprobación; botón **Denunciar**, permiso propio «Moderar en el mapa» y panel de administración con interruptores que se guardan solos.
+- **Fotos de perfil** (opcional, con el componente MiFoto): en el podio, los amigos y los viajes, con interruptor del administrador.
+- **Códigos para artículos**: `{mapaviajes stats}`, `{mapaviajes albums}`, `{mapaviajes countries}` y `{mapaviajes photos}` ponen los totales en cualquier artículo de Joomla ([`docs/CODIGOS-ARTICULO.md`](docs/CODIGOS-ARTICULO.md)).
+- **Privacidad (RGPD)**: sin cookies ni analítica propias, herramientas de acceso y borrado de datos de Joomla, y un texto base en [`docs/PRIVACIDAD.md`](docs/PRIVACIDAD.md).
 
-Requisitos: Joomla **5.4.9 / 6.1.4 o superior** (el instalador se niega en versiones con fallos conocidos), PHP 8.1+ con GD (WebP), fileinfo e intl; MySQL/MariaDB o PostgreSQL.
+Requisitos: Joomla **5.4.9 / 6.1.4 o superior** (el instalador se niega en versiones con fallos conocidos), PHP 8.1+ con GD (WebP), fileinfo e intl; MySQL/MariaDB o PostgreSQL. El SQL de MySQL/MariaDB está escrito pero solo se ha probado en PostgreSQL.
 
 ## Instalar
+Descarga `pkg_mapaviajes-<versión>.zip` de la página de [Releases](../../releases), o genéralo tú:
 ```
-php build/build.php          # genera dist/com_mapaviajes-1.0.0.zip
+php build/build.php          # genera dist/pkg_mapaviajes-<versión>.zip
 ```
-Instala el ZIP desde *Sistema → Instalar → Extensiones*. Crea un elemento de menú «Mapa de viajes» (o enlaza a `index.php?option=com_mapaviajes`). Tras instalar, los usuarios registrados pueden añadir viajes; ajústalo en *Opciones → Permisos*.
+Instala el ZIP desde *Sistema → Instalar → Extensiones* (el paquete incluye el componente y sus plugins). Crea un elemento de menú «Mapa de viajes» (o enlaza a `index.php?option=com_mapaviajes`). Tras instalar, los usuarios registrados pueden añadir viajes y los grupos Administrator y Super Users moderan; ajústalo en *Opciones → Permisos*.
 
 **Hazlo bien desde el primer día** (detalle en [SECURITY.md](SECURITY.md)): pon la carpeta privada de fotos *fuera* de la web (Opciones → «Carpeta privada de fotos»), desactiva los plugins *Web Services* y *API Authentication* si no usas la API REST, y mantén Joomla actualizado.
 
 ## Estado
-Versión 1.0.0: mapa, formulario, subida segura y moderación. Lo que falta está listado en [CHANGELOG.md](CHANGELOG.md). Seguridad y pruebas: [SECURITY.md](SECURITY.md) y [tests/LEEME.md](tests/LEEME.md). Licencia: GPL v3 o posterior, ver [NOTICE.md](NOTICE.md).
-
-Los bocetos de diseño están en `boceto/` (HTML autocontenido: `mapa.html` y `admin-panel.html`).
+Versión actual: ver [CHANGELOG.md](CHANGELOG.md). Seguridad, auditorías y pruebas: [SECURITY.md](SECURITY.md), [`docs/AUDITORIA-SEGURIDAD-1.18.md`](docs/AUDITORIA-SEGURIDAD-1.18.md) y [tests/LEEME.md](tests/LEEME.md). Licencia: **GNU GPL v3 o posterior** (archivo [LICENSE](LICENSE)); terceros incluidos y sus licencias en [NOTICE.md](NOTICE.md).
 
 ## Comentarios
 Cada viaje puede tener comentarios a través de otra extensión (Engage probado; eventos de contenido de Joomla para otras). Joomla no trae comentarios propios. Cómo funciona, qué cadenas usa cada sistema y qué está probado: [`docs/COMENTARIOS.md`](docs/COMENTARIOS.md).
 
-## Ranking, sorteo y privacidad
-Podio semanal en estilo cómic, panel de administración con interruptores que se guardan solos, listado de participantes para un sorteo y herramientas de acceso y borrado de datos (RGPD). Ver [`docs/PRIVACIDAD.md`](docs/PRIVACIDAD.md): qué hace el código, qué datos guarda y qué te toca a ti (política de privacidad, bases del sorteo).
+## Estilos del mapa
+Cómo añadir o cambiar un estilo: [`docs/ESTILOS-MAPA.md`](docs/ESTILOS-MAPA.md).
