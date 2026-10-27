@@ -74,6 +74,6 @@ class FriendController extends BaseController
 			$this->json(['ok' => false, 'error' => Text::_('COM_MAPAVIAJES_ERR_SERVER')], 500);
 		}
 
-		$this->json(['ok' => true, 'result' => \is_array($result) ? ($result['status'] ?? '') : '', 'friend' => $service->state((int) $user->id, (new Settings())->showRealNames())]);
+		$this->json(['ok' => true, 'result' => \is_array($result) ? ($result['status'] ?? '') : '', 'friend' => $service->state((int) $user->id, (new Settings())->showRealNames(), new \Chaska\Component\Mapaviajes\Administrator\Service\ProfilePhoto())]);
 	}
 }

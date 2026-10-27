@@ -52,6 +52,7 @@ class HtmlView extends BaseHtmlView
 			'review_first'      => (string) (int) $s->reviewFirst(),
 			'comments_default'  => (string) (int) $s->commentsDefault(),
 			'show_real_names'   => (string) (int) $s->showRealNames(),
+			'profile_photos'    => (string) (int) $s->profilePhotos(),
 			'notify_admin'      => (string) (int) $s->notifyAdmin(),
 			'notify_author'     => (string) (int) $s->notifyAuthor(),
 			'rank_enabled'      => (string) (int) $s->rankEnabled(),

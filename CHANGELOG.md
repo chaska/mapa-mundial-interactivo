@@ -1,5 +1,12 @@
 # Registro de cambios
 
+## 1.18.0 — 2026-10-27 (fotos de perfil con MiFoto)
+- **Fotos de perfil** (opcional, necesita el componente **MiFoto** ≥ 0.2.0): quien haya subido su foto la enseña en el **podio** (semana, semana pasada y General), en la **lista de amigos y solicitudes** y junto al nombre del autor en la **ficha del viaje**. Quien no tiene foto sigue con el círculo de color con la inicial; si la foto falla al cargar, también vuelve la inicial.
+- **Quién la ve lo decide MiFoto** (permiso de quien mira): el mapa le pregunta con una sola consulta por pantalla (`ProfilePhoto::urls()`), no guarda la dirección en la base de datos ni en cachés compartidas y no distingue «sin foto» de «no puedes verla». Sin MiFoto, o si algo falla, no pasa nada: se ven las iniciales.
+- **Interruptor del administrador** «Mostrar las fotos de perfil» (Panel de control y Opciones → Privacidad; por defecto sí). Apagado = todo el mapa con iniciales.
+- Seguridad: solo se aceptan direcciones del propio sitio que empiezan por una sola `/`, sin espacios ni comillas; la imagen va sin `referer` y con texto alternativo vacío (decorativa). El navegador nunca recibe el id de Joomla.
+- Pruebas nuevas: `tests/05-foto-perfil.php` (los filtros de direcciones y el servicio, 33) y `118-foto-perfil-navegador.js` (podio, General, amigos, ficha, foto que falla y ninguna petición a otro dominio, 14).
+
 ## 1.17.2 — 2026-10-26
 - **Podio: la semana se cierra al acabar** (domingo 24:00 UTC), sin esperar los 2 días de margen. En la primera petición después, la semana pasada queda fijada y suma al ranking General.
 

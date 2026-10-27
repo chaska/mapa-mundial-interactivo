@@ -41,7 +41,7 @@ final class TripRepository
 	 *
 	 * @return list<array<string, mixed>>
 	 */
-	public function forMap(User $user, int $albumId, int $limit = 3000, bool $realNames = false): array
+	public function forMap(User $user, int $albumId, int $limit = 3000, bool $realNames = false, array &$authors = []): array
 	{
 		$uid   = (int) $user->id;
 		$meBind = $uid; // Joomla's bind() takes a reference and may turn it into a string: never reuse a bound variable
@@ -166,6 +166,7 @@ final class TripRepository
 		foreach ($trips as $t)
 		{
 			$id    = (int) $t['id'];
+			$authors[Settings::userKey((int) $t['user_id'])] = (int) $t['user_id'];
 			$out[] = [
 				'id' => $id, 't' => (string) $t['title'], 'p' => (string) $t['place'], 'yr' => (int) $t['trip_year'],
 				'la' => (float) $t['lat'], 'lo' => (float) $t['lon'],

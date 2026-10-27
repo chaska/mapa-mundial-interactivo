@@ -94,7 +94,7 @@ final class FriendService
 	 *
 	 * @return array{friends: list<array{k: string, n: string}>, incoming: list<array{k: string, n: string}>, outgoing: list<array{k: string, n: string}>, blocked: list<array{k: string, n: string}>}
 	 */
-	public function state(int $userId, bool $realNames): array
+	public function state(int $userId, bool $realNames, ?ProfilePhoto $photos = null): array
 	{
 		$out = ['friends' => [], 'incoming' => [], 'outgoing' => [], 'blocked' => []];
 
@@ -105,11 +105,6 @@ final class FriendService
 
 		$fids  = $this->friendIds($userId);
 		$fname = $this->names($fids, $realNames);
-
-		foreach ($fids as $id)
-		{
-			$out['friends'][] = ['k' => Settings::userKey($id), 'n' => $fname[$id] ?? '?'];
-		}
 
 		$u  = $userId;
 		$q  = $this->db->getQuery(true)->select($this->db->quoteName(['requester_id', 'addressee_id']))->from($this->db->quoteName('#__mapaviajes_friends'))->where($this->db->quoteName('status') . ' = 0')
@@ -130,15 +125,21 @@ final class FriendService
 		}
 
 		$names = $this->names(array_merge($in, $ou), $realNames);
+		$av    = $photos !== null ? $photos->urls(array_merge($fids, $in, $ou), null, 64) : [];
+
+		foreach ($fids as $id)
+		{
+			$out['friends'][] = ['k' => Settings::userKey($id), 'n' => $fname[$id] ?? '?', 'av' => $av[$id] ?? ''];
+		}
 
 		foreach ($ou as $id)
 		{
-			$out['outgoing'][] = ['k' => Settings::userKey($id), 'n' => $names[$id] ?? '?'];
+			$out['outgoing'][] = ['k' => Settings::userKey($id), 'n' => $names[$id] ?? '?', 'av' => $av[$id] ?? ''];
 		}
 
 		foreach ($in as $id)
 		{
-			$out['incoming'][] = ['k' => Settings::userKey($id), 'n' => $names[$id] ?? '?'];
+			$out['incoming'][] = ['k' => Settings::userKey($id), 'n' => $names[$id] ?? '?', 'av' => $av[$id] ?? ''];
 		}
 
 		$bq  = $this->db->getQuery(true)->select($this->db->quoteName('blocked_id'))->from($this->db->quoteName('#__mapaviajes_blocks'))->where($this->db->quoteName('blocker_id') . ' = :a')->bind(':a', $u, ParameterType::INTEGER);

@@ -165,6 +165,8 @@ final class Settings
 	}
 	public function reactionsPerDay(): int { return $this->int('reactions_per_day', 300, 1, 5000); }
 	public function showRealNames(): bool { return (int) $this->params->get('show_real_names', 0) === 1; }
+	/** Profile photos from the MiFoto component in the map. On by default; without MiFoto there is simply nothing to show. */
+	public function profilePhotos(): bool { return (int) $this->params->get('profile_photos', 1) === 1; }
 	public function notifyAdmin(): bool   { return (int) $this->params->get('notify_admin', 1) === 1; }
 
 	/** @return string[] valid e-mail addresses only */

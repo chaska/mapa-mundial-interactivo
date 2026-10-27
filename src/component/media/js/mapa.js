@@ -29,6 +29,18 @@
 		return e;
 	}
 	const photoSrc = (id) => O.photoUrl + encodeURIComponent(String(id));
+	/* profile photos (MiFoto): the server sends an address of our own site, or nothing; only a path that starts with a single "/" is used,
+	 * and a person without a photo (or whose photo fails) keeps the coloured initial */
+	const AV_COLORS = ['#a8321f', '#1f6f78', '#7a5a1f', '#5b3f8a', '#2f6b3b', '#a05a1a'];
+	const colorOf = (key) => { let n = 0; for (const ch of String(key)) { n = (n * 31 + ch.charCodeAt(0)) >>> 0; } return AV_COLORS[n % AV_COLORS.length]; };
+	const safeAv = (u) => (typeof u === 'string' && u.length > 1 && u.length < 300 && u.charAt(0) === '/' && u.charAt(1) !== '/' && !/[\s\\<>"'`]/.test(u)) ? u : '';
+	function avatarEl(person, cls) {
+		const initial = () => h('span', { class: cls, style: 'background:' + colorOf(person.u || person.k), 'aria-hidden': 'true', text: (person.n || '?').charAt(0).toUpperCase() }), url = safeAv(person.av);
+		if (!url) { return initial(); }
+		const img = h('img', { class: cls + ' mv-pimg', alt: '', loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer', src: url });
+		img.addEventListener('error', () => { img.replaceWith(initial()); }, { once: true });
+		return img;
+	}
 	/* a small picture for lists and previews: the server sends a ~320 px copy (not the full photo), the browser loads it only when it scrolls
 	 * into view, and a picture that fails (a busy server) is asked for again up to three times */
 	function thumbImg(id, attrs) {
@@ -498,7 +510,8 @@
 		if (!t || !t.ph.length) { return; }
 		closePop(); VWR.t = t; VWR.i = 0; if (!again) { VWR.opener = document.activeElement; }
 		$('fiT').textContent = t.t;
-		$('fiS').textContent = [t.p, t.yr > 0 ? String(t.yr) : '', t.by ? fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) : ''].filter(Boolean).join(' · ');
+		$('fiS').textContent = ''; if (safeAv(t.av)) { $('fiS').append(avatarEl({ u: t.u, n: t.by, av: t.av }, 'mv-fi-av')); }
+		$('fiS').append(document.createTextNode([t.p, t.yr > 0 ? String(t.yr) : '', t.by ? fmt(T('COM_MAPAVIAJES_JS_BY'), t.by) : ''].filter(Boolean).join(' · ')));
 		$('fiPend').hidden = !t.pending;
 		$('fDel').hidden = !(t.mine || O.canDelete);
 		if ($('fRep')) { $('fRep').hidden = !!t.mine || !!t.pending; }
@@ -818,7 +831,7 @@
 		followBusy = false;
 	}
 	function renderFriends(body) {
-		const person = (p, ...btns) => h('li', { class: 'mv-fr-li' }, h('span', { class: 'mv-fr-n', text: p.n || '—' }), h('span', { class: 'mv-fr-acts' }, btns));
+		const person = (p, ...btns) => h('li', { class: 'mv-fr-li' }, avatarEl(p, 'mv-fr-av'), h('span', { class: 'mv-fr-n', text: p.n || '—' }), h('span', { class: 'mv-fr-acts' }, btns));
 		const btn = (label, cls, fn) => h('button', { type: 'button', class: 'mv-fr-b ' + cls, text: label, onclick: fn });
 		const sec = (title, items) => (items.length ? [h('h3', { class: 'mv-fr-h', text: title }), h('ul', { class: 'mv-fr-list' }, items)] : []);
 		const inc = FR.incoming.map((p) => person(p, btn(T('COM_MAPAVIAJES_JS_FR_ACCEPT'), 'mv-yes', async () => { if (await friendDo('respond', p.k, p.n, { action: 'accept' })) { toast(T('COM_MAPAVIAJES_JS_FR_NOW')); } }),
@@ -849,12 +862,10 @@
 
 	/* ---- the weekly podium (comic style): data comes from our own server, names are escaped by textContent ---- */
 	if ($('pod')) {
-		const COLORS = ['#a8321f', '#1f6f78', '#7a5a1f', '#5b3f8a', '#2f6b3b', '#a05a1a'];
-		const colorOf = (key) => { let n = 0; for (const ch of String(key)) { n = (n * 31 + ch.charCodeAt(0)) >>> 0; } return COLORS[n % COLORS.length]; };
 		let podData = null, podView = 'week', podOpener = null;
 		const star = (on, i) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'mv-pstar' + (on ? '' : ' mv-off')); s.setAttribute('aria-hidden', 'true'); s.style.setProperty('--d', (0.25 + i * 0.12) + 's'); s.style.setProperty('--r', [-8, 0, 8][i % 3] + 'deg'); const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z'); s.append(p); return s; };
 		const who = (r) => h('button', { type: 'button', class: 'mv-pname', title: T('COM_MAPAVIAJES_JS_POD_FILTER'), onclick: () => { closePod(); setAuthor(r.u, r.n); } }, h('span', { text: r.n }));
-		const avatar = (r) => h('span', { class: 'mv-pav', style: 'background:' + colorOf(r.u), 'aria-hidden': 'true', text: (r.n || '?').charAt(0).toUpperCase() });
+		const avatar = (r) => avatarEl(r, 'mv-pav');
 		function slot(r, place, kind) {
 			if (!r) { return h('div', { class: 'mv-pslot mv-p' + place + ' mv-pnoone' }, h('div', { class: 'mv-pstars' }), h('span', { class: 'mv-pav mv-pnone', 'aria-hidden': 'true', text: '?' }), h('p', { class: 'mv-pwho mv-pdim', text: '—' }), h('div', { class: 'mv-pblock' }, h('span', { text: String(place) }))); }
 			const stars = h('div', { class: 'mv-pstars', 'aria-hidden': 'true' }, [0, 1, 2].slice(0, 4 - place).map((i) => star(true, i)));
@@ -1297,7 +1308,7 @@
 			const res = await fetch(O.dataUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
 			if (res.status === 403) { toast(T('COM_MAPAVIAJES_JS_SESSION')); return; }
 			const j = await res.json();
-			ALL = (j.trips || []).map((t) => { const [x, y] = project(t.lo, t.la); return { ...t, x, y }; });
+			const AVS = j.av || {}; ALL = (j.trips || []).map((t) => { const [x, y] = project(t.lo, t.la); return { ...t, x, y, av: AVS[t.u] || '' }; });
 			FW = { keys: new Set((j.follow && j.follow.keys) || []), seen: Number(j.follow && j.follow.seen) || 0, digest: Number(j.follow && j.follow.digest) || 0 }; syncFollow(); setFriend(j.friend);
 			TRIPS = visibleTrips();
 			syncChip();

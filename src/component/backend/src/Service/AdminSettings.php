@@ -22,6 +22,7 @@ final class AdminSettings
 		'review_first'      => ['0', '1'],
 		'comments_default'  => ['0', '1'],
 		'show_real_names'   => ['0', '1'],
+		'profile_photos'    => ['0', '1'],
 		'notify_admin'      => ['0', '1'],
 		'notify_author'     => ['0', '1'],
 		'rank_enabled'      => ['0', '1'],

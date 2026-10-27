@@ -12,6 +12,7 @@ namespace Chaska\Component\Mapaviajes\Site\Controller;
 defined('_JEXEC') || die;
 
 use Chaska\Component\Mapaviajes\Administrator\Service\Notifier;
+use Chaska\Component\Mapaviajes\Administrator\Service\ProfilePhoto;
 use Chaska\Component\Mapaviajes\Administrator\Service\RankingService;
 use Chaska\Component\Mapaviajes\Administrator\Service\Settings;
 use Joomla\CMS\Factory;
@@ -28,6 +29,9 @@ class RankingController extends BaseController
 {
 	use JsonTrait;
 
+	/** @var array<int, string> */
+	private array $photos = [];
+
 	private function service(): RankingService
 	{
 		return new RankingService(Factory::getContainer()->get(DatabaseInterface::class), new Settings());
@@ -39,7 +43,7 @@ class RankingController extends BaseController
 		$alias = $real && trim((string) ($r['name'] ?? '')) !== '' ? (string) $r['name'] : (string) ($r['username'] ?? '');
 
 		return [
-			'n' => $alias, 'u' => Settings::userKey((int) $r['user_id']), 'me' => (int) $r['user_id'] === $me,
+			'n' => $alias, 'u' => Settings::userKey((int) $r['user_id']), 'av' => $this->photos[(int) $r['user_id']] ?? '', 'me' => (int) $r['user_id'] === $me,
 			'pos' => (int) ($r['position'] ?? 0), 'st' => (int) ($r['stars'] ?? 0), 's' => (int) ($r['score'] ?? $r['points'] ?? 0),
 			't' => (int) ($r['trips'] ?? 0), 'p' => (int) ($r['photos'] ?? 0), 'l' => (int) ($r['likes'] ?? 0), 'c' => (int) ($r['comments'] ?? 0),
 		];
@@ -70,6 +74,12 @@ class RankingController extends BaseController
 		$me   = (int) $user->id;
 		$week = RankingService::weekStart(time());
 		$live = $svc->compute($week, 500);
+		// "Last week" is always the calendar week before this one; if it is not closed yet it is computed live (provisional).
+		$lastWeek = gmdate('Y-m-d', strtotime($week . ' UTC') - 7 * 86400);
+		$closed   = $svc->closedWeek($lastWeek);
+		$lastRows = $closed ?? $svc->compute($lastWeek);
+		$all      = $svc->allTime(500);
+		$this->photos = (new ProfilePhoto())->urls(array_map(static fn (array $r): int => (int) $r['user_id'], array_merge($live, $lastRows, $all)), $user, 128);
 		$mine = null;
 
 		foreach ($live as $r)
@@ -80,20 +90,14 @@ class RankingController extends BaseController
 			}
 		}
 
-		// "Last week" is always the calendar week before this one. While it is still inside its grace period it is not
-		// closed yet, so it is computed live (provisional) instead of showing an older closed week.
-		$lastWeek = gmdate('Y-m-d', strtotime($week . ' UTC') - 7 * 86400);
-		$closed   = $svc->closedWeek($lastWeek);
-		$lastRows = $closed ?? $svc->compute($lastWeek);
 		$last     = array_map(fn (array $r): array => $this->row($r, $real, $me), $lastRows);
-		$all      = $svc->allTime(500);
 		$general  = [];
 		$mineAll  = null;
 
 		foreach ($all as $i => $r)
 		{
 			$row = [
-				'n' => $real && trim((string) $r['name']) !== '' ? (string) $r['name'] : (string) $r['username'], 'u' => Settings::userKey((int) $r['user_id']),
+				'n' => $real && trim((string) $r['name']) !== '' ? (string) $r['name'] : (string) $r['username'], 'u' => Settings::userKey((int) $r['user_id']), 'av' => $this->photos[(int) $r['user_id']] ?? '',
 				'me' => (int) $r['user_id'] === $me, 'pos' => $i + 1, 's' => (int) $r['points'], 'st' => (int) $r['stars'], 'w' => (int) $r['weeks'], 'pd' => (int) $r['podiums'],
 			];
 

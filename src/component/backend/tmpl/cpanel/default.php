@@ -47,6 +47,7 @@ $mapUrl = \Joomla\CMS\Uri\Uri::root() . 'index.php?option=com_mapaviajes';
 				<?php echo $sw('review_first', Text::_('COM_MAPAVIAJES_CONFIG_REVIEW_FIRST'), Text::_('COM_MAPAVIAJES_CP_REVIEW_HINT')); ?>
 				<?php echo $sw('comments_default', Text::_('COM_MAPAVIAJES_CONFIG_COMMENTS_DEFAULT'), Text::_('COM_MAPAVIAJES_CP_COMMENTS_HINT')); ?>
 				<?php echo $sw('show_real_names', Text::_('COM_MAPAVIAJES_CONFIG_REAL_NAMES'), Text::_('COM_MAPAVIAJES_CP_NAMES_HINT')); ?>
+				<?php echo $sw('profile_photos', Text::_('COM_MAPAVIAJES_CONFIG_PROFILE_PHOTOS'), Text::_('COM_MAPAVIAJES_CP_PHOTOS_HINT')); ?>
 			</div>
 			<div class="mvA-group">
 				<?php echo $sw('rank_enabled', Text::_('COM_MAPAVIAJES_CONFIG_RANK_ENABLED'), Text::_('COM_MAPAVIAJES_CP_RANK_HINT')); ?>
