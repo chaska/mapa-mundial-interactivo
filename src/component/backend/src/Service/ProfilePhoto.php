@@ -61,8 +61,19 @@ final class ProfilePhoto
 		catch (\Throwable $e)
 		{
 			// the map goes on with initials, but a broken or renamed MiFoto must leave a trace for the administrator (class and message only)
-			self::$logged || Log::add('profile photos unavailable: ' . \get_class($e) . ': ' . substr($e->getMessage(), 0, 160), Log::WARNING, 'com_mapaviajes');
-			self::$logged = true;
+			if (!self::$logged)
+			{
+				self::$logged = true;
+
+				try
+				{
+					Log::add('profile photos unavailable: ' . \get_class($e) . ': ' . substr($e->getMessage(), 0, 160), Log::WARNING, 'com_mapaviajes');
+				}
+				catch (\Throwable $ignored)
+				{
+					// the log itself must never break the page
+				}
+			}
 
 			return [];
 		}

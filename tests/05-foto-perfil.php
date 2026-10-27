@@ -2,6 +2,7 @@
 declare(strict_types=1);
 // ProfilePhoto: which addresses are accepted and how the answer of MiFoto is filtered. No Joomla needed (a stub User stands in).
 namespace Joomla\CMS\User { class User { public int $id = 0; public bool $guest = true; } }
+namespace Joomla\CMS\Log { class Log { public const WARNING = 4; public static array $lines = []; public static function add(string $m, int $p, string $c): void { self::$lines[] = $m; } } }
 namespace {
 define('_JEXEC', 1);
 require __DIR__ . '/aserciones.php';
@@ -37,6 +38,7 @@ afirma($svc->urls([], $viewer) === [], 'sin personas: nada, sin llamar a MiFoto'
 afirma($svc->urls([42], $guest) === [], 'quien mira es invitado: nada');
 afirma((new ProfilePhoto($fuente, false))->urls([42], $viewer) === [], 'con el interruptor del administrador apagado: nada');
 afirma((new ProfilePhoto(static function (): array { throw new RuntimeException('MiFoto roto'); }, true))->urls([42], $viewer) === [], 'si MiFoto falla, nada (el mapa sigue con las iniciales)');
+afirma(count(\Joomla\CMS\Log\Log::$lines) === 1 && str_contains(\Joomla\CMS\Log\Log::$lines[0], 'RuntimeException: MiFoto roto'), 'y el fallo queda anotado una sola vez en el registro: ' . json_encode(\Joomla\CMS\Log\Log::$lines));
 afirma((new ProfilePhoto(static fn (): array => [], true))->urls([42], $viewer) === [], 'MiFoto no conoce a nadie: nada');
 fin();
 }
