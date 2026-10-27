@@ -5,6 +5,7 @@
 - **Quién la ve lo decide MiFoto** (permiso de quien mira): el mapa le pregunta con una sola consulta por pantalla (`ProfilePhoto::urls()`), no guarda la dirección en la base de datos ni en cachés compartidas y no distingue «sin foto» de «no puedes verla». Sin MiFoto, o si algo falla, no pasa nada: se ven las iniciales.
 - **Interruptor del administrador** «Mostrar las fotos de perfil» (Panel de control y Opciones → Privacidad; por defecto sí). Apagado = todo el mapa con iniciales.
 - Seguridad: solo se aceptan direcciones del propio sitio que empiezan por una sola `/`, sin espacios ni comillas; la imagen va sin `referer` y con texto alternativo vacío (decorativa). El navegador nunca recibe el id de Joomla.
+- **Auditoría 1.16–1.18** (`docs/AUDITORIA-SEGURIDAD-1.18.md`): sin hallazgos medios ni altos. El empaquetador ahora fija el SHA-256 del lector HEIC incluido y se niega a construir si cambia. `docs/PRIVACIDAD.md` recoge las fotos de perfil.
 - Pruebas nuevas: `tests/05-foto-perfil.php` (los filtros de direcciones y el servicio, 33) y `118-foto-perfil-navegador.js` (podio, General, amigos, ficha, foto que falla y ninguna petición a otro dominio, 14).
 
 ## 1.17.2 — 2026-10-26

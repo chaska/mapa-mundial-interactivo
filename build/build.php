@@ -59,6 +59,9 @@ function inspect(string $src, array &$fail): array
 }
 
 $files  = inspect($src, $fail);
+// The bundled HEIC reader (libheif-js 1.23.5) runs in every browser that picks a HEIC photo: it must be exactly the file we vetted.
+$libheif = $src . '/media/js/vendor/libheif-bundle.js';
+if (!is_file($libheif) || hash_file('sha256', $libheif) !== '074b2b55ef3de477ba9f794ca381f3f0324c1cba8c91b4af07395f39c22d54cc') { $fail[] = 'media/js/vendor/libheif-bundle.js is not the vetted libheif-js 1.23.5 (SHA-256 mismatch); update the hash here only after reviewing the new build'; }
 $plugins = ['content', 'user', 'privacy'];
 $pFiles = [];
 foreach ($plugins as $g) { $pFiles[$g] = inspect($root . '/src/plugins/' . $g . '/mapaviajes', $fail); }

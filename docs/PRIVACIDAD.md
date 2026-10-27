@@ -30,6 +30,7 @@
 |---|---|---|
 | **Captcha de Joomla** (p. ej. reCAPTCHA v3) | Con reCAPTCHA, la **IP y datos del navegador van a Google**. «Proof of Work» y otros captchas locales no envían nada fuera | Prefiere uno local; si mantienes reCAPTCHA, cítalo en tu política y valora el consentimiento |
 | **Comentarios (Engage)** | Guarda texto, usuario y puede guardar IP y navegador de quien comenta. Gravatar solo se carga tras consentimiento (modo «preguntar») | Cítalo en tu política con su plazo de conservación |
+| **Fotos de perfil (MiFoto)**, si lo instalas | Una foto de una persona es dato personal. El mapa solo muestra la dirección que MiFoto le da a quien mira (con su permiso) y no guarda nada; la foto y su consentimiento viven en MiFoto | Cítalo en tu política: quién la ve (usuarios con sesión), cómo se borra y dónde se denuncia. El interruptor «Mostrar las fotos de perfil» del mapa la apaga en todo el mapa |
 | **Servidor de correo** | Ve los correos | Tu proveedor |
 | **Copias de seguridad** | Contienen las fotos hasta que roten | Define la rotación |
 

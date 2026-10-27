@@ -14,4 +14,4 @@
 
 ## Sin afiliación
 No es un producto de Joomla, de Akeeba ni del Open Source Matters Project.
-- **Lectura de fotos HEIC/HEIF en el navegador** (`media/js/vendor/libheif-bundle.js`): `libheif-js` 1.23.5 (libheif compilada a WebAssembly), licencia **LGPL-3.0** (texto en `media/js/vendor/LIBHEIF-LICENSE.txt`). Código fuente: https://github.com/catdad-experiments/libheif-js y https://github.com/strukturag/libheif. Va tal cual, sin modificar, como archivo aparte que se carga solo cuando alguien elige una foto HEIC; el servidor nunca abre HEIC.
+- **Lectura de fotos HEIC/HEIF en el navegador** (`media/js/vendor/libheif-bundle.js`): `libheif-js` 1.23.5 (libheif compilada a WebAssembly), licencia **LGPL-3.0** (texto en `media/js/vendor/LIBHEIF-LICENSE.txt`). Código fuente: https://github.com/catdad-experiments/libheif-js y https://github.com/strukturag/libheif. Va tal cual, sin modificar, como archivo aparte que se carga solo cuando alguien elige una foto HEIC; el servidor nunca abre HEIC. SHA-256 del archivo: `074b2b55ef3de477ba9f794ca381f3f0324c1cba8c91b4af07395f39c22d54cc` (el empaquetador se niega a construir si cambia).
